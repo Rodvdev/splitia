@@ -14,6 +14,26 @@ export async function middleware(request: NextRequest) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
+
+  // Check if we're on an API route and need to ensure the user exists in the database
+  // Only for authenticated users, and only for GraphQL API routes
+  if (session && pathname === '/api/graphql') {
+    try {
+      // Make a simple check to the profile API to ensure the user exists in the database
+      // This will trigger user creation if needed via the route handler
+      await fetch(new URL('/api/profile/check', request.url), {
+        headers: {
+          cookie: request.headers.get('cookie') || '',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      // No need to check the response - just calling the API will ensure the user exists
+    } catch (error) {
+      console.error('Error ensuring user exists in middleware:', error);
+    }
+  }
   
   // Handle internationalization
   // Check if the pathname is missing a locale

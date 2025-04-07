@@ -110,9 +110,33 @@ export default function ExpensesPage() {
         
         setExpenses(expensesData.expenses);
         setCategories(categoriesData.categories);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching data:', err);
-        setError('Failed to load expenses. Please try again.');
+        
+        // Type guard for GraphQL errors
+        type GraphQLError = {
+          message?: string;
+          response?: {
+            errors?: Array<{
+              extensions?: {
+                code?: string;
+              };
+            }>;
+          };
+        };
+        
+        const graphqlError = err as GraphQLError;
+        
+        // Check for authentication errors
+        if (graphqlError.message?.includes('Not authenticated') || 
+            graphqlError.response?.errors?.some(e => e.extensions?.code === 'UNAUTHENTICATED')) {
+          setError(t('error.authError') || 'Authentication error. Please log in again.');
+          
+          // Optional: Redirect to login
+          // router.push('/sign-in');
+        } else {
+          setError(t('error.loadError') || 'Failed to load expenses. Please try again.');
+        }
       } finally {
         setLoading(false);
       }

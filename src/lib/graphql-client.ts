@@ -21,6 +21,28 @@ export async function getAuthenticatedClient() {
   // Log authentication status for debugging
   if (!data.session) {
     console.warn('No active session found when creating authenticated GraphQL client');
+    console.error('Authentication issues may occur - Please ensure user is logged in');
+    
+    // Try to refresh the session if no session is found
+    try {
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      if (refreshData.session) {
+        console.log('Session refreshed successfully');
+        
+        // Create client with authentication headers from refreshed session
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${refreshData.session.access_token}`
+        };
+        
+        return new GraphQLClient(getGraphQLEndpoint(), {
+          credentials: 'include',
+          headers,
+        });
+      }
+    } catch (refreshError) {
+      console.error('Failed to refresh session:', refreshError);
+    }
   }
   
   // Create client with authentication headers if session exists
@@ -29,7 +51,11 @@ export async function getAuthenticatedClient() {
   };
   
   if (data.session) {
-    console.log('Adding auth token to GraphQL request');
+    console.log('Adding auth token to GraphQL request', {
+      userId: data.session.user.id,
+      email: data.session.user.email,
+    });
+    
     // Use the correct header format for JWT token authorization
     headers['Authorization'] = `Bearer ${data.session.access_token}`;
   }
@@ -112,7 +138,14 @@ export async function fetchExpenses(variables: {
     }
   `;
 
-  return graphqlClient.request(query, variables);
+  try {
+    // Use authenticated client to ensure session token is sent
+    const client = await getAuthenticatedClient();
+    return await client.request(query, variables);
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    throw error;
+  }
 }
 
 // Helper function to fetch a single expense by ID
@@ -157,7 +190,14 @@ export async function fetchExpense(id: string) {
     }
   `;
 
-  return graphqlClient.request(query, { id });
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(query, { id });
+  } catch (error) {
+    console.error('Error fetching expense details:', error);
+    throw error;
+  }
 }
 
 // Helper function to create a new expense
@@ -213,7 +253,14 @@ export async function createExpense(data: {
     }
   `;
 
-  return graphqlClient.request(mutation, { data });
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { data });
+  } catch (error) {
+    console.error('Error creating expense:', error);
+    throw error;
+  }
 }
 
 // Helper function to update an existing expense
@@ -270,7 +317,14 @@ export async function updateExpense(data: {
     }
   `;
 
-  return graphqlClient.request(mutation, { data });
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { data });
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    throw error;
+  }
 }
 
 // Helper function to delete an expense
@@ -281,7 +335,14 @@ export async function deleteExpense(id: string) {
     }
   `;
 
-  return graphqlClient.request(mutation, { id });
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { id });
+  } catch (error) {
+    console.error('Error deleting expense:', error);
+    throw error;
+  }
 }
 
 // Helper function to fetch categories
@@ -297,7 +358,14 @@ export async function fetchCategories() {
     }
   `;
 
-  return graphqlClient.request(query);
+  try {
+    // Use authenticated client to ensure session token is sent
+    const client = await getAuthenticatedClient();
+    return await client.request(query);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    throw error;
+  }
 }
 
 // Helper function to create a new category
@@ -317,7 +385,14 @@ export async function createCategory(data: {
     }
   `;
 
-  return graphqlClient.request(mutation, data);
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, data);
+  } catch (error) {
+    console.error('Error creating category:', error);
+    throw error;
+  }
 }
 
 // Helper function to fetch user groups
@@ -401,13 +476,75 @@ export async function createGroup(data: {
     }
   `;
 
-  try {
-    // Use authenticated client
-    const client = await getAuthenticatedClient();
-    const result = await client.request(mutation, { data });
-    return result;
-  } catch (error) {
-    console.error('Error creating group:', error);
-    throw error;
+  // Try to create the group with retries
+  let retryCount = 0;
+  const maxRetries = 2;
+  
+  while (retryCount <= maxRetries) {
+    try {
+      console.log(`Attempting to create group${retryCount > 0 ? ` (Attempt ${retryCount + 1})` : ''}`);
+      
+      // Force a session refresh before trying
+      if (retryCount > 0) {
+        try {
+          const supabase = createClient();
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          if (refreshData.session) {
+            console.log('Session refreshed before retry');
+          }
+        } catch (refreshError) {
+          console.error('Failed to refresh session:', refreshError);
+        }
+      }
+      
+      // Use authenticated client
+      const client = await getAuthenticatedClient();
+      const result = await client.request(mutation, { data });
+      console.log('Group created successfully');
+      return result;
+    } catch (error: unknown) {
+      console.error(`Error creating group (Attempt ${retryCount + 1}):`, error);
+      
+      // Define type for GraphQL errors
+      type GraphQLError = {
+        response?: {
+          errors?: Array<{
+            message?: string;
+            extensions?: {
+              code?: string;
+            };
+          }>;
+        };
+        message?: string;
+      };
+      
+      // Cast to a more specific type
+      const graphqlError = error as GraphQLError;
+      
+      // Check if this is an authentication error
+      if (graphqlError.response?.errors?.some(e => 
+        e.extensions?.code === 'UNAUTHENTICATED' || 
+        e.message?.includes('Not authenticated')
+      )) {
+        console.error('Authentication error detected');
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Retrying operation, attempt ${retryCount + 1} of ${maxRetries + 1}`);
+          
+          // Wait a moment before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        
+        throw new Error('Authentication failed. Please sign in again and try once more.');
+      }
+      
+      // For non-auth errors or if we've exhausted retries, just throw the original error
+      throw error;
+    }
   }
+  
+  // This should never be reached but TypeScript wants a return statement
+  throw new Error('Failed to create group after maximum retries');
 } 

@@ -14,6 +14,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Log the Supabase user ID for debugging
+    console.log('Setting up profile for Supabase user ID:', session.user.id);
+    
     // Parse the request body
     const { name, image, currency, language } = await request.json();
     
@@ -21,15 +24,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
     
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if user already exists by externalId
+    let existingUser = await prisma.user.findUnique({
       where: {
         externalId: session.user.id
       }
     });
     
+    // If no user found by externalId, check by email
+    if (!existingUser && session.user.email) {
+      existingUser = await prisma.user.findUnique({
+        where: {
+          email: session.user.email
+        }
+      });
+      
+      // If found by email but no externalId, update with externalId
+      if (existingUser && !existingUser.externalId) {
+        console.log('Found user by email, updating with externalId');
+        existingUser = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: { externalId: session.user.id }
+        });
+      }
+    }
+    
     if (existingUser) {
       // Update existing user
+      console.log('Updating existing user with ID:', existingUser.id);
       const updatedUser = await prisma.user.update({
         where: {
           id: existingUser.id
@@ -38,13 +60,15 @@ export async function POST(request: NextRequest) {
           name,
           image,
           currency,
-          language
+          language,
+          externalId: session.user.id // Ensure externalId is always set
         }
       });
       
       return NextResponse.json({ user: updatedUser });
     } else {
       // Create new user
+      console.log('Creating new user for Supabase account');
       const newUser = await prisma.user.create({
         data: {
           name,
@@ -56,6 +80,7 @@ export async function POST(request: NextRequest) {
         }
       });
       
+      console.log('Created new user with ID:', newUser.id);
       return NextResponse.json({ user: newUser });
     }
   } catch (error) {

@@ -21,7 +21,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   name          String
   email         String         @unique
-  externalId    String?        @unique // For Clerk authentication
+  externalId    String?        @unique // For Supabase authentication
   image         String?
   currency      String         @default("PEN") // Default currency
   language      String         @default("es") // Default language

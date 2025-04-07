@@ -1,35 +1,23 @@
 import { prisma } from '@/lib/prisma';
 import { GraphQLError } from 'graphql';
-import { PrismaClient } from '@prisma/client';
-import { createClient } from '@supabase/supabase-js';
 
 // Helper function to get the session
 async function getServerSession(context?: Context) {
   if (context?.user) {
-    // If context already has user data, create a session-like object
+    // If context already has user data, return it directly
     return {
       user: {
         id: context.user.id,
-        email: context.user.email
+        email: context.user.email,
+        externalId: context.user.externalId
       }
     };
   }
   
   // This fallback should rarely be needed since we're handling auth in the API route
   console.warn('No user context provided to getServerSession - this is unexpected');
-  
-  // Create a Supabase client for fallback authentication
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  );
-  
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) {
-    console.error('Authentication failed: No session found');
-  }
-  
-  return data.session;
+  console.error('Authentication failed: User context missing');
+  return null;
 }
 
 // Define ShareType enum to match the Prisma schema
@@ -42,8 +30,9 @@ enum ShareType {
 // Basic type definitions for resolvers
 interface Context {
   user?: {
-    id: string;
+    id: string;       // This is now the Prisma User ID
     email: string;
+    externalId?: string; // This is the Supabase User ID
   };
   request: Request;
 }
@@ -94,8 +83,6 @@ interface GroupMemberInput {
   email: string;
   role: string;
 }
-
-type PrismaTransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;
 
 // Define types based on the Prisma models
 interface ExpenseType {
@@ -456,90 +443,96 @@ export const resolvers = {
       }
 
       // Create the expense and expense shares in a transaction
-      return prisma.$transaction(async (tx: PrismaTransactionClient) => {
-        // Create the expense
-        const expense = await tx.expense.create({
-          data: {
-            amount: data.amount,
-            description: data.description,
-            date: new Date(data.date),
-            categoryId: data.categoryId || null,
-            currency: data.currency,
-            location: data.location || null,
-            notes: data.notes || null,
-            paidById: userId,
-            groupId: data.groupId || null,
-          },
-          include: {
-            paidBy: true,
-            group: true,
-            category: true,
-          },
-        });
-
-        // Create expense shares if provided
-        if (data.shares && data.shares.length > 0) {
-          await Promise.all(
-            data.shares.map((share: ExpenseShareInput) =>
-              tx.expenseShare.create({
-                data: {
-                  amount: share.amount,
-                  type: share.type as ShareType,
-                  userId: share.userId,
-                  expenseId: expense.id,
-                },
-              })
-            )
-          );
-        } else if (data.groupId) {
-          // If it's a group expense but no shares provided, 
-          // create equal shares for all group members
-          const groupMembers = await tx.groupUser.findMany({
-            where: { groupId: data.groupId },
-            select: { userId: true },
-          });
-
-          const shareAmount = data.amount / groupMembers.length;
-
-          await Promise.all(
-            groupMembers.map((member: { userId: string }) =>
-              tx.expenseShare.create({
-                data: {
-                  amount: shareAmount,
-                  type: ShareType.EQUAL,
-                  userId: member.userId,
-                  expenseId: expense.id,
-                },
-              })
-            )
-          );
-        } else {
-          // For personal expenses, create a share for the user
-          await tx.expenseShare.create({
+      return prisma.$transaction(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async (tx: any) => {
+          // Type the transaction parameter properly
+          const txClient = tx as typeof prisma;
+          
+          // Create the expense
+          const expense = await txClient.expense.create({
             data: {
               amount: data.amount,
-              type: ShareType.FIXED,
-              userId,
-              expenseId: expense.id,
+              description: data.description,
+              date: new Date(data.date),
+              categoryId: data.categoryId || null,
+              currency: data.currency,
+              location: data.location || null,
+              notes: data.notes || null,
+              paidById: userId,
+              groupId: data.groupId || null,
+            },
+            include: {
+              paidBy: true,
+              group: true,
+              category: true,
+            },
+          });
+
+          // Create expense shares if provided
+          if (data.shares && data.shares.length > 0) {
+            await Promise.all(
+              data.shares.map((share: ExpenseShareInput) =>
+                txClient.expenseShare.create({
+                  data: {
+                    amount: share.amount,
+                    type: share.type as ShareType,
+                    userId: share.userId,
+                    expenseId: expense.id,
+                  },
+                })
+              )
+            );
+          } else if (data.groupId) {
+            // If it's a group expense but no shares provided, 
+            // create equal shares for all group members
+            const groupMembers = await txClient.groupUser.findMany({
+              where: { groupId: data.groupId },
+              select: { userId: true },
+            });
+
+            const shareAmount = data.amount / groupMembers.length;
+
+            await Promise.all(
+              groupMembers.map((member: { userId: string }) =>
+                txClient.expenseShare.create({
+                  data: {
+                    amount: shareAmount,
+                    type: ShareType.EQUAL,
+                    userId: member.userId,
+                    expenseId: expense.id,
+                  },
+                })
+              )
+            );
+          } else {
+            // For personal expenses, create a share for the user
+            await txClient.expenseShare.create({
+              data: {
+                amount: data.amount,
+                type: ShareType.FIXED,
+                userId,
+                expenseId: expense.id,
+              },
+            });
+          }
+
+          // Get the complete expense with shares
+          return txClient.expense.findUnique({
+            where: { id: expense.id },
+            include: {
+              paidBy: true,
+              group: true,
+              category: true,
+              shares: {
+                include: {
+                  user: true,
+                },
+              },
             },
           });
         }
-
-        // Get the complete expense with shares
-        return tx.expense.findUnique({
-          where: { id: expense.id },
-          include: {
-            paidBy: true,
-            group: true,
-            category: true,
-            shares: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        });
-      });
+      );
     },
 
     // Update an existing expense
@@ -604,59 +597,65 @@ export const resolvers = {
       }
 
       // Update expense and shares in a transaction
-      return prisma.$transaction(async (tx: PrismaTransactionClient) => {
-        // Update the expense
-        await tx.expense.update({
-          where: { id: data.id },
-          data: {
-            amount: data.amount !== undefined ? data.amount : undefined,
-            description: data.description !== undefined ? data.description : undefined,
-            date: data.date !== undefined ? new Date(data.date) : undefined,
-            categoryId: data.categoryId !== undefined ? data.categoryId : undefined,
-            currency: data.currency !== undefined ? data.currency : undefined,
-            location: data.location !== undefined ? data.location : undefined,
-            notes: data.notes !== undefined ? data.notes : undefined,
-            groupId: data.groupId !== undefined ? data.groupId : undefined,
-          },
-        });
-
-        // Update shares if provided
-        if (data.shares && data.shares.length > 0) {
-          // Delete existing shares
-          await tx.expenseShare.deleteMany({
-            where: { expenseId: data.id },
+      return prisma.$transaction(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async (tx: any) => {
+          // Type the transaction parameter properly
+          const txClient = tx as typeof prisma;
+          
+          // Update the expense
+          await txClient.expense.update({
+            where: { id: data.id },
+            data: {
+              amount: data.amount !== undefined ? data.amount : undefined,
+              description: data.description !== undefined ? data.description : undefined,
+              date: data.date !== undefined ? new Date(data.date) : undefined,
+              categoryId: data.categoryId !== undefined ? data.categoryId : undefined,
+              currency: data.currency !== undefined ? data.currency : undefined,
+              location: data.location !== undefined ? data.location : undefined,
+              notes: data.notes !== undefined ? data.notes : undefined,
+              groupId: data.groupId !== undefined ? data.groupId : undefined,
+            },
           });
 
-          // Create new shares
-          await Promise.all(
-            data.shares.map((share: ExpenseShareInput) =>
-              tx.expenseShare.create({
-                data: {
-                  amount: share.amount,
-                  type: share.type as ShareType,
-                  userId: share.userId,
-                  expenseId: data.id!,
-                },
-              })
-            )
-          );
-        }
+          // Update shares if provided
+          if (data.shares && data.shares.length > 0) {
+            // Delete existing shares
+            await txClient.expenseShare.deleteMany({
+              where: { expenseId: data.id },
+            });
 
-        // Get the complete updated expense with shares
-        return tx.expense.findUnique({
-          where: { id: data.id },
-          include: {
-            paidBy: true,
-            group: true,
-            category: true,
-            shares: {
-              include: {
-                user: true,
+            // Create new shares
+            await Promise.all(
+              data.shares.map((share: ExpenseShareInput) =>
+                txClient.expenseShare.create({
+                  data: {
+                    amount: share.amount,
+                    type: share.type as ShareType,
+                    userId: share.userId,
+                    expenseId: data.id!,
+                  },
+                })
+              )
+            );
+          }
+
+          // Get the complete updated expense with shares
+          return txClient.expense.findUnique({
+            where: { id: data.id },
+            include: {
+              paidBy: true,
+              group: true,
+              category: true,
+              shares: {
+                include: {
+                  user: true,
+                },
               },
             },
-          },
-        });
-      });
+          });
+        }
+      );
     },
 
     // Delete an expense
@@ -776,35 +775,43 @@ export const resolvers = {
         });
       }
 
-      const userId = session.user.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
         throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
 
+      console.log('Creating group with Prisma user ID:', userId);
+
       // Create the group and add the creator as an admin in a transaction
-      return prisma.$transaction(async (tx: PrismaTransactionClient) => {
-        // Create the group
-        const group = await tx.group.create({
-          data: {
-            name: data.name,
-            description: data.description || null,
-            image: data.image || null,
-          },
-        });
+      return prisma.$transaction(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async (tx: any) => {
+          // Type the transaction parameter properly
+          const txClient = tx as typeof prisma;
+          
+          // Create the group
+          const group = await txClient.group.create({
+            data: {
+              name: data.name,
+              description: data.description || null,
+              image: data.image || null,
+            },
+          });
 
-        // Add the creator as an admin
-        await tx.groupUser.create({
-          data: {
-            userId,
-            groupId: group.id,
-            role: 'ADMIN',
-          },
-        });
+          // Add the creator as an admin
+          await txClient.groupUser.create({
+            data: {
+              userId,
+              groupId: group.id,
+              role: 'ADMIN',
+            },
+          });
 
-        return group;
-      });
+          return group;
+        }
+      );
     },
 
     // Add a member to a group
@@ -1042,17 +1049,23 @@ export const resolvers = {
       }
 
       // Delete the group in a transaction, cascading to memberships
-      await prisma.$transaction(async (tx: PrismaTransactionClient) => {
-        // Delete all group memberships
-        await tx.groupUser.deleteMany({
-          where: { groupId: id },
-        });
+      await prisma.$transaction(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async (tx: any) => {
+          // Type the transaction parameter properly
+          const txClient = tx as typeof prisma;
+          
+          // Delete all group memberships
+          await txClient.groupUser.deleteMany({
+            where: { groupId: id },
+          });
 
-        // Delete the group
-        await tx.group.delete({
-          where: { id },
-        });
-      });
+          // Delete the group
+          await txClient.group.delete({
+            where: { id },
+          });
+        }
+      );
 
       return true;
     },
