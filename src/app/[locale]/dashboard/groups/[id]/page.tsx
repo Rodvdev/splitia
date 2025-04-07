@@ -33,6 +33,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 // For a real implementation, fetch the group data from the API
 // This is a placeholder for now
@@ -222,7 +223,7 @@ export default function GroupPage() {
       <div className="flex items-start gap-4 mb-6">
         <div className="h-20 w-20 rounded-full flex items-center justify-center bg-primary text-primary-foreground text-3xl">
           {group.image ? (
-            <img src={group.image} alt={group.name} className="h-full w-full object-cover rounded-full" />
+            <Image src={group.image} alt={group.name} className="h-full w-full object-cover rounded-full" />
           ) : (
             getInitials(group.name)
           )}

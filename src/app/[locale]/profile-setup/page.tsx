@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createClient } from '@/lib/supabase/client';
+import Image from 'next/image';
 
 // Define profile form schema
 const profileFormSchema = z.object({
@@ -216,7 +217,7 @@ export default function ProfileSetupPage() {
                 <div className="flex items-center gap-4">
                   {imagePreview ? (
                     <div className="relative h-16 w-16 rounded-full overflow-hidden">
-                      <img 
+                      <Image 
                         src={imagePreview} 
                         alt="Profile preview" 
                         className="h-full w-full object-cover"
