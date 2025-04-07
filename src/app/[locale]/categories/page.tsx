@@ -3,17 +3,19 @@ import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 
-// Mark explicitly as a server component
+// Mark page as static to be pre-rendered at build time
 export const dynamic = 'force-static';
 
-interface PageProps {
-  params: {
-    locale: string;
-  };
-  searchParams: Record<string, string | string[] | undefined>;
+// Define generator function for static paths
+export function generateStaticParams() {
+  return [{ locale: 'en' }, { locale: 'es' }, { locale: 'pt' }];
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+type Props = {
+  params: { locale: string }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: 'Categories' });
   return {
     title: t('title'),
