@@ -1,0 +1,62 @@
+{
+  "authentication": {
+  },
+  "app": {
+    "name": "Splitia",
+    "tagline": "Registre despesas, divida contas e acerte contas com amigos e familiares",
+    "copyright": "© 2023 Splitia. Todos os direitos reservados."
+  },
+  "errors": {
+    "fetchProfile": "Falha ao buscar seu perfil",
+    "general": "Algo deu errado. Por favor, tente novamente."
+  },
+  "greetings": {
+    "morning": "Bom dia",
+    "afternoon": "Boa tarde",
+    "evening": "Boa noite"
+  },
+  "navigation": {
+    "dashboard": "Painel",
+    "expenses": "Despesas",
+    "groups": "Grupos",
+    "profile": "Perfil"
+  },
+  "user": {
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "signOut": "Sair",
+    "guest": "Convidado"
+  },
+  "dashboard": {
+    "title": "Painel",
+    "summary": "Resumo",
+    "recentActivity": "Atividade Recente"
+  },
+  "expenses": {
+    "title": "Despesas",
+    "add": "Adicionar Despesa",
+    "viewAll": "Ver Todas",
+    "total": "no total",
+    "description": "Gerencie e divida suas despesas",
+    "noExpenses": "Nenhuma despesa encontrada. Adicione sua primeira despesa para começar!"
+  },
+  "groups": {
+    "title": "Grupos",
+    "create": "Criar Grupo",
+    "description": "Gerencie seus grupos e despesas compartilhadas",
+    "total": "no total",
+    "viewAll": "Ver Todos",
+    "empty": "Nenhum grupo encontrado. Crie seu primeiro grupo para começar!"
+  },
+  "settings": {
+    "title": "Configurações",
+    "description": "Gerencie as preferências da sua conta",
+    "language": "Idioma",
+    "currency": "Moeda",
+    "profile": "Editar Perfil"
+  },
+  "date": {
+    "today": "Hoje",
+    "yesterday": "Ontem"
+  }
+} 

@@ -35,6 +35,7 @@ model User {
   messageSeen   MessageSeen[]
   categories    CustomCategory[]
   preferences   UserPreference?
+  createdGroups Group[]        @relation("CreatedGroups")
   // Group invitations the user has created
   createdInvitations GroupInvitation[] @relation("CreatedInvitations")
   // Group invitations the user has been invited through
@@ -54,6 +55,8 @@ model Group {
   expenses      Expense[]
   conversation  Conversation?
   invitations   GroupInvitation[]
+  createdBy     User           @relation("CreatedGroups", fields: [createdById], references: [id])
+  createdById   String
 }
 
 // GroupUser model (for many-to-many relationship between User and Group)

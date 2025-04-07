@@ -797,6 +797,7 @@ export const resolvers = {
               name: data.name,
               description: data.description || null,
               image: data.image || null,
+              createdById: userId,
             },
           });
 
@@ -1114,6 +1115,16 @@ export const resolvers = {
 
       return prisma.user.findUnique({
         where: { id: parent.userId },
+      });
+    },
+  },
+
+  Group: {
+    createdBy: async (parent: { id: string; createdById?: string }) => {
+      if (!parent.createdById) return null;
+      
+      return prisma.user.findUnique({
+        where: { id: parent.createdById },
       });
     },
   },

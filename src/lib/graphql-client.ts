@@ -25,7 +25,14 @@ export async function getAuthenticatedClient() {
     
     // Try to refresh the session if no session is found
     try {
-      const { data: refreshData } = await supabase.auth.refreshSession();
+      console.log('Attempting to refresh the session...');
+      const { data: refreshData, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Session refresh failed:', error.message);
+        throw new Error('Authentication failed: ' + error.message);
+      }
+      
       if (refreshData.session) {
         console.log('Session refreshed successfully');
         
@@ -39,9 +46,13 @@ export async function getAuthenticatedClient() {
           credentials: 'include',
           headers,
         });
+      } else {
+        console.error('No session after refresh attempt');
+        throw new Error('Authentication required');
       }
     } catch (refreshError) {
       console.error('Failed to refresh session:', refreshError);
+      throw new Error('Authentication failed');
     }
   }
   
@@ -149,7 +160,43 @@ export async function fetchExpenses(variables: {
 }
 
 // Helper function to fetch a single expense by ID
-export async function fetchExpense(id: string) {
+export async function fetchExpense(id: string): Promise<{ expense: { 
+  id: string;
+  description: string;
+  amount: number;
+  currency: string;
+  date: string;
+  location?: string;
+  notes?: string;
+  paidBy: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  group?: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  category?: {
+    id: string;
+    name: string;
+    icon?: string;
+    color?: string;
+  };
+  shares: Array<{
+    id: string;
+    amount: number;
+    type: string;
+    user: {
+      id: string;
+      name: string;
+      image?: string;
+    };
+  }>;
+  createdAt: string;
+  updatedAt: string;
+} | null }> {
   const query = `
     query GetExpense($id: ID!) {
       expense(id: $id) {
@@ -404,33 +451,85 @@ export async function fetchUserGroups() {
         name
         image
         description
+        members {
+          id
+        }
       }
     }
   `;
 
-  try {
-    // Get the current session first to verify we have an active session
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.error('No active session found when attempting to fetch user groups');
-      throw new Error('Authentication required to access user groups');
+  let retryCount = 0;
+  const maxRetries = 2;
+  
+  while (retryCount <= maxRetries) {
+    try {
+      // Get the current session first to verify we have an active session
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No active session found when attempting to fetch user groups');
+        
+        // Try to refresh the session
+        const { data: refreshData, error } = await supabase.auth.refreshSession();
+        if (error || !refreshData.session) {
+          throw new Error('Authentication required to access user groups');
+        }
+        
+        console.log('Session refreshed before fetching groups');
+      }
+      
+      // Use authenticated client to ensure session is included
+      const client = await getAuthenticatedClient();
+      const response = await client.request(query);
+      console.log('Successfully fetched user groups');
+      return response;
+    } catch (error) {
+      console.error(`Error fetching user groups (Attempt ${retryCount + 1}):`, error);
+      
+      // If we have retries left, refresh session and retry
+      if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Retrying fetchUserGroups, attempt ${retryCount + 1} of ${maxRetries + 1}`);
+        
+        // Try to refresh the session before retrying
+        try {
+          const supabase = createClient();
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          if (refreshData.session) {
+            console.log('Session refreshed before retry');
+          }
+        } catch (refreshError) {
+          console.error('Failed to refresh session before retry:', refreshError);
+        }
+        
+        // Wait a moment before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      
+      // Return empty array but don't swallow the error
+      throw error;
     }
-    
-    // Use authenticated client to ensure session is included
-    const client = await getAuthenticatedClient();
-    const response = await client.request(query);
-    return response;
-  } catch (error) {
-    console.error('Error fetching user groups:', error);
-    // Return empty array but don't swallow the error
-    throw error;
   }
+  
+  throw new Error('Failed to fetch user groups after maximum retries');
 }
 
 // Helper function to fetch a single group
-export async function getGroup(id: string) {
+export async function fetchGroup(id: string): Promise<{ group: { 
+  id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  members: Array<{
+    id: string;
+    name: string;
+    email?: string;
+    image?: string;
+    role: string;
+  }>;
+} | null }> {
   const query = `
     query GetGroup($id: ID!) {
       group(id: $id) {
@@ -455,7 +554,25 @@ export async function getGroup(id: string) {
     return await client.request(query, { id });
   } catch (error) {
     console.error('Error fetching group:', error);
-    return { group: null };
+    throw error;
+  }
+}
+
+// Helper function to delete a group
+export async function deleteGroup(id: string) {
+  const mutation = `
+    mutation DeleteGroup($id: ID!) {
+      deleteGroup(id: $id)
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { id });
+  } catch (error) {
+    console.error('Error deleting group:', error);
+    throw error;
   }
 }
 
@@ -547,4 +664,195 @@ export async function createGroup(data: {
   
   // This should never be reached but TypeScript wants a return statement
   throw new Error('Failed to create group after maximum retries');
+}
+
+// Helper function to invite members to a group
+export async function inviteToGroup(data: {
+  groupId: string;
+  email: string;
+  role: 'ADMIN' | 'MEMBER' | 'GUEST';
+}) {
+  const mutation = `
+    mutation InviteToGroup($data: GroupInviteInput!) {
+      inviteToGroup(data: $data) {
+        id
+        success
+        email
+        role
+        expiresAt
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { data });
+  } catch (error) {
+    console.error('Error inviting to group:', error);
+    throw error;
+  }
+}
+
+// Helper function to generate an invite link for a group
+export async function generateGroupInviteLink(data: {
+  groupId: string;
+  maxUses?: number;
+  expiresAt?: Date;
+}) {
+  const mutation = `
+    mutation GenerateGroupInviteLink($data: GroupInviteLinkInput!) {
+      generateGroupInviteLink(data: $data) {
+        id
+        token
+        url
+        maxUses
+        usedCount
+        expiresAt
+      }
+    }
+  `;
+
+  // Create a new object without expiresAt if it's undefined or invalid
+  const formattedData: { 
+    groupId: string; 
+    maxUses?: number; 
+    expiresAt?: string; 
+  } = { 
+    groupId: data.groupId,
+    maxUses: data.maxUses
+  };
+  
+  // Only include expiresAt if it's defined and valid
+  if (data.expiresAt && data.expiresAt instanceof Date && !isNaN(data.expiresAt.getTime())) {
+    formattedData.expiresAt = data.expiresAt.toISOString();
+  }
+
+  try {
+    console.log('Sending GroupInviteLink mutation with data:', JSON.stringify(formattedData));
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { data: formattedData });
+  } catch (error) {
+    console.error('Error generating group invite link:', error);
+    
+    // Define type for GraphQL errors
+    type GraphQLError = {
+      response?: {
+        errors?: Array<{
+          message?: string;
+          extensions?: {
+            code?: string;
+          };
+        }>;
+        status?: number;
+        headers?: Record<string, unknown>;
+      };
+      request?: {
+        query?: string;
+        variables?: Record<string, unknown>;
+      };
+      message?: string;
+    };
+    
+    // Cast to a more specific type
+    const graphqlError = error as GraphQLError;
+    
+    // Log more detailed error information
+    if (graphqlError.response) {
+      console.error('GraphQL Response Error:', {
+        status: graphqlError.response.status,
+        errors: graphqlError.response.errors,
+        request: graphqlError.request
+      });
+    }
+    
+    throw error;
+  }
+}
+
+// Helper function to change a member's role in a group
+export async function changeGroupMemberRole(data: {
+  groupId: string;
+  memberId: string;
+  role: 'ADMIN' | 'MEMBER' | 'GUEST';
+}) {
+  const mutation = `
+    mutation ChangeGroupMemberRole($data: GroupMemberRoleInput!) {
+      changeGroupMemberRole(data: $data) {
+        id
+        role
+        user {
+          id
+          name
+        }
+        group {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { data });
+  } catch (error) {
+    console.error('Error changing group member role:', error);
+    throw error;
+  }
+}
+
+// Helper function to remove a member from a group
+export async function removeGroupMember(data: {
+  groupId: string;
+  memberId: string;
+}) {
+  const mutation = `
+    mutation RemoveGroupMember($data: GroupMemberInput!) {
+      removeGroupMember(data: $data) {
+        success
+        message
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { data });
+  } catch (error) {
+    console.error('Error removing group member:', error);
+    throw error;
+  }
+}
+
+// Helper function to generate a basic invite link for a group (without expiry or usage limits)
+export async function generateBasicGroupInviteLink(groupId: string) {
+  const mutation = `
+    mutation GenerateBasicGroupInviteLink($data: GroupInviteLinkInput!) {
+      generateGroupInviteLink(data: $data) {
+        id
+        token
+        url
+        maxUses
+        usedCount
+        expiresAt
+      }
+    }
+  `;
+
+  try {
+    console.log('Sending basic group invite link mutation with groupId:', groupId);
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    
+    // Use the structure expected by the API
+    const data = { groupId };
+    return await client.request(mutation, { data });
+  } catch (error) {
+    console.error('Error generating basic group invite link:', error);
+    throw error;
+  }
 } 

@@ -1,0 +1,1 @@
+Let's update the English locale file to add the missing translations.

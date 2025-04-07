@@ -5,7 +5,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   // Create Supabase client with the correct way to use cookies
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = cookies();  
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
   
   try {
     // Get the user session

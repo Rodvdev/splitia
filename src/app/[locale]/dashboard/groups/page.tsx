@@ -32,6 +32,7 @@ interface Group {
   name: string;
   image?: string | null;
   description?: string | null;
+  members?: { id: string }[];
 }
 
 // Type for the API response
@@ -184,7 +185,7 @@ export default function GroupsPage() {
               <CardContent className="pb-2">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Users className="mr-1 h-4 w-4" />
-                  <span>{t('membersCount', { count: 3 })}</span> {/* This should be dynamically populated from the API */}
+                  <span>{t('membersCount', { count: group.members?.length || 0 })}</span>
                 </div>
               </CardContent>
               <CardFooter className="pt-2 flex justify-between">

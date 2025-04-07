@@ -1,21 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Users, 
-  Settings, 
-  UserPlus, 
-  MoreVertical,
-  PieChart,
-  Share2
+import {
+  ArrowLeft,
+  Users,
+  UserPlus,
+  Settings,
+  Trash2,
 } from 'lucide-react';
 
-// UI Components
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Card,
   CardContent,
@@ -23,26 +20,34 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { 
+  Avatar, 
+  AvatarFallback, 
+  AvatarImage 
+} from '@/components/ui/avatar';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
-// For a real implementation, fetch the group data from the API
-// This is a placeholder for now
+import { fetchGroup, deleteGroup, changeGroupMemberRole, removeGroupMember } from '@/lib/graphql-client';
+import { createClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { GroupMembers } from './_components/GroupMembers';
+
 interface GroupMember {
   id: string;
   name: string;
+  email?: string;
   image?: string;
-  email: string;
-  role: 'ADMIN' | 'MEMBER' | 'GUEST';
+  role: string;
 }
 
 interface Group {
@@ -54,35 +59,57 @@ interface Group {
 }
 
 export default function GroupPage() {
+  // Get params directly using useParams hook
+  const params = useParams();
+  const groupId = params.id as string;
+  
   const t = useTranslations('groups');
   const router = useRouter();
-  const params = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [group, setGroup] = useState<Group | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   // Fetch group data when component mounts
   useEffect(() => {
     const loadGroup = async () => {
       setIsLoading(true);
       try {
-        // Fetch the group data from the API
-        const response = await fetch(`/api/groups/${params.id}`);
+        // Use the GraphQL client to fetch the group
+        const response = await fetchGroup(groupId);
         
-        if (!response.ok) {
+        if (!response || !response.group) {
           throw new Error('Failed to fetch group data');
         }
         
-        const data = await response.json();
-        setGroup(data);
+        setGroup(response.group);
       } catch (error) {
         console.error('Failed to load group:', error);
+        toast.error(t('errors.fetchFailed'));
       } finally {
         setIsLoading(false);
       }
     };
     
     loadGroup();
-  }, [params.id]);
+  }, [groupId, t]);
+
+  // Fetch current user ID when component mounts
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          setCurrentUserId(data.user.id);
+        }
+      } catch (error) {
+        console.error('Failed to get current user:', error);
+      }
+    };
+    
+    getCurrentUser();
+  }, []);
 
   // Navigate back
   const handleBack = () => {
@@ -101,218 +128,237 @@ export default function GroupPage() {
 
   // Group settings
   const handleSettings = () => {
-    router.push(`/dashboard/groups/${params.id}/settings`);
+    router.push(`/dashboard/groups/${groupId}/settings`);
   };
 
   // Invite members
   const handleInvite = () => {
-    router.push(`/dashboard/groups/${params.id}/invite`);
+    router.push(`/dashboard/groups/${groupId}/invite`);
   };
 
   // Delete group
-  const handleDelete = () => {
-    if (confirm(t('deleteConfirm', { defaultValue: 'Are you sure you want to delete this group?' }))) {
-      // Delete the group via API
-      fetch(`/api/groups/${params.id}`, {
-        method: 'DELETE',
-      })
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to delete group');
-          router.push('/dashboard/groups');
-        })
-        .catch(error => {
-          console.error('Error deleting group:', error);
-          // Show error notification here if you have a notification system
-        });
+  const handleDelete = async () => {
+    if (!group) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteGroup(group.id);
+      toast.success(t('deleteSuccess'));
+      router.push('/dashboard/groups');
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      toast.error(t('errors.deleteFailed'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  // Leave group
-  const handleLeave = () => {
-    if (confirm(t('leaveConfirm', { defaultValue: 'Are you sure you want to leave this group?' }))) {
-      // Leave the group via API
-      fetch(`/api/groups/${params.id}/leave`, {
-        method: 'POST',
-      })
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to leave group');
-          router.push('/dashboard/groups');
-        })
-        .catch(error => {
-          console.error('Error leaving group:', error);
-          // Show error notification here if you have a notification system
+  // Handle member role change
+  const handleChangeRole = async (memberId: string, newRole: string) => {
+    try {
+      await changeGroupMemberRole({
+        groupId,
+        memberId,
+        role: newRole as 'ADMIN' | 'MEMBER' | 'GUEST',
+      });
+      
+      // Update the local state
+      if (group) {
+        setGroup({
+          ...group,
+          members: group.members.map(member => 
+            member.id === memberId 
+              ? { ...member, role: newRole } 
+              : member
+          ),
         });
+      }
+      
+      toast.success(t('roleUpdateSuccess'));
+    } catch (error) {
+      console.error('Failed to change role:', error);
+      toast.error(t('errors.roleUpdateFailed'));
     }
   };
-
+  
+  // Handle member removal
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      await removeGroupMember({
+        groupId,
+        memberId,
+      });
+      
+      // Update the local state
+      if (group) {
+        setGroup({
+          ...group,
+          members: group.members.filter(member => member.id !== memberId),
+        });
+      }
+      
+      toast.success(t('memberRemoveSuccess'));
+    } catch (error) {
+      console.error('Failed to remove member:', error);
+      toast.error(t('errors.memberRemoveFailed'));
+    }
+  };
+  
+  // Show loading state
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={handleBack} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {t('back')}
-        </Button>
-        
-        <div className="flex items-center gap-4 mb-6">
-          <Skeleton className="h-20 w-20 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-72" />
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBack}
+              className="h-8 w-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="h-8 w-40 bg-muted animate-pulse rounded"></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-20 bg-muted animate-pulse rounded"></div>
+            <div className="h-8 w-20 bg-muted animate-pulse rounded"></div>
           </div>
         </div>
         
-        <Skeleton className="h-10 w-full" />
-        
-        <div className="grid gap-4">
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="h-8 w-40 bg-muted animate-pulse rounded mb-2"></div>
+            <div className="h-4 w-60 bg-muted animate-pulse rounded"></div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="h-24 bg-muted animate-pulse rounded"></div>
+            <div className="space-y-2">
+              <div className="h-6 bg-muted animate-pulse rounded"></div>
+              <div className="h-12 bg-muted animate-pulse rounded"></div>
+              <div className="h-12 bg-muted animate-pulse rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
-
+  
+  // Show error state
   if (!group) {
     return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium">{t('groupNotFound')}</h3>
-        <Button className="mt-4" onClick={handleBack}>
-          {t('backToGroups')}
+      <div className="p-6 flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-bold text-destructive mb-2">{t('errors.notFound')}</h2>
+        <p className="text-muted-foreground mb-4">{t('errors.notFoundDescription')}</p>
+        <Button onClick={handleBack} variant="outline">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t('actions.back')}
         </Button>
       </div>
     );
   }
-
+  
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Button variant="ghost" onClick={handleBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {t('back')}
-        </Button>
+    <div className="p-6 space-y-6">
+      {/* Header with back button and actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-2xl font-bold">{t('view.title')}</h1>
+        </div>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleSettings}>
-              <Settings className="mr-2 h-4 w-4" />
-              {t('settings')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleInvite}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              {t('invite')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLeave} className="text-orange-600">
-              <Share2 className="mr-2 h-4 w-4" />
-              {t('leave')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDelete} className="text-red-600">
-              <Settings className="mr-2 h-4 w-4" />
-              {t('delete')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleSettings}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            {t('actions.settings')}
+          </Button>
+          
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={handleInvite}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            {t('actions.invite')}
+          </Button>
+        </div>
       </div>
       
-      <div className="flex items-start gap-4 mb-6">
-        <div className="h-20 w-20 rounded-full flex items-center justify-center bg-primary text-primary-foreground text-3xl">
-          {group.image ? (
-            <Image src={group.image} alt={group.name} className="h-full w-full object-cover rounded-full" />
-          ) : (
-            getInitials(group.name)
-          )}
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold">{group.name}</h1>
-          {group.description && (
-            <p className="text-muted-foreground mt-1">{group.description}</p>
-          )}
-          <div className="flex items-center mt-2">
-            <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {t('membersCount', { count: group.members.length })}
-            </span>
+      {/* Group info card */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              {group.image ? (
+                <AvatarImage src={group.image} alt={group.name} />
+              ) : null}
+              <AvatarFallback className="text-lg">{getInitials(group.name)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-2xl">{group.name}</CardTitle>
+              {group.description && (
+                <CardDescription className="mt-1">{group.description}</CardDescription>
+              )}
+            </div>
           </div>
-        </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Users className="mr-2 h-4 w-4" />
+            <span>{t('view.memberCount', { count: group.members.length })}</span>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Delete group option */}
+      <div className="flex justify-end">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t('actions.delete')}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('delete.title')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('delete.description')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('actions.cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive hover:bg-destructive/90"
+                disabled={isDeleting}
+              >
+                {isDeleting ? t('actions.deleting') : t('actions.confirm')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       
-      <Tabs defaultValue="members">
-        <TabsList className="w-full">
-          <TabsTrigger value="members" className="flex-1">
-            <Users className="h-4 w-4 mr-2" />
-            {t('members')}
-          </TabsTrigger>
-          <TabsTrigger value="expenses" className="flex-1">
-            <PieChart className="h-4 w-4 mr-2" />
-            {t('expenses')}
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="members" className="mt-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle>{t('members')}</CardTitle>
-                <Button onClick={handleInvite} size="sm">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  {t('invite')}
-                </Button>
-              </div>
-              <CardDescription>
-                {t('membersDescription', { defaultValue: 'People who can view and add expenses to this group' })}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-4">
-                {group.members.map(member => (
-                  <li key={member.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={member.image} />
-                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
-                      </div>
-                    </div>
-                    <Badge variant={member.role === 'ADMIN' ? 'default' : 'outline'}>
-                      {member.role === 'ADMIN' ? t('admin') : t('member')}
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="expenses" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('expenses')}</CardTitle>
-              <CardDescription>
-                {t('expensesDescription', { defaultValue: 'All expenses associated with this group' })}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  {t('noExpenses', { defaultValue: 'No expenses added to this group yet' })}
-                </p>
-                <Button className="mt-4" onClick={() => router.push('/dashboard/expenses/create')}>
-                  {t('addExpense')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Members section */}
+      <GroupMembers
+        members={group.members}
+        currentUserRole={group.members.find(m => m.id === currentUserId)?.role || ''}
+        currentUserId={currentUserId || ''}
+        onChangeRole={handleChangeRole}
+        onRemoveMember={handleRemoveMember}
+      />
     </div>
   );
 } 

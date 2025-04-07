@@ -15,50 +15,21 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Check if we're on an API route and need to ensure the user exists in the database
-  // Only for authenticated users, and only for GraphQL API routes
+  // Add auth token to response headers for GraphQL requests
   if (session && pathname === '/api/graphql') {
-    try {
-      // Make a simple check to the profile API to ensure the user exists in the database
-      // This will trigger user creation if needed via the route handler
-      await fetch(new URL('/api/profile/check', request.url), {
-        headers: {
-          cookie: request.headers.get('cookie') || '',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      
-      // No need to check the response - just calling the API will ensure the user exists
-    } catch (error) {
-      console.error('Error ensuring user exists in middleware:', error);
-    }
-  }
-  
-  // Handle internationalization
-  // Check if the pathname is missing a locale
-  const pathnameHasLocale = locales.some(
-    locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
-  
-  // Skip internationalization for API routes and Next.js internal routes
-  const isApiRoute = pathname.startsWith('/api/');
-  const isInternalRoute = pathname.includes('/_next/') || 
-                          pathname.includes('/favicon.ico') ||
-                          pathname.startsWith('/auth/');
-  
-  if (!pathnameHasLocale && !isApiRoute && !isInternalRoute) {
-    // Get the preferred locale from the Accept-Language header
-    const acceptLanguage = request.headers.get('accept-language') || '';
-    const userLocale = acceptLanguage.split(',')[0].split('-')[0] || 'en';
+    // Clone the headers to avoid immutability issues
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.set('Authorization', `Bearer ${session.access_token}`);
     
-    // Use the user's preferred locale if it's supported, otherwise default to 'en'
-    const locale = locales.includes(userLocale as typeof locales[number]) ? userLocale : 'en';
+    // Create a new response with the updated headers
+    const newResponse = new NextResponse(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
     
-    // Redirect to the same URL but with the locale prefix
-    const newUrl = new URL(`/${locale}${pathname.startsWith('/') ? pathname : `/${pathname}`}`, request.url);
-    newUrl.search = request.nextUrl.search;
-    return NextResponse.redirect(newUrl);
+    console.log('Added Authorization header to GraphQL request');
+    return newResponse;
   }
 
   // Define paths that don't need authentication
@@ -101,6 +72,32 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  // Handle internationalization
+  // Check if the pathname is missing a locale
+  const pathnameHasLocale = locales.some(
+    locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  );
+  
+  // Skip internationalization for API routes and Next.js internal routes
+  const isApiRoute = pathname.startsWith('/api/');
+  const isInternalRoute = pathname.includes('/_next/') || 
+                          pathname.includes('/favicon.ico') ||
+                          pathname.startsWith('/auth/');
+  
+  if (!pathnameHasLocale && !isApiRoute && !isInternalRoute) {
+    // Get the preferred locale from the Accept-Language header
+    const acceptLanguage = request.headers.get('accept-language') || '';
+    const userLocale = acceptLanguage.split(',')[0].split('-')[0] || 'en';
+    
+    // Use the user's preferred locale if it's supported, otherwise default to 'en'
+    const locale = locales.includes(userLocale as typeof locales[number]) ? userLocale : 'en';
+    
+    // Redirect to the same URL but with the locale prefix
+    const newUrl = new URL(`/${locale}${pathname.startsWith('/') ? pathname : `/${pathname}`}`, request.url);
+    newUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(newUrl);
+  }
+
   // Handle authentication routes
   if (!isPublicPath(pathname)) {
     if (!session) {
@@ -111,34 +108,58 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Handle profile setup check
-  if (session && needsProfileSetup(pathname)) {
+  // Check profile status for authenticated users on protected routes
+  if (session && !isApiRoute && needsProfileSetup(pathname)) {
     try {
-      // Check if profile is complete
+      // Set up common request headers
+      const headers = {
+        cookie: request.headers.get('cookie') || '',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      };
+
+      // Create a controller to handle timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      
+      // Make a single fetch request to check profile status
       const profileResponse = await fetch(new URL('/api/profile/check', request.url), {
-        headers: {
-          cookie: request.headers.get('cookie') || '',
-          'Content-Type': 'application/json'
-        }
+        headers,
+        signal: controller.signal
+      }).catch(error => {
+        console.error('Error in profile check:', error);
+        return null;
       });
       
-      if (profileResponse.ok) {
-        const { isComplete } = await profileResponse.json();
+      clearTimeout(timeoutId);
+      
+      if (profileResponse && profileResponse.ok) {
+        const profileData = await profileResponse.json();
         
-        if (!isComplete) {
+        if (!profileData.isComplete) {
+          // Get the locale from the current path if it exists
+          const localeMatch = pathname.match(new RegExp(`^/(${locales.join('|')})/`));
+          const locale = localeMatch ? localeMatch[1] : 'en';
+          
           // Redirect to profile setup if profile is not complete
-          return NextResponse.redirect(new URL('/profile-setup', request.url));
+          const setupUrl = new URL(`/${locale}/profile-setup`, request.url);
+          return NextResponse.redirect(setupUrl);
         }
       }
     } catch (error) {
       console.error('Error checking profile status in middleware:', error);
+      // Continue without blocking the request on error
     }
   }
   
   // Handle public routes when user is already authenticated
   if ((pathname.includes('/sign-in') || pathname.includes('/sign-up')) && session) {
+    // Get the locale from the current path if it exists
+    const localeMatch = pathname.match(new RegExp(`^/(${locales.join('|')})/`));
+    const locale = localeMatch ? localeMatch[1] : 'en';
+    
     // Redirect to dashboard if accessing auth pages while logged in
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
   }
   
   return response;
@@ -146,7 +167,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip all internal paths, public assets, and API routes
-    '/((?!_next/|api/|favicon.ico).*)'
+    // Skip static files and images
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }; 

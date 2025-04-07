@@ -66,7 +66,7 @@ export default function ProfileSetupPage() {
     defaultValues: {
       name: '',
       currency: 'PEN',
-      language: 'en',
+      language: 'es',
     },
   });
 
@@ -83,12 +83,19 @@ export default function ProfileSetupPage() {
       
       setUser(session.user);
       
+      // Auto-fill name from email if available
+      if (session.user.email) {
+        const nameSuggestion = session.user.email.split('@')[0];
+        form.setValue('name', nameSuggestion);
+      }
+      
       // Check if user has already completed profile setup
       try {
         const response = await fetch('/api/profile/check', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
           },
         });
         
@@ -105,7 +112,7 @@ export default function ProfileSetupPage() {
     };
     
     checkAuth();
-  }, [router, supabase]);
+  }, [router, supabase, form]);
 
   // Handle image upload
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,6 +136,12 @@ export default function ProfileSetupPage() {
     setIsSubmitting(true);
     
     try {
+      // Get current session for authorization token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+      
       // First upload image if exists
       let imageUrl = null;
       if (imageFile) {
@@ -154,6 +167,7 @@ export default function ProfileSetupPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           ...values,
@@ -162,13 +176,14 @@ export default function ProfileSetupPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to save profile data');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save profile data');
       }
       
       toast.success(t('successMessage'));
       
       // Redirect to dashboard
-      router.push('/dashboard');
+      router.push(`/${values.language}/dashboard`);
     } catch (error) {
       console.error('Error setting up profile:', error);
       toast.error(t('errorMessage'));
@@ -178,8 +193,33 @@ export default function ProfileSetupPage() {
   };
 
   // Handle skip
-  const handleSkip = () => {
-    router.push('/dashboard');
+  const handleSkip = async () => {
+    // Even when skipping, we need to create a basic profile
+    const values = form.getValues();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      try {
+        await fetch('/api/profile/setup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            name: values.name || (user?.email?.split('@')[0] || 'User'),
+            language: values.language || 'es',
+            currency: values.currency || 'PEN',
+          }),
+        });
+      } catch (error) {
+        console.error('Error setting up basic profile when skipping:', error);
+      }
+    }
+    
+    // Determine current language to redirect correctly
+    const currentLanguage = form.getValues().language || 'es';
+    router.push(`/${currentLanguage}/dashboard`);
   };
 
   return (

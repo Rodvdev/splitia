@@ -15,7 +15,7 @@ interface ExpenseFormData {
   amount: number;
   currency: string;
   date: Date;
-  category: string;
+  category: string; // Now this will be the category ID, not the name
   location?: string;
   notes?: string;
   isPaid: boolean;
@@ -38,7 +38,8 @@ export default function CreateExpensePage() {
         amount: data.amount,
         description: data.title, // Map title to description
         date: data.date,
-        categoryId: data.category, // Category is the ID from the select
+        // Only include categoryId if it's a valid ID (not a string like "Food" from fallback)
+        ...(data.category && data.category.length > 8 && { categoryId: data.category }),
         currency: data.currency,
         location: data.location || undefined,
         notes: data.notes || undefined,

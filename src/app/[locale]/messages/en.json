@@ -1,0 +1,62 @@
+{
+  "authentication": {
+  },
+  "app": {
+    "name": "Splitia",
+    "tagline": "Track expenses, split bills, and settle up with friends and family",
+    "copyright": "© 2023 Splitia. All rights reserved."
+  },
+  "errors": {
+    "fetchProfile": "Failed to fetch your profile",
+    "general": "Something went wrong. Please try again."
+  },
+  "greetings": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "expenses": "Expenses",
+    "groups": "Groups",
+    "profile": "Profile"
+  },
+  "user": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "guest": "Guest"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "summary": "Summary",
+    "recentActivity": "Recent Activity"
+  },
+  "expenses": {
+    "title": "Expenses",
+    "add": "Add Expense",
+    "viewAll": "View All",
+    "total": "total",
+    "description": "Manage and split your expenses",
+    "noExpenses": "No expenses found. Add your first expense to get started!"
+  },
+  "groups": {
+    "title": "Groups",
+    "create": "Create Group",
+    "description": "Manage your groups and shared expenses",
+    "total": "total",
+    "viewAll": "View All",
+    "empty": "No groups found. Create your first group to get started!"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account preferences",
+    "language": "Language",
+    "currency": "Currency",
+    "profile": "Edit Profile"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday"
+  }
+} 

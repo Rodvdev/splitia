@@ -8,7 +8,8 @@ import { useTranslations } from 'next-intl';
 import { Calendar as CalendarIcon, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Control } from 'react-hook-form';
-import { fetchUserGroups } from '@/lib/graphql-client';
+import { fetchUserGroups, fetchCategories } from '@/lib/graphql-client';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -83,9 +84,21 @@ interface Group {
   description?: string;
 }
 
+// Interface for category data
+interface Category {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+}
+
 // Interface for the GraphQL response
 interface UserGroupsResponse {
   userGroups: Group[];
+}
+
+interface CategoriesResponse {
+  categories: Category[];
 }
 
 export function ExpenseForm({
@@ -96,7 +109,10 @@ export function ExpenseForm({
 }: ExpenseFormProps) {
   const t = useTranslations('expenses.form');
   const [groups, setGroups] = React.useState<Group[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = React.useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = React.useState(false);
+  const { profile } = useUserProfile();
   
   // Initialize form with React Hook Form
   const form = useForm<FormValues>({
@@ -104,7 +120,7 @@ export function ExpenseForm({
     defaultValues: {
       title: initialData?.title || '',
       amount: initialData?.amount || undefined,
-      currency: initialData?.currency || 'USD',
+      currency: initialData?.currency || profile?.currency || 'USD',
       date: initialData?.date || new Date(),
       category: initialData?.category || '',
       location: initialData?.location || '',
@@ -114,6 +130,13 @@ export function ExpenseForm({
       groupId: initialData?.groupId || '',
     },
   });
+
+  // Update currency when profile loads
+  React.useEffect(() => {
+    if (profile && !initialData?.currency) {
+      form.setValue('currency', profile.currency);
+    }
+  }, [profile, form, initialData]);
 
   // Watch the isGroupExpense field to conditionally show group selection
   const isGroupExpense = form.watch('isGroupExpense');
@@ -137,6 +160,24 @@ export function ExpenseForm({
       loadGroups();
     }
   }, [isGroupExpense]);
+
+  // Fetch categories when component mounts
+  React.useEffect(() => {
+    const loadCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        // Use the fetchCategories helper function
+        const response = await fetchCategories();
+        setCategories((response as CategoriesResponse).categories || []);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    
+    loadCategories();
+  }, []);
   
   return (
     <Form {...form}>
@@ -198,7 +239,12 @@ export function ExpenseForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'].map((currency) => (
+                    {[
+                      'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 
+                      'HKD', 'NZD', 'SEK', 'KRW', 'SGD', 'NOK', 'MXN', 'INR', 
+                      'RUB', 'ZAR', 'BRL', 'TRY', 'PEN', 'CLP', 'COP', 'ARS',
+                      'BOB', 'UYU', 'PYG'
+                    ].map((currency) => (
                       <SelectItem key={currency} value={currency}>
                         {currency}
                       </SelectItem>
@@ -267,11 +313,22 @@ export function ExpenseForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {['Food', 'Entertainment', 'Housing', 'Transportation', 'Utilities', 'Healthcare', 'Shopping', 'Personal', 'Other'].map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
+                    {isLoadingCategories ? (
+                      <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                    ) : categories.length > 0 ? (
+                      categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      // Fallback categories if API fails or returns empty
+                      ['Food', 'Entertainment', 'Housing', 'Transportation', 'Utilities', 'Healthcare', 'Shopping', 'Personal', 'Other'].map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -290,7 +347,6 @@ export function ExpenseForm({
                   <Input 
                     placeholder={t('location.placeholder')} 
                     {...field} 
-                    value={field.value || ''}
                   />
                 </FormControl>
                 <FormDescription>{t('location.description')}</FormDescription>
@@ -311,7 +367,6 @@ export function ExpenseForm({
                     placeholder={t('notes.placeholder')} 
                     className="resize-none" 
                     {...field} 
-                    value={field.value || ''}
                   />
                 </FormControl>
                 <FormMessage />

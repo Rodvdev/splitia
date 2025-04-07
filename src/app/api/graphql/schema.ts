@@ -23,6 +23,8 @@ export const typeDefs = gql`
     description: String
     image: String
     members: [GroupMember!]
+    createdBy: User
+    createdById: ID
   }
 
   type GroupMember {

@@ -32,6 +32,9 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 
+// Import GraphQL client functions
+import { inviteToGroup, generateBasicGroupInviteLink } from '@/lib/graphql-client';
+
 // Define form schema for email invitation
 const emailInviteSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -42,6 +45,7 @@ const emailInviteSchema = z.object({
 const linkInviteSchema = z.object({
   useLimit: z.boolean(),
   maxUses: z.coerce.number().min(1).optional(),
+  useExpiry: z.boolean(),
   expiresAt: z.coerce.number().min(1).optional(),
   expiresUnit: z.enum(['hours', 'days']),
 });
@@ -49,6 +53,31 @@ const linkInviteSchema = z.object({
 // Define the form values types
 type EmailInviteFormValues = z.infer<typeof emailInviteSchema>;
 type LinkInviteFormValues = z.infer<typeof linkInviteSchema>;
+
+// Interfaces for GraphQL responses
+interface GroupInviteLinkResponse {
+  generateGroupInviteLink: {
+    id: string;
+    token: string;
+    url: string;
+    maxUses?: number;
+    usedCount: number;
+    expiresAt?: string;
+  };
+}
+
+// Define error type for GraphQL errors
+interface GraphQLError {
+  message?: string;
+  response?: {
+    errors?: Array<{
+      message?: string;
+      extensions?: {
+        code?: string;
+      };
+    }>;
+  };
+}
 
 export default function InviteGroupPage() {
   const t = useTranslations('groups');
@@ -73,13 +102,15 @@ export default function InviteGroupPage() {
     defaultValues: {
       useLimit: false,
       maxUses: 5,
+      useExpiry: false,
       expiresAt: 7,
       expiresUnit: 'days',
     },
   });
 
-  // Watch the useLimit field to conditionally show maxUses field
+  // Watch the form fields for conditional rendering
   const useLimit = linkForm.watch('useLimit');
+  const useExpiry = linkForm.watch('useExpiry');
 
   // Navigate back
   const handleBack = () => {
@@ -91,9 +122,13 @@ export default function InviteGroupPage() {
     setIsSubmittingEmail(true);
     
     try {
-      // In a real implementation, you would call your API to send the invitation
-      console.log('Sending invitation to:', data.email, 'with role:', data.role);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the GraphQL mutation to send the invitation
+      const groupId = params.id as string;
+      await inviteToGroup({
+        groupId,
+        email: data.email,
+        role: data.role,
+      });
       
       toast.success(t.raw('inviteSent') || 'Invitation sent successfully');
       emailForm.reset();
@@ -106,30 +141,32 @@ export default function InviteGroupPage() {
   };
 
   // Handle link generation
-  const onGenerateLink = async (data: LinkInviteFormValues) => {
+  const onGenerateLink = async () => {
     setIsGeneratingLink(true);
     
     try {
-      // In a real implementation, you would call your API to generate the invitation link
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use only the basic invite link generation to avoid issues
+      const groupId = params.id as string;
+      const response = await generateBasicGroupInviteLink(groupId) as GroupInviteLinkResponse;
       
-      // Calculate expiration time if specified (would be used in the API call)
-      if (data.expiresAt) {
-        const now = new Date();
-        const multiplier = data.expiresUnit === 'hours' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-        // This would be used in the actual implementation
-        const expiryDate = new Date(now.getTime() + data.expiresAt * multiplier);
-        console.log('Link will expire at:', expiryDate);
-      }
-      
-      // Mock invitation link
-      const mockInviteToken = Math.random().toString(36).substring(2, 15);
-      setInviteLink(`${window.location.origin}/invite/${mockInviteToken}`);
+      // Set the generated invite link
+      setInviteLink(response.generateGroupInviteLink.url);
       
       toast.success(t.raw('linkGenerated') || 'Invitation link generated');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to generate invitation link:', error);
-      toast.error(t.raw('linkError') || 'Failed to generate invitation link');
+      
+      // Cast to GraphQLError type
+      const graphqlError = error as GraphQLError;
+      
+      // Provide more specific error messaging based on the error
+      const errorMessage = 
+        graphqlError.response?.errors?.[0]?.message || 
+        graphqlError.message || 
+        t.raw('linkError') || 
+        'Failed to generate invitation link';
+        
+      toast.error(errorMessage);
     } finally {
       setIsGeneratingLink(false);
     }
@@ -309,52 +346,77 @@ export default function InviteGroupPage() {
                       />
                     )}
                     
-                    <div className="flex flex-col space-y-2">
-                      <FormField
-                        control={linkForm.control}
-                        name="expiresAt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t.raw('expires') || 'Expires After'}</FormLabel>
-                            <div className="flex space-x-2">
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  {...field} 
-                                  className="w-20"
-                                />
-                              </FormControl>
-                              
-                              <FormField
-                                control={linkForm.control}
-                                name="expiresUnit"
-                                render={({ field }) => (
-                                  <Select 
-                                    onValueChange={field.onChange} 
-                                    defaultValue={field.value}
-                                  >
-                                    <FormControl>
-                                      <SelectTrigger className="w-24">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="hours">{t('hours')}</SelectItem>
-                                      <SelectItem value="days">{t('days')}</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              />
-                            </div>
+                    <FormField
+                      control={linkForm.control}
+                      name="useExpiry"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Set Expiration Time
+                            </FormLabel>
                             <FormDescription>
-                              {t.raw('expiresDescription') || 'The link will expire after this time period'}
+                              Make the invitation link expire after a certain time
                             </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {useExpiry && (
+                      <div className="flex flex-col space-y-2">
+                        <FormField
+                          control={linkForm.control}
+                          name="expiresAt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t.raw('expires') || 'Expires After'}</FormLabel>
+                              <div className="flex space-x-2">
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="1"
+                                    {...field} 
+                                    className="w-20"
+                                  />
+                                </FormControl>
+                                
+                                <FormField
+                                  control={linkForm.control}
+                                  name="expiresUnit"
+                                  render={({ field }) => (
+                                    <Select 
+                                      onValueChange={field.onChange} 
+                                      defaultValue={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger className="w-24">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="hours">{t('hours')}</SelectItem>
+                                        <SelectItem value="days">{t('days')}</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                              </div>
+                              <FormDescription>
+                                {t.raw('expiresDescription') || 'The link will expire after this time period'}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                     
                     <div className="flex justify-end">
                       <Button 

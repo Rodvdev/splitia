@@ -8,7 +8,6 @@ import {
   Filter,
   Plus,
   ArrowUpDown,
-  Calendar,
 } from 'lucide-react';
 
 // UI Components
@@ -295,42 +294,52 @@ export default function ExpensesPage() {
           </div>
         </div>
         
-        {/* Results */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Expenses List */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            // Loading state - show skeleton loaders
-            Array.from({ length: 6 }).map((_, index) => (
-              <div 
-                key={`skeleton-${index}`} 
-                className="h-48 rounded-lg bg-muted animate-pulse"
-              />
+            // Loading skeletons...
+            Array(3).fill(0).map((_, i) => (
+              <div key={i} className="bg-card border rounded-lg p-4 h-48 animate-pulse">
+                <div className="h-6 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
+                <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                <div className="h-3 bg-muted rounded w-4/5 mb-4"></div>
+                <div className="flex justify-between items-center mt-6">
+                  <div className="h-6 bg-muted rounded w-1/4"></div>
+                  <div className="h-6 bg-muted rounded w-1/4"></div>
+                </div>
+              </div>
             ))
-          ) : error ? (
-            // Error state
-            <div className="col-span-full p-8 text-center">
-              <p className="text-destructive mb-2">{error}</p>
-              <Button onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
-            </div>
           ) : sortedExpenses.length > 0 ? (
-            // Expenses list
-            sortedExpenses.map((expense) => (
-              <ExpenseCard
-                key={expense.id}
+            sortedExpenses.map(expense => (
+              <ExpenseCard 
+                key={expense.id} 
                 expense={formatExpenseForCard(expense)}
                 onClick={handleExpenseClick}
               />
             ))
+          ) : error ? (
+            // Error state
+            <div className="col-span-full flex flex-col items-center justify-center p-8 text-center bg-muted/40 rounded-lg">
+              <div className="mb-4 p-3 bg-destructive/10 rounded-full">
+                <Search className="h-6 w-6 text-destructive" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">{error}</h3>
+              <p className="text-muted-foreground mb-4">{t('error.tryAgain')}</p>
+              <Button onClick={() => window.location.reload()}>
+                {t('actions.refresh')}
+              </Button>
+            </div>
           ) : (
             // Empty state
-            <div className="col-span-full flex flex-col items-center justify-center p-12 bg-muted/20 rounded-lg">
-              <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">{t('empty.title')}</h3>
-              <p className="text-muted-foreground text-center mt-1">
-                {t('empty.description')}
-              </p>
-              <Button className="mt-4" onClick={handleCreateExpense}>
+            <div className="col-span-full flex flex-col items-center justify-center p-8 text-center bg-muted/40 rounded-lg">
+              <div className="mb-4 p-3 bg-primary/10 rounded-full">
+                <Search className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">{t('empty.title')}</h3>
+              <p className="text-muted-foreground mb-4">{t('empty.description')}</p>
+              <Button onClick={() => router.push('/dashboard/expenses/create')}>
+                <Plus className="h-4 w-4 mr-2" />
                 {t('empty.action')}
               </Button>
             </div>

@@ -73,6 +73,7 @@
     "recent": "Recent Expenses",
     "noExpenses": "No expenses yet",
     "categories": "Categories",
+    "viewAll": "View All Expenses",
     "actions": {
       "create": "New Expense",
       "edit": "Edit Expense",
@@ -153,7 +154,15 @@
       },
       "date": {
         "label": "Date",
-        "placeholder": "Select date"
+        "placeholder": "Select date",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "thisWeek": "This Week",
+        "lastWeek": "Last Week",
+        "thisMonth": "This Month",
+        "lastMonth": "Last Month",
+        "thisYear": "This Year",
+        "lastYear": "Last Year"
       },
       "category": {
         "label": "Category",
@@ -220,6 +229,7 @@
     "admin": "Admin",
     "member": "Member",
     "guest": "Guest",
+    "viewAll": "View All Groups",
     "roleDescription": "The role determines what actions the user can perform",
     "sending": "Sending...",
     "sendInvite": "Send Invite",
@@ -240,6 +250,7 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "description": "Manage your account settings",
     "currency": "Currency",
     "notifications": "Notifications",
     "profile": "Profile",

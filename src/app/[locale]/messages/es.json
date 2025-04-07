@@ -1,0 +1,62 @@
+{
+  "authentication": {
+  },
+  "app": {
+    "name": "Splitia",
+    "tagline": "Registra gastos, divide cuentas y liquida con amigos y familiares",
+    "copyright": "© 2023 Splitia. Todos los derechos reservados."
+  },
+  "errors": {
+    "fetchProfile": "Error al obtener tu perfil",
+    "general": "Algo salió mal. Por favor intenta de nuevo."
+  },
+  "greetings": {
+    "morning": "Buenos días",
+    "afternoon": "Buenas tardes",
+    "evening": "Buenas noches"
+  },
+  "navigation": {
+    "dashboard": "Panel de Control",
+    "expenses": "Gastos",
+    "groups": "Grupos",
+    "profile": "Perfil"
+  },
+  "user": {
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "signOut": "Cerrar Sesión",
+    "guest": "Invitado"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "summary": "Resumen",
+    "recentActivity": "Actividad Reciente"
+  },
+  "expenses": {
+    "title": "Gastos",
+    "add": "Añadir Gasto",
+    "viewAll": "Ver Todos",
+    "total": "en total",
+    "description": "Gestiona y divide tus gastos",
+    "noExpenses": "No se encontraron gastos. ¡Añade tu primer gasto para comenzar!"
+  },
+  "groups": {
+    "title": "Grupos",
+    "create": "Crear Grupo",
+    "description": "Gestiona tus grupos y gastos compartidos",
+    "total": "en total",
+    "viewAll": "Ver Todos",
+    "empty": "No se encontraron grupos. ¡Crea tu primer grupo para comenzar!"
+  },
+  "settings": {
+    "title": "Configuración",
+    "description": "Gestiona las preferencias de tu cuenta",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "profile": "Editar Perfil"
+  },
+  "date": {
+    "today": "Hoy",
+    "yesterday": "Ayer"
+  }
+} 

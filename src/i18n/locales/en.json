@@ -113,6 +113,8 @@
     "limitUses": "Limit Number of Uses",
     "limitUsesDescription": "Limit how many times this invitation link can be used",
     "maxUses": "Maximum Uses",
+    "useExpiry": "Set Expiration Time",
+    "useExpiryDescription": "Make the invitation link expire after a certain time",
     "expires": "Expires After",
     "hours": "Hours",
     "days": "Days",
