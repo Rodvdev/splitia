@@ -18,18 +18,23 @@ export async function getAuthenticatedClient() {
   const supabase = createClient();
   const { data } = await supabase.auth.getSession();
   
+  // Log authentication status for debugging
+  if (!data.session) {
+    console.warn('No active session found when creating authenticated GraphQL client');
+  }
+  
   // Create client with authentication headers if session exists
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
   
   if (data.session) {
-    // Use the correct header format: Bearer token
+    console.log('Adding auth token to GraphQL request');
+    // Use the correct header format for JWT token authorization
     headers['Authorization'] = `Bearer ${data.session.access_token}`;
-  } else {
-    console.warn('No active session found for authenticated request');
   }
   
+  // Create and return the GraphQL client with proper auth headers
   return new GraphQLClient(getGraphQLEndpoint(), {
     credentials: 'include',
     headers,

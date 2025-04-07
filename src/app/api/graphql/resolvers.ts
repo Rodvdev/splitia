@@ -149,14 +149,15 @@ interface CategoryType {
   color?: string | null;
 }
 
-interface GroupUserType {
-  id: string;
-  userId: string; 
-  groupId: string;
-  role: string;
-  user: UserType;
-  group: GroupType;
-}
+// NOTE: We've replaced this with more specific types in resolver functions
+// interface GroupUserType {
+//   id: string;
+//   userId: string; 
+//   groupId: string;
+//   role: string;
+//   user: UserType;
+//   group: GroupType;
+// }
 
 export const resolvers = {
   Query: {
@@ -392,10 +393,24 @@ export const resolvers = {
         });
       }
 
+      // Define the type for Prisma's GroupUser with nested User
+      type PrismaGroupMember = {
+        id: string;
+        userId: string;
+        groupId: string;
+        role: string;
+        user: {
+          id: string;
+          email: string;
+          name: string | null;
+          image: string | null;
+        };
+      };
+
       // Transform the data to match our schema
       return {
         ...group,
-        members: group.members.map((member: GroupUserType) => ({
+        members: group.members.map((member: PrismaGroupMember) => ({
           id: member.user.id,
           name: member.user.name,
           email: member.user.email,

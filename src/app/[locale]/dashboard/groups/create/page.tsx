@@ -42,6 +42,7 @@ export default function CreateGroupPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   // Initialize form with React Hook Form
@@ -73,19 +74,35 @@ export default function CreateGroupPage() {
     setIsSubmitting(true);
     
     try {
-      // In a real implementation, you would:
-      // 1. Upload the image to storage if imageFile exists
-      // 2. Call your GraphQL mutation to create the group with the values
-      console.log('Creating group with values:', values, 'Image file:', imageFile);
+      // Import the createGroup function
+      const { createGroup } = await import('@/lib/graphql-client');
       
-      // Mock implementation for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the GraphQL mutation to create the group
+      const result = await createGroup({
+        name: values.name,
+        description: values.description || undefined,
+        // In a real implementation, you would:
+        // 1. Upload the image to storage first
+        // 2. Add the image URL here
+        image: imagePreview || undefined
+      });
       
+      console.log('Group created:', result);
       toast.success(t('createSuccess'));
       router.push('/dashboard/groups');
     } catch (error) {
       console.error('Failed to create group:', error);
-      toast.error(t('createError'));
+      
+      // Check for authentication errors
+      if (error instanceof Error && 
+          (error.message.includes('Not authenticated') || 
+           error.message.includes('UNAUTHENTICATED'))) {
+        toast.error(t('authError') || 'Authentication failed. Please log in again.');
+        // Optionally redirect to login
+        // router.push('/sign-in');
+      } else {
+        toast.error(t('createError') || 'Failed to create group');
+      }
     } finally {
       setIsSubmitting(false);
     }

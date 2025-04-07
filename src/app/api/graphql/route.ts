@@ -28,6 +28,9 @@ const yoga = createYoga({
     // Extract token from Authorization header if it exists
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
+      console.log('Authorization header found with token');
+    } else {
+      console.warn('No Authorization header or invalid format');
     }
     
     // Create Supabase client with auth info
@@ -47,6 +50,12 @@ const yoga = createYoga({
         },
       }
     );
+    
+    // Log all headers for debugging
+    console.log('Request headers:', [...request.headers.entries()].reduce((acc, [key, value]) => {
+      acc[key] = key === 'authorization' ? 'Bearer [redacted]' : value;
+      return acc;
+    }, {} as Record<string, string>));
     
     // Get session from cookie or token
     const { data: { session } } = await supabase.auth.getSession();
@@ -70,7 +79,7 @@ const yoga = createYoga({
       }
     } else {
       // For debugging
-      console.warn('Unauthenticated GraphQL request received');
+      console.warn('Unauthenticated GraphQL request received - No valid session found');
     }
     
     return { request };
