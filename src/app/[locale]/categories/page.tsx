@@ -1,5 +1,14 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }) {
+  const t = await getTranslations({ locale, namespace: 'Categories' });
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
 export default function CategoriesPage() {
   const t = useTranslations('Categories');
