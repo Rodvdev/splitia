@@ -11,14 +11,13 @@ export function generateStaticParams() {
   return [{ locale: 'en' }, { locale: 'es' }, { locale: 'pt' }];
 }
 
-type Params = { locale: string };
-
+// Use a simpler approach without custom types for metadata
 export async function generateMetadata({ 
-  params 
+  params: { locale } 
 }: { 
-  params: Params 
+  params: { locale: string } 
 }): Promise<Metadata> {
-  const t = await getTranslations({ locale: params.locale, namespace: 'Categories' });
+  const t = await getTranslations({ locale, namespace: 'Categories' });
   return {
     title: t('title'),
     description: t('description'),
