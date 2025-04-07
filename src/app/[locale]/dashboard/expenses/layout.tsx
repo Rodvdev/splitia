@@ -61,7 +61,7 @@ export default function ExpensesLayout({
                 href={item.href}
                 className={cn(
                   "flex items-center rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                  pathname.endsWith(item.href)
+                  pathname?.endsWith(item.href)
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 )}
