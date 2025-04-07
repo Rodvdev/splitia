@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Copy, Mail, User } from 'lucide-react';
+import { ArrowLeft, Copy, Mail } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,15 +35,15 @@ import {
 // Define form schema for email invitation
 const emailInviteSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
-  role: z.enum(['ADMIN', 'MEMBER', 'GUEST']).default('MEMBER'),
+  role: z.enum(['ADMIN', 'MEMBER', 'GUEST']),
 });
 
 // Define form schema for link invitation
 const linkInviteSchema = z.object({
-  useLimit: z.boolean().default(false),
+  useLimit: z.boolean(),
   maxUses: z.coerce.number().min(1).optional(),
   expiresAt: z.coerce.number().min(1).optional(),
-  expiresUnit: z.enum(['hours', 'days']).default('days'),
+  expiresUnit: z.enum(['hours', 'days']),
 });
 
 // Define the form values types
@@ -87,47 +87,49 @@ export default function InviteGroupPage() {
   };
 
   // Handle email invite form submission
-  const onEmailSubmit = async (values: EmailInviteFormValues) => {
+  const onEmailSubmit = async (data: EmailInviteFormValues) => {
     setIsSubmittingEmail(true);
     
     try {
       // In a real implementation, you would call your API to send the invitation
+      console.log('Sending invitation to:', data.email, 'with role:', data.role);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      toast.success(t('inviteSent', 'Invitation sent successfully'));
+      toast.success(t.raw('inviteSent') || 'Invitation sent successfully');
       emailForm.reset();
     } catch (error) {
       console.error('Failed to send invitation:', error);
-      toast.error(t('inviteError', 'Failed to send invitation'));
+      toast.error(t.raw('inviteError') || 'Failed to send invitation');
     } finally {
       setIsSubmittingEmail(false);
     }
   };
 
   // Handle link generation
-  const onGenerateLink = async (values: LinkInviteFormValues) => {
+  const onGenerateLink = async (data: LinkInviteFormValues) => {
     setIsGeneratingLink(true);
     
     try {
       // In a real implementation, you would call your API to generate the invitation link
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Calculate expiration time if specified
-      let expiresAt = null;
-      if (values.expiresAt) {
+      // Calculate expiration time if specified (would be used in the API call)
+      if (data.expiresAt) {
         const now = new Date();
-        const multiplier = values.expiresUnit === 'hours' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-        expiresAt = new Date(now.getTime() + values.expiresAt * multiplier);
+        const multiplier = data.expiresUnit === 'hours' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+        // This would be used in the actual implementation
+        const expiryDate = new Date(now.getTime() + data.expiresAt * multiplier);
+        console.log('Link will expire at:', expiryDate);
       }
       
       // Mock invitation link
       const mockInviteToken = Math.random().toString(36).substring(2, 15);
       setInviteLink(`${window.location.origin}/invite/${mockInviteToken}`);
       
-      toast.success(t('linkGenerated', 'Invitation link generated'));
+      toast.success(t.raw('linkGenerated') || 'Invitation link generated');
     } catch (error) {
       console.error('Failed to generate invitation link:', error);
-      toast.error(t('linkError', 'Failed to generate invitation link'));
+      toast.error(t.raw('linkError') || 'Failed to generate invitation link');
     } finally {
       setIsGeneratingLink(false);
     }
@@ -137,7 +139,7 @@ export default function InviteGroupPage() {
   const handleCopyLink = () => {
     if (inviteLink) {
       navigator.clipboard.writeText(inviteLink);
-      toast.success(t('linkCopied', 'Link copied to clipboard'));
+      toast.success(t.raw('linkCopied') || 'Link copied to clipboard');
     }
   };
 
@@ -161,11 +163,11 @@ export default function InviteGroupPage() {
             <TabsList className="w-full mb-6">
               <TabsTrigger value="email" className="flex-1">
                 <Mail className="mr-2 h-4 w-4" />
-                {t('inviteByEmail', 'Invite by Email')}
+                {t.raw('inviteByEmail') || 'Invite by Email'}
               </TabsTrigger>
               <TabsTrigger value="link" className="flex-1">
                 <Copy className="mr-2 h-4 w-4" />
-                {t('inviteByLink', 'Invite by Link')}
+                {t.raw('inviteByLink') || 'Invite by Link'}
               </TabsTrigger>
             </TabsList>
             
@@ -186,7 +188,7 @@ export default function InviteGroupPage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          {t('emailDescription', 'Enter the email address of the person you want to invite')}
+                          {t.raw('emailDescription') || 'Enter the email address of the person you want to invite'}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -205,7 +207,7 @@ export default function InviteGroupPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder={t('selectRole', 'Select a role')} />
+                              <SelectValue placeholder={t.raw('selectRole') || 'Select a role'} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -215,7 +217,7 @@ export default function InviteGroupPage() {
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          {t('roleDescription', 'The role determines what actions the user can perform')}
+                          {t.raw('roleDescription') || 'The role determines what actions the user can perform'}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -227,7 +229,7 @@ export default function InviteGroupPage() {
                       type="submit" 
                       disabled={isSubmittingEmail}
                     >
-                      {isSubmittingEmail ? t('sending', 'Sending...') : t('sendInvite', 'Send Invite')}
+                      {isSubmittingEmail ? t.raw('sending') || 'Sending...' : t.raw('sendInvite') || 'Send Invite'}
                     </Button>
                   </div>
                 </form>
@@ -254,7 +256,7 @@ export default function InviteGroupPage() {
                       variant="outline" 
                       onClick={() => setInviteLink(null)}
                     >
-                      {t('generateNew', 'Generate New Link')}
+                      {t.raw('generateNew') || 'Generate New Link'}
                     </Button>
                     <Button onClick={handleBack}>
                       {t('done')}
@@ -271,10 +273,10 @@ export default function InviteGroupPage() {
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">
-                              {t('limitUses', 'Limit Number of Uses')}
+                              {t.raw('limitUses') || 'Limit Number of Uses'}
                             </FormLabel>
                             <FormDescription>
-                              {t('limitUsesDescription', 'Limit how many times this invitation link can be used')}
+                              {t.raw('limitUsesDescription') || 'Limit how many times this invitation link can be used'}
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -293,7 +295,7 @@ export default function InviteGroupPage() {
                         name="maxUses"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('maxUses', 'Maximum Uses')}</FormLabel>
+                            <FormLabel>{t.raw('maxUses') || 'Maximum Uses'}</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
@@ -313,7 +315,7 @@ export default function InviteGroupPage() {
                         name="expiresAt"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('expires', 'Expires After')}</FormLabel>
+                            <FormLabel>{t.raw('expires') || 'Expires After'}</FormLabel>
                             <div className="flex space-x-2">
                               <FormControl>
                                 <Input 
@@ -346,7 +348,7 @@ export default function InviteGroupPage() {
                               />
                             </div>
                             <FormDescription>
-                              {t('expiresDescription', 'The link will expire after this time period')}
+                              {t.raw('expiresDescription') || 'The link will expire after this time period'}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -359,7 +361,7 @@ export default function InviteGroupPage() {
                         type="submit" 
                         disabled={isGeneratingLink}
                       >
-                        {isGeneratingLink ? t('generating', 'Generating...') : t('generateLink', 'Generate Link')}
+                        {isGeneratingLink ? t.raw('generating') || 'Generating...' : t.raw('generateLink') || 'Generate Link'}
                       </Button>
                     </div>
                   </form>

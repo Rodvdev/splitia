@@ -1,14 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { GraphQLError } from 'graphql';
 import { getServerSession } from 'next-auth';
-import { 
-  Expense,
-  ExpenseShare,
-  Group,
-  GroupUser,
-  CustomCategory,
-  User
-} from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 // Define ShareType enum to match the Prisma schema
 enum ShareType {
@@ -73,7 +66,66 @@ interface GroupMemberInput {
   role: string;
 }
 
-type PrismaTransactionClient = Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;
+type PrismaTransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;
+
+// Define types based on the Prisma models
+interface ExpenseType {
+  id: string;
+  amount: number;
+  description: string;
+  date: Date;
+  categoryId?: string | null;
+  paidById: string;
+  groupId?: string | null;
+  shares?: ExpenseShareType[];
+  paidBy?: UserType;
+  group?: GroupType;
+  category?: CategoryType;
+}
+
+interface ExpenseShareType {
+  id: string;
+  amount: number;
+  type: ShareType;
+  userId: string;
+  expenseId: string;
+  user?: UserType;
+}
+
+interface UserType {
+  id: string;
+  name?: string | null;
+  email: string;
+  image?: string | null;
+}
+
+interface GroupType {
+  id: string;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+  members?: Array<{
+    userId: string;
+    role: string;
+    user: UserType;
+  }>;
+}
+
+interface CategoryType {
+  id: string;
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+}
+
+interface GroupUserType {
+  id: string;
+  userId: string; 
+  groupId: string;
+  role: string;
+  user: UserType;
+  group: GroupType;
+}
 
 export const resolvers = {
   Query: {
@@ -239,7 +291,7 @@ export const resolvers = {
       });
 
       // Return just the groups
-      return userGroupMemberships.map((membership: GroupUser & { group: Group }) => membership.group);
+      return userGroupMemberships.map((membership: GroupUserType) => membership.group);
     },
 
     // Get a single group by ID with its members
@@ -294,7 +346,7 @@ export const resolvers = {
       // Transform the data to match our schema
       return {
         ...group,
-        members: group.members.map((member: GroupUser & { user: User }) => ({
+        members: group.members.map((member: GroupUserType) => ({
           id: member.user.id,
           name: member.user.name,
           email: member.user.email,
@@ -944,7 +996,7 @@ export const resolvers = {
 
   // Type resolvers for nested fields
   Expense: {
-    shares: async (parent: Expense & { shares?: ExpenseShare[] }) => {
+    shares: async (parent: ExpenseType) => {
       if (parent.shares) return parent.shares;
 
       return prisma.expenseShare.findMany({
@@ -954,14 +1006,14 @@ export const resolvers = {
         },
       });
     },
-    paidBy: async (parent: Expense & { paidBy?: User }) => {
+    paidBy: async (parent: ExpenseType) => {
       if (parent.paidBy) return parent.paidBy;
 
       return prisma.user.findUnique({
         where: { id: parent.paidById },
       });
     },
-    group: async (parent: Expense & { group?: Group }) => {
+    group: async (parent: ExpenseType) => {
       if (!parent.groupId) return null;
       if (parent.group) return parent.group;
 
@@ -969,7 +1021,7 @@ export const resolvers = {
         where: { id: parent.groupId },
       });
     },
-    category: async (parent: Expense & { category?: CustomCategory }) => {
+    category: async (parent: ExpenseType) => {
       if (!parent.categoryId) return null;
       if (parent.category) return parent.category;
 
@@ -980,7 +1032,7 @@ export const resolvers = {
   },
 
   ExpenseShare: {
-    user: async (parent: ExpenseShare & { user?: User }) => {
+    user: async (parent: ExpenseShareType) => {
       if (parent.user) return parent.user;
 
       return prisma.user.findUnique({
