@@ -10,7 +10,9 @@
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
-    "search": "Search"
+    "search": "Search",
+    "date": "Date",
+    "user": "User"
   },
   "navigation": {
     "dashboard": "Dashboard",
