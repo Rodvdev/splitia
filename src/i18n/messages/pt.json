@@ -1,0 +1,209 @@
+{
+  "app": {
+    "name": "Splitia",
+    "tagline": "Divida despesas com amigos e família"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "create": "Criar",
+    "search": "Buscar"
+  },
+  "navigation": {
+    "dashboard": "Painel",
+    "expenses": "Despesas",
+    "groups": "Grupos",
+    "budget": "Orçamento", 
+    "chat": "Chat",
+    "settings": "Configurações"
+  },
+  "auth": {
+    "signIn": "Entrar",
+    "signUp": "Cadastrar",
+    "signOut": "Sair",
+    "email": "E-mail",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
+    "forgotPassword": "Esqueceu sua senha?",
+    "resetPassword": "Redefinir Senha",
+    "noAccount": "Não tem uma conta?",
+    "haveAccount": "Já tem uma conta?",
+    "createAccount": "Criar uma conta",
+    "passwordMismatch": "As senhas não coincidem",
+    "passwordsNoMatch": "As senhas não coincidem",
+    "signInError": "Houve um problema ao fazer login",
+    "signUpError": "Houve um problema ao criar sua conta",
+    "checkEmail": "Verifique seu e-mail",
+    "verificationSent": "Enviamos um link de verificação",
+    "verificationInstructions": "Clique no link no e-mail para verificar sua conta e entrar",
+    "noEmailReceived": "Não recebeu um e-mail?",
+    "checkSpam": "Verifique sua pasta de spam ou tente novamente",
+    "backToSignIn": "Voltar para o Login",
+    "hasAccount": "Já tem uma conta?"
+  },
+  "expenses": {
+    "title": "Despesas",
+    "description": "Gerencie e acompanhe todas as suas despesas pessoais e em grupo",
+    "total": "Despesas Totais",
+    "add": "Adicionar Despesa",
+    "recent": "Despesas Recentes",
+    "noExpenses": "Ainda não há despesas",
+    "categories": "Categorias",
+    "actions": {
+      "create": "Nova Despesa",
+      "edit": "Editar Despesa",
+      "delete": "Excluir Despesa",
+      "save": "Salvar Despesa",
+      "view": "Ver Detalhes"
+    },
+    "filters": {
+      "search": "Buscar despesas...",
+      "category": "Categoria",
+      "date": "Data",
+      "amount": "Valor",
+      "sort": {
+        "date": "Ordenar por Data",
+        "amount": "Ordenar por Valor"
+      },
+      "status": {
+        "all": "Todos os Status",
+        "paid": "Apenas Pagas",
+        "pending": "Apenas Pendentes"
+      }
+    },
+    "nav": {
+      "all": "Todas as Despesas",
+      "create": "Criar",
+      "monthly": "Mensais",
+      "recurring": "Recorrentes",
+      "statistics": "Estatísticas"
+    },
+    "empty": {
+      "title": "Nenhuma despesa encontrada",
+      "description": "Crie sua primeira despesa para começar a controlar seus gastos",
+      "action": "Criar Despesa"
+    },
+    "status": {
+      "paid": "Paga",
+      "pending": "Pendente"
+    },
+    "type": {
+      "personal": "Pessoal",
+      "group": "Grupo"
+    },
+    "create": {
+      "title": "Criar Nova Despesa",
+      "success": "Despesa criada com sucesso"
+    },
+    "edit": {
+      "title": "Editar Despesa",
+      "success": "Despesa atualizada com sucesso"
+    },
+    "delete": {
+      "title": "Excluir Despesa",
+      "confirmation": "Tem certeza que deseja excluir esta despesa?",
+      "warning": "Esta ação não pode ser desfeita.",
+      "success": "Despesa excluída com sucesso"
+    },
+    "notifications": {
+      "createSuccess": "Despesa criada com sucesso",
+      "updateSuccess": "Despesa atualizada com sucesso",
+      "deleteSuccess": "Despesa excluída com sucesso",
+      "createError": "Falha ao criar despesa",
+      "updateError": "Falha ao atualizar despesa",
+      "deleteError": "Falha ao excluir despesa"
+    },
+    "form": {
+      "title": {
+        "label": "Título",
+        "placeholder": "Para que foi esta despesa?",
+        "description": "Digite um nome descritivo para esta despesa"
+      },
+      "amount": {
+        "label": "Valor",
+        "placeholder": "0,00"
+      },
+      "currency": {
+        "label": "Moeda",
+        "placeholder": "Selecionar moeda"
+      },
+      "date": {
+        "label": "Data",
+        "placeholder": "Selecionar data"
+      },
+      "category": {
+        "label": "Categoria",
+        "placeholder": "Selecionar categoria"
+      },
+      "location": {
+        "label": "Localização",
+        "placeholder": "Onde ocorreu esta despesa?",
+        "description": "Opcional: Adicione um local para esta despesa"
+      },
+      "notes": {
+        "label": "Notas",
+        "placeholder": "Adicione quaisquer detalhes adicionais sobre esta despesa"
+      },
+      "isPaid": {
+        "label": "Marcar como Paga",
+        "description": "Ative se esta despesa já foi paga"
+      },
+      "isGroupExpense": {
+        "label": "Despesa em Grupo",
+        "description": "Esta é uma despesa para ser dividida com outros?"
+      },
+      "actions": {
+        "submit": "Salvar Despesa",
+        "submitting": "Salvando...",
+        "cancel": "Cancelar"
+      }
+    },
+    "people": "pessoas"
+  },
+  "groups": {
+    "title": "Grupos",
+    "create": "Criar Grupo",
+    "join": "Entrar no Grupo",
+    "noGroups": "Ainda não há grupos",
+    "members": "Membros",
+    "invite": "Convidar Membros",
+    "back": "Voltar",
+    "cancel": "Cancelar",
+    "creating": "Criando...",
+    "createSuccess": "Grupo criado com sucesso",
+    "createError": "Falha ao criar grupo",
+    "nameLabel": "Nome do Grupo",
+    "namePlaceholder": "Digite um nome para o seu grupo",
+    "nameDescription": "Isso será exibido para os membros do seu grupo",
+    "descriptionLabel": "Descrição (Opcional)",
+    "descriptionPlaceholder": "Para que serve este grupo?",
+    "descriptionDescription": "Forneça contexto sobre o propósito deste grupo",
+    "uploadImage": "Carregar imagem"
+  },
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "currency": "Moeda",
+    "notifications": "Notificações",
+    "profile": "Perfil",
+    "account": "Conta",
+    "theme": "Tema",
+    "help": "Ajuda e Suporte"
+  },
+  "dashboard": {
+    "title": "Painel",
+    "tagline": "Gerencie suas despesas e grupos",
+    "expenses": "Despesas",
+    "groups": "Grupos",
+    "budget": "Orçamento",
+    "chat": "Chat",
+    "settings": "Configurações",
+    "recentActivity": "Atividade Recente",
+    "totalExpenses": "Despesas Totais",
+    "manageGroups": "Gerenciar Grupos",
+    "changeSettings": "Alterar Configurações"
+  }
+} 

@@ -1,0 +1,263 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  name          String
+  email         String         @unique
+  externalId    String?        @unique // For Clerk authentication
+  image         String?
+  // Relations
+  groups        GroupUser[]
+  expenses      Expense[]
+  expenseShares ExpenseShare[]
+  budgets       Budget[]
+  sentMessages  Message[]      @relation("SentMessages")
+  conversations ConversationParticipant[]
+  messageSeen   MessageSeen[]
+  categories    CustomCategory[]
+  preferences   UserPreference?
+  // Group invitations the user has created
+  createdInvitations GroupInvitation[] @relation("CreatedInvitations")
+  // Group invitations the user has been invited through
+  receivedInvitations GroupInvitation[] @relation("ReceivedInvitations")
+}
+
+// Group model
+model Group {
+  id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  name          String
+  description   String?
+  image         String?
+  // Relations
+  members       GroupUser[]
+  expenses      Expense[]
+  conversation  Conversation?
+  invitations   GroupInvitation[]
+}
+
+// GroupUser model (for many-to-many relationship between User and Group)
+model GroupUser {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  role      GroupRole @default(MEMBER)
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+
+  @@unique([userId, groupId])
+}
+
+// Expense model
+model Expense {
+  id          String         @id @default(cuid())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  amount      Float
+  description String
+  date        DateTime
+  categoryId  String?
+  currency    String         @default("USD")
+  location    String?
+  notes       String?
+  // Relations
+  paidBy      User           @relation(fields: [paidById], references: [id])
+  paidById    String
+  group       Group?         @relation(fields: [groupId], references: [id])
+  groupId     String?
+  shares      ExpenseShare[]
+  category    CustomCategory? @relation(fields: [categoryId], references: [id])
+}
+
+// ExpenseShare model
+model ExpenseShare {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  amount    Float
+  type      ShareType  @default(EQUAL)
+  // Relations
+  expense   Expense    @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expenseId String
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@unique([expenseId, userId])
+}
+
+// Budget model
+model Budget {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  amount    Float
+  month     Int
+  year      Int
+  currency  String   @default("USD")
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  category  CustomCategory? @relation(fields: [categoryId], references: [id])
+  categoryId String?
+
+  @@unique([userId, month, year, categoryId])
+}
+
+// CustomCategory model
+model CustomCategory {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  name      String
+  icon      String?
+  color     String?
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expenses  Expense[]
+  budgets   Budget[]
+
+  @@unique([userId, name])
+}
+
+// Conversation model
+model Conversation {
+  id            String                    @id @default(cuid())
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  isGroupChat   Boolean                   @default(false)
+  // Relations
+  participants  ConversationParticipant[]
+  messages      Message[]
+  group         Group?                     @relation(fields: [groupId], references: [id])
+  groupId       String?                    @unique // One-to-one with Group
+}
+
+// ConversationParticipant model
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  // Relations
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+
+  @@unique([conversationId, userId])
+}
+
+// Message model
+model Message {
+  id             String        @id @default(cuid())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  content        String
+  isAI           Boolean       @default(false)
+  // Relations
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
+  senderId       String
+  seenBy         MessageSeen[]
+}
+
+// MessageSeen model
+model MessageSeen {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  // Relations
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@unique([messageId, userId])
+}
+
+// AIAction model for auditing AI actions
+model AIAction {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  action      AIActionType
+  description String
+  prompt      String       // The user's original prompt
+  result      String       // JSON string of the action result
+  metadata    String?      // Additional JSON metadata
+}
+
+// UserPreference model for internationalization and other preferences
+model UserPreference {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  language    String   @default("en") // Language code (en, es, pt, etc.)
+  currency    String   @default("USD") // Default currency
+  theme       String   @default("light") // UI theme
+  dateFormat  String   @default("MM/DD/YYYY") // Date format preference
+  timeFormat  String   @default("12h") // 12h or 24h
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String   @unique
+}
+
+// GroupInvitation model for invitations
+model GroupInvitation {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  token       String    @unique // Unique token for the invitation link
+  expiresAt   DateTime?
+  usedAt      DateTime?
+  maxUses     Int?      // Maximum number of uses (null = unlimited)
+  useCount    Int       @default(0) // Current use count
+  // Relations
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+  creator     User      @relation("CreatedInvitations", fields: [creatorId], references: [id])
+  creatorId   String
+  invitedUser User?     @relation("ReceivedInvitations", fields: [invitedUserId], references: [id])
+  invitedUserId String?
+}
+
+// Enums
+enum GroupRole {
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+enum ShareType {
+  EQUAL
+  PERCENTAGE
+  FIXED
+}
+
+enum AIActionType {
+  CREATE_EXPENSE
+  UPDATE_EXPENSE
+  DELETE_EXPENSE
+  CREATE_GROUP
+  ADD_USER_TO_GROUP
+  SUGGEST_SETTLEMENT
+}

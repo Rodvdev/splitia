@@ -1,0 +1,209 @@
+{
+  "app": {
+    "name": "Splitia",
+    "tagline": "Divide gastos con amigos y familia"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "expenses": "Gastos",
+    "groups": "Grupos",
+    "budget": "Presupuesto",
+    "chat": "Chat",
+    "settings": "Configuración"
+  },
+  "auth": {
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar Sesión",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "noAccount": "¿No tienes una cuenta?",
+    "haveAccount": "¿Ya tienes una cuenta?",
+    "createAccount": "Crear una cuenta",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "passwordsNoMatch": "Las contraseñas no coinciden",
+    "signInError": "Hubo un problema al iniciar sesión",
+    "signUpError": "Hubo un problema al crear tu cuenta",
+    "checkEmail": "Revisa tu correo electrónico",
+    "verificationSent": "Te hemos enviado un enlace de verificación",
+    "verificationInstructions": "Haz clic en el enlace del correo electrónico para verificar tu cuenta e iniciar sesión",
+    "noEmailReceived": "¿No recibiste un correo electrónico?",
+    "checkSpam": "Revisa tu carpeta de spam o inténtalo de nuevo",
+    "backToSignIn": "Volver a Iniciar Sesión",
+    "hasAccount": "¿Ya tienes una cuenta?"
+  },
+  "expenses": {
+    "title": "Gastos",
+    "description": "Administra y rastrea todos tus gastos personales y grupales",
+    "total": "Gastos Totales",
+    "add": "Añadir Gasto",
+    "recent": "Gastos Recientes",
+    "noExpenses": "Aún no hay gastos",
+    "categories": "Categorías",
+    "actions": {
+      "create": "Nuevo Gasto",
+      "edit": "Editar Gasto",
+      "delete": "Eliminar Gasto",
+      "save": "Guardar Gasto",
+      "view": "Ver Detalles"
+    },
+    "filters": {
+      "search": "Buscar gastos...",
+      "category": "Categoría",
+      "date": "Fecha",
+      "amount": "Importe",
+      "sort": {
+        "date": "Ordenar por Fecha",
+        "amount": "Ordenar por Importe"
+      },
+      "status": {
+        "all": "Todos los Estados",
+        "paid": "Solo Pagados",
+        "pending": "Solo Pendientes"
+      }
+    },
+    "nav": {
+      "all": "Todos los Gastos",
+      "create": "Crear",
+      "monthly": "Mensuales",
+      "recurring": "Recurrentes",
+      "statistics": "Estadísticas"
+    },
+    "empty": {
+      "title": "No se encontraron gastos",
+      "description": "Crea tu primer gasto para comenzar a rastrear tus gastos",
+      "action": "Crear Gasto"
+    },
+    "status": {
+      "paid": "Pagado",
+      "pending": "Pendiente"
+    },
+    "type": {
+      "personal": "Personal",
+      "group": "Grupo"
+    },
+    "create": {
+      "title": "Crear Nuevo Gasto",
+      "success": "Gasto creado con éxito"
+    },
+    "edit": {
+      "title": "Editar Gasto",
+      "success": "Gasto actualizado con éxito"
+    },
+    "delete": {
+      "title": "Eliminar Gasto",
+      "confirmation": "¿Estás seguro de que quieres eliminar este gasto?",
+      "warning": "Esta acción no se puede deshacer.",
+      "success": "Gasto eliminado con éxito"
+    },
+    "notifications": {
+      "createSuccess": "Gasto creado con éxito",
+      "updateSuccess": "Gasto actualizado con éxito",
+      "deleteSuccess": "Gasto eliminado con éxito",
+      "createError": "Error al crear el gasto",
+      "updateError": "Error al actualizar el gasto",
+      "deleteError": "Error al eliminar el gasto"
+    },
+    "form": {
+      "title": {
+        "label": "Título",
+        "placeholder": "¿Para qué fue este gasto?",
+        "description": "Ingresa un nombre descriptivo para este gasto"
+      },
+      "amount": {
+        "label": "Importe",
+        "placeholder": "0,00"
+      },
+      "currency": {
+        "label": "Moneda",
+        "placeholder": "Seleccionar moneda"
+      },
+      "date": {
+        "label": "Fecha",
+        "placeholder": "Seleccionar fecha"
+      },
+      "category": {
+        "label": "Categoría",
+        "placeholder": "Seleccionar categoría"
+      },
+      "location": {
+        "label": "Ubicación",
+        "placeholder": "¿Dónde ocurrió este gasto?",
+        "description": "Opcional: Añade una ubicación para este gasto"
+      },
+      "notes": {
+        "label": "Notas",
+        "placeholder": "Añade cualquier detalle adicional sobre este gasto"
+      },
+      "isPaid": {
+        "label": "Marcar como Pagado",
+        "description": "Activa si este gasto ha sido pagado"
+      },
+      "isGroupExpense": {
+        "label": "Gasto Grupal",
+        "description": "¿Es este un gasto para dividir con otros?"
+      },
+      "actions": {
+        "submit": "Guardar Gasto",
+        "submitting": "Guardando...",
+        "cancel": "Cancelar"
+      }
+    },
+    "people": "personas"
+  },
+  "groups": {
+    "title": "Grupos",
+    "create": "Crear Grupo",
+    "join": "Unirse al Grupo",
+    "noGroups": "Aún no hay grupos",
+    "members": "Miembros",
+    "invite": "Invitar Miembros",
+    "back": "Volver",
+    "cancel": "Cancelar",
+    "creating": "Creando...",
+    "createSuccess": "Grupo creado con éxito",
+    "createError": "Error al crear el grupo",
+    "nameLabel": "Nombre del Grupo",
+    "namePlaceholder": "Ingresa un nombre para tu grupo",
+    "nameDescription": "Esto se mostrará a los miembros de tu grupo",
+    "descriptionLabel": "Descripción (Opcional)",
+    "descriptionPlaceholder": "¿Para qué es este grupo?",
+    "descriptionDescription": "Proporciona contexto sobre el propósito de este grupo",
+    "uploadImage": "Subir imagen"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "notifications": "Notificaciones",
+    "profile": "Perfil",
+    "account": "Cuenta",
+    "theme": "Tema",
+    "help": "Ayuda y Soporte"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "tagline": "Administra tus gastos y grupos",
+    "expenses": "Gastos",
+    "groups": "Grupos",
+    "budget": "Presupuesto",
+    "chat": "Chat",
+    "settings": "Configuración",
+    "recentActivity": "Actividad Reciente",
+    "totalExpenses": "Gastos Totales",
+    "manageGroups": "Administrar Grupos",
+    "changeSettings": "Cambiar Configuración"
+  }
+} 
