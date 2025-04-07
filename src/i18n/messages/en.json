@@ -272,5 +272,47 @@
     "totalExpenses": "Total Expenses",
     "manageGroups": "Manage Groups",
     "changeSettings": "Change Settings"
+  },
+  "Categories": {
+    "title": "Categories",
+    "description": "Manage and organize your expense categories",
+    "create": "Create Category",
+    "edit": "Edit Category",
+    "delete": "Delete Category",
+    "empty": "No categories found",
+    "emptyDescription": "Create your first category to organize your expenses",
+    "nameLabel": "Category Name",
+    "namePlaceholder": "Enter category name",
+    "colorLabel": "Category Color",
+    "iconLabel": "Category Icon",
+    "actions": {
+      "save": "Save Category",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit"
+    }
+  },
+  "Reports": {
+    "title": "Reports",
+    "description": "View detailed expense and spending reports",
+    "timeRange": "Time Range",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "custom": "Custom",
+    "categories": "Categories",
+    "total": "Total Spending",
+    "average": "Average per Day",
+    "byCategory": "Spending by Category",
+    "topCategories": "Top Categories",
+    "spendingTrends": "Spending Trends",
+    "noData": "No data for the selected period",
+    "filters": {
+      "apply": "Apply Filters",
+      "clear": "Clear Filters",
+      "startDate": "Start Date",
+      "endDate": "End Date"
+    }
   }
 } 

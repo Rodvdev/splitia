@@ -185,13 +185,16 @@
   },
   "settings": {
     "title": "Configurações",
+    "description": "Gerencie sua conta e preferências",
+    "account": "Configurações da Conta",
+    "preferences": "Preferências",
+    "notifications": "Notificações",
+    "privacy": "Privacidade",
     "language": "Idioma",
     "currency": "Moeda",
-    "notifications": "Notificações",
-    "profile": "Perfil",
-    "account": "Conta",
     "theme": "Tema",
-    "help": "Ajuda e Suporte"
+    "security": "Segurança",
+    "logout": "Sair"
   },
   "dashboard": {
     "title": "Painel",
@@ -205,5 +208,47 @@
     "totalExpenses": "Despesas Totais",
     "manageGroups": "Gerenciar Grupos",
     "changeSettings": "Alterar Configurações"
+  },
+  "Categories": {
+    "title": "Categorias",
+    "description": "Gerencie e organize suas categorias de despesas",
+    "create": "Criar Categoria",
+    "edit": "Editar Categoria",
+    "delete": "Excluir Categoria",
+    "empty": "Nenhuma categoria encontrada",
+    "emptyDescription": "Crie sua primeira categoria para organizar suas despesas",
+    "nameLabel": "Nome da Categoria",
+    "namePlaceholder": "Digite o nome da categoria",
+    "colorLabel": "Cor da Categoria",
+    "iconLabel": "Ícone da Categoria",
+    "actions": {
+      "save": "Salvar Categoria",
+      "cancel": "Cancelar",
+      "delete": "Excluir",
+      "edit": "Editar"
+    }
+  },
+  "Reports": {
+    "title": "Relatórios",
+    "description": "Visualize relatórios detalhados de despesas",
+    "timeRange": "Período de Tempo",
+    "today": "Hoje",
+    "thisWeek": "Esta Semana",
+    "thisMonth": "Este Mês",
+    "lastMonth": "Mês Passado",
+    "custom": "Personalizado",
+    "categories": "Categorias",
+    "total": "Gasto Total",
+    "average": "Média por Dia",
+    "byCategory": "Gastos por Categoria",
+    "topCategories": "Principais Categorias",
+    "spendingTrends": "Tendências de Gastos",
+    "noData": "Sem dados para o período selecionado",
+    "filters": {
+      "apply": "Aplicar Filtros",
+      "clear": "Limpar Filtros",
+      "startDate": "Data de Início",
+      "endDate": "Data de Término"
+    }
   }
 } 

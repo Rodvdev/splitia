@@ -11,7 +11,7 @@ function SignInForm() {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const redirectTo = searchParams?.get('redirectTo') || '/dashboard';
   const { signIn, isLoading } = useAuth();
   
   const [email, setEmail] = useState('');

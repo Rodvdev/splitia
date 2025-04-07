@@ -39,13 +39,15 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
+type LayoutProps = {
+  children: React.ReactNode;
+  params?: { locale?: string };
+};
+
 export default function RootLayout({
   children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { locale?: string };
-}) {
+  params = {}
+}: LayoutProps) {
   // Set default locale if not provided
   const locale = (params.locale || 'en') as keyof typeof messages;
   
