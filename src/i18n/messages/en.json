@@ -249,14 +249,16 @@
   },
   "settings": {
     "title": "Settings",
-    "language": "Language",
-    "description": "Manage your account settings",
-    "currency": "Currency",
+    "description": "Manage your account and preferences",
+    "account": "Account Settings",
+    "preferences": "Preferences",
     "notifications": "Notifications",
-    "profile": "Profile",
-    "account": "Account",
+    "privacy": "Privacy",
+    "language": "Language",
+    "currency": "Currency",
     "theme": "Theme",
-    "help": "Help & Support"
+    "security": "Security",
+    "logout": "Log Out"
   },
   "dashboard": {
     "title": "Dashboard",
