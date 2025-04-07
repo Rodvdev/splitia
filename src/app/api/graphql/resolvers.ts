@@ -320,13 +320,27 @@ export const resolvers = {
       console.log('Fetching groups for user:', userId);
 
       // Find groups where the user is a member
+      // Define the return type explicitly
+      type PrismaGroupUser = {
+        id: string;
+        userId: string;
+        groupId: string;
+        role: string;
+        group: {
+          id: string;
+          name: string;
+          description: string | null;
+          image: string | null;
+        }
+      };
+      
       const userGroupMemberships = await prisma.groupUser.findMany({
         where: { userId },
         include: { group: true },
-      });
+      }) as PrismaGroupUser[];
 
       // Return just the groups
-      return userGroupMemberships.map((membership: GroupUserType) => membership.group);
+      return userGroupMemberships.map(membership => membership.group);
     },
 
     // Get a single group by ID with its members
