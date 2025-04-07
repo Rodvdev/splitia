@@ -11,11 +11,13 @@ export function generateStaticParams() {
   return [{ locale: 'en' }, { locale: 'es' }, { locale: 'pt' }];
 }
 
-type Props = {
-  params: { locale: string }
-}
+type Params = { locale: string };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Params 
+}): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: 'Categories' });
   return {
     title: t('title'),
