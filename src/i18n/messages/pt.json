@@ -181,7 +181,8 @@
     "descriptionLabel": "Descrição (Opcional)",
     "descriptionPlaceholder": "Para que serve este grupo?",
     "descriptionDescription": "Forneça contexto sobre o propósito deste grupo",
-    "uploadImage": "Carregar imagem"
+    "uploadImage": "Carregar imagem",
+    "total": "Total de Grupos"
   },
   "settings": {
     "title": "Configurações",
@@ -250,5 +251,45 @@
       "startDate": "Data de Início",
       "endDate": "Data de Término"
     }
+  },
+  "Profile": {
+    "title": "Perfil do Usuário",
+    "description": "Gerencie seu perfil pessoal e configurações da conta",
+    "personalInfo": "Informações Pessoais",
+    "accountSettings": "Configurações da Conta",
+    "name": "Nome Completo",
+    "email": "Endereço de Email",
+    "phone": "Número de Telefone",
+    "avatar": "Foto do Perfil",
+    "changeAvatar": "Alterar Foto",
+    "removeAvatar": "Remover Foto",
+    "save": "Salvar Alterações",
+    "cancel": "Cancelar",
+    "changesSaved": "Suas alterações foram salvas",
+    "errorSaving": "Ocorreu um erro ao salvar suas alterações"
+  },
+  "greetings": {
+    "welcome": "Bem-vindo ao Splitia",
+    "welcomeBack": "Bem-vindo de volta, {name}",
+    "morning": "Bom dia",
+    "afternoon": "Boa tarde",
+    "evening": "Boa noite",
+    "today": "Hoje é {date}",
+    "getStarted": "Vamos começar"
+  },
+  "errors": {
+    "general": "Algo deu errado",
+    "notFound": "Página não encontrada",
+    "unauthorized": "Você não está autorizado a visualizar esta página",
+    "networkError": "Erro de rede. Por favor, verifique sua conexão",
+    "sessionExpired": "Sua sessão expirou. Por favor, faça login novamente",
+    "invalidCredentials": "Email ou senha inválidos",
+    "requiredField": "Este campo é obrigatório",
+    "invalidEmail": "Por favor, insira um endereço de email válido",
+    "invalidPassword": "A senha deve ter pelo menos 8 caracteres",
+    "passwordMismatch": "As senhas não coincidem",
+    "formSubmission": "Houve um problema ao enviar o formulário",
+    "tryAgain": "Por favor, tente novamente mais tarde",
+    "dataLoad": "Falha ao carregar dados"
   }
 } 

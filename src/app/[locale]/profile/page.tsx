@@ -1,6 +1,18 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
 
+// Mark page as static to be pre-rendered at build time
+export const dynamic = 'force-static';
+
+// This is needed for proper static generation with next-intl
+export function generateStaticParams() {
+  return [
+    { locale: 'en' },
+    { locale: 'es' },
+    { locale: 'pt' }
+  ];
+}
+
 export default function ProfilePage() {
   const t = useTranslations('Profile');
   

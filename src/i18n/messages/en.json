@@ -245,7 +245,8 @@
     "generating": "Generating...",
     "generateLink": "Generate Link",
     "email": "Email",
-    "role": "Role"
+    "role": "Role",
+    "total": "Total Groups"
   },
   "settings": {
     "title": "Settings",
@@ -314,5 +315,45 @@
       "startDate": "Start Date",
       "endDate": "End Date"
     }
+  },
+  "Profile": {
+    "title": "User Profile",
+    "description": "Manage your personal profile and account settings",
+    "personalInfo": "Personal Information",
+    "accountSettings": "Account Settings",
+    "name": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "avatar": "Profile Picture",
+    "changeAvatar": "Change Picture",
+    "removeAvatar": "Remove Picture",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "changesSaved": "Your changes have been saved",
+    "errorSaving": "There was an error saving your changes"
+  },
+  "greetings": {
+    "welcome": "Welcome to Splitia",
+    "welcomeBack": "Welcome back, {name}",
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "today": "Today is {date}",
+    "getStarted": "Let's get started"
+  },
+  "errors": {
+    "general": "Something went wrong",
+    "notFound": "Page not found",
+    "unauthorized": "You are not authorized to view this page",
+    "networkError": "Network error. Please check your connection",
+    "sessionExpired": "Your session has expired. Please sign in again",
+    "invalidCredentials": "Invalid email or password",
+    "requiredField": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidPassword": "Password must be at least 8 characters",
+    "passwordMismatch": "Passwords do not match",
+    "formSubmission": "There was a problem submitting the form",
+    "tryAgain": "Please try again later",
+    "dataLoad": "Failed to load data"
   }
 } 

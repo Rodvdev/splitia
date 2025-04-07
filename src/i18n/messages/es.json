@@ -181,7 +181,8 @@
     "descriptionLabel": "Descripción (Opcional)",
     "descriptionPlaceholder": "¿Para qué es este grupo?",
     "descriptionDescription": "Proporciona contexto sobre el propósito de este grupo",
-    "uploadImage": "Subir imagen"
+    "uploadImage": "Subir imagen",
+    "total": "Total de Grupos"
   },
   "settings": {
     "title": "Configuración",
@@ -250,5 +251,45 @@
       "startDate": "Fecha de Inicio",
       "endDate": "Fecha de Fin"
     }
+  },
+  "Profile": {
+    "title": "Perfil de Usuario",
+    "description": "Administra tu perfil personal y configuración de cuenta",
+    "personalInfo": "Información Personal",
+    "accountSettings": "Configuración de Cuenta",
+    "name": "Nombre Completo",
+    "email": "Correo Electrónico",
+    "phone": "Número de Teléfono",
+    "avatar": "Foto de Perfil",
+    "changeAvatar": "Cambiar Foto",
+    "removeAvatar": "Eliminar Foto",
+    "save": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "changesSaved": "Tus cambios han sido guardados",
+    "errorSaving": "Hubo un error al guardar tus cambios"
+  },
+  "greetings": {
+    "welcome": "Bienvenido a Splitia",
+    "welcomeBack": "Bienvenido de nuevo, {name}",
+    "morning": "Buenos días",
+    "afternoon": "Buenas tardes",
+    "evening": "Buenas noches",
+    "today": "Hoy es {date}",
+    "getStarted": "Comencemos"
+  },
+  "errors": {
+    "general": "Algo salió mal",
+    "notFound": "Página no encontrada",
+    "unauthorized": "No estás autorizado para ver esta página",
+    "networkError": "Error de red. Por favor, comprueba tu conexión",
+    "sessionExpired": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo",
+    "invalidCredentials": "Correo electrónico o contraseña inválidos",
+    "requiredField": "Este campo es obligatorio",
+    "invalidEmail": "Por favor, introduce un correo electrónico válido",
+    "invalidPassword": "La contraseña debe tener al menos 8 caracteres",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "formSubmission": "Hubo un problema al enviar el formulario",
+    "tryAgain": "Por favor, inténtalo de nuevo más tarde",
+    "dataLoad": "Error al cargar datos"
   }
 } 
