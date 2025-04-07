@@ -10,7 +10,9 @@
     "delete": "Eliminar",
     "edit": "Editar",
     "create": "Crear",
-    "search": "Buscar"
+    "search": "Buscar",
+    "date": "Fecha",
+    "user": "Usuario"
   },
   "navigation": {
     "dashboard": "Panel",
@@ -292,5 +294,51 @@
     "formSubmission": "Hubo un problema al enviar el formulario",
     "tryAgain": "Por favor, inténtalo de nuevo más tarde",
     "dataLoad": "Error al cargar datos"
+  },
+  "user": {
+    "profile": "Perfil",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "settings": "Configuración de Usuario",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "preferences": "Preferencias",
+    "avatar": "Foto de Perfil"
+  },
+  "date": {
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "thisWeek": "Esta Semana",
+    "lastWeek": "Semana Pasada",
+    "thisMonth": "Este Mes",
+    "lastMonth": "Mes Pasado",
+    "format": {
+      "short": "DD/MM/YYYY",
+      "long": "D de MMMM de YYYY",
+      "relative": "Hace {timeAgo}"
+    },
+    "month": {
+      "january": "Enero",
+      "february": "Febrero",
+      "march": "Marzo",
+      "april": "Abril",
+      "may": "Mayo",
+      "june": "Junio",
+      "july": "Julio",
+      "august": "Agosto",
+      "september": "Septiembre",
+      "october": "Octubre",
+      "november": "Noviembre",
+      "december": "Diciembre"
+    },
+    "day": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    }
   }
 } 

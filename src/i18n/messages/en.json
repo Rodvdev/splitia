@@ -358,5 +358,51 @@
     "formSubmission": "There was a problem submitting the form",
     "tryAgain": "Please try again later",
     "dataLoad": "Failed to load data"
+  },
+  "user": {
+    "profile": "Profile",
+    "name": "Name",
+    "email": "Email",
+    "settings": "User Settings",
+    "language": "Language",
+    "currency": "Currency",
+    "preferences": "Preferences",
+    "avatar": "Profile Picture"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "format": {
+      "short": "MM/DD/YYYY",
+      "long": "MMMM D, YYYY",
+      "relative": "{timeAgo} ago"
+    },
+    "month": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "day": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
   }
 } 
