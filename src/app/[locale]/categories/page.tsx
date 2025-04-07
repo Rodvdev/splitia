@@ -1,9 +1,17 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 
-export async function generateMetadata({ params: { locale } }: { params: { locale: string } }) {
-  const t = await getTranslations({ locale, namespace: 'Categories' });
+// Mark explicitly as a server component
+export const dynamic = 'force-static';
+
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: { locale: string } 
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: 'Categories' });
   return {
     title: t('title'),
     description: t('description'),
