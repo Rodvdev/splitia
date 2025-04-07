@@ -6,13 +6,14 @@ import type { Metadata } from 'next';
 // Mark explicitly as a server component
 export const dynamic = 'force-static';
 
-type Props = {
+interface PageProps {
   params: {
     locale: string;
   };
-};
+  searchParams: Record<string, string | string[] | undefined>;
+}
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: 'Categories' });
   return {
     title: t('title'),
