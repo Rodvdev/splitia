@@ -4,6 +4,18 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { locales } from "@/i18n/config";
 
+// Import language messages
+import en from '@/i18n/messages/en.json';
+import es from '@/i18n/messages/es.json';
+import pt from '@/i18n/messages/pt.json';
+
+// Define messages by locale
+const messages = {
+  en,
+  es,
+  pt
+};
+
 // Define font configuration
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,20 +39,20 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
-  params: { locale = 'en' },
-}: Readonly<{
+  params,
+}: {
   children: React.ReactNode;
   params: { locale?: string };
-}>) {
-  // Load messages for the current locale
-  const messages = (await import(`@/i18n/messages/${locale}.json`)).default;
-
+}) {
+  // Set default locale if not provided
+  const locale = (params.locale || 'en') as keyof typeof messages;
+  
   return (
     <html lang={locale}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers locale={locale} messages={messages}>
+        <Providers locale={locale} messages={messages[locale]}>
           {children}
         </Providers>
       </body>
