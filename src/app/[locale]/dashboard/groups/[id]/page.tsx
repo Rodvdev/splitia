@@ -61,7 +61,7 @@ interface Group {
 export default function GroupPage() {
   // Get params directly using useParams hook
   const params = useParams();
-  const groupId = params.id as string;
+  const groupId = params?.id as string;
   
   const t = useTranslations('groups');
   const router = useRouter();

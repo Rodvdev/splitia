@@ -89,7 +89,7 @@ function isValidDate(dateString: string | undefined | null): boolean {
 export default function ExpensePage() {
   // Get params directly using useParams hook
   const params = useParams();
-  const expenseId = params.id as string;
+  const expenseId = params?.id as string;
   
   const t = useTranslations('expenses');
   const router = useRouter();

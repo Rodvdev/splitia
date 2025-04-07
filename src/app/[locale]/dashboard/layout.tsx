@@ -75,7 +75,7 @@ export default function DashboardLayout({
                   href={item.href}
                   className={cn(
                     "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    pathname.endsWith(item.href) || 
+                    pathname?.endsWith(item.href) || 
                     (item.href === '/dashboard' && pathname === '/dashboard')
                       ? "bg-sidebar-primary text-sidebar-primary-foreground"
                       : ""

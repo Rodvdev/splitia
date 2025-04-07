@@ -114,7 +114,7 @@ export default function InviteGroupPage() {
 
   // Navigate back
   const handleBack = () => {
-    router.push(`/dashboard/groups/${params.id}`);
+    router.push(`/dashboard/groups/${params?.id}`);
   };
 
   // Handle email invite form submission
@@ -123,7 +123,7 @@ export default function InviteGroupPage() {
     
     try {
       // Call the GraphQL mutation to send the invitation
-      const groupId = params.id as string;
+      const groupId = params?.id as string;
       await inviteToGroup({
         groupId,
         email: data.email,
@@ -146,7 +146,7 @@ export default function InviteGroupPage() {
     
     try {
       // Use only the basic invite link generation to avoid issues
-      const groupId = params.id as string;
+      const groupId = params?.id as string;
       const response = await generateBasicGroupInviteLink(groupId) as GroupInviteLinkResponse;
       
       // Set the generated invite link
