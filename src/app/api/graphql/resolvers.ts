@@ -885,7 +885,7 @@ export const resolvers = {
         data: {
           userId: userToAdd.id,
           groupId,
-          role: data.role,
+          role: data.role as GroupRole,
         },
       });
 
