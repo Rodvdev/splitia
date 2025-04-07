@@ -259,7 +259,8 @@
     "currency": "Currency",
     "theme": "Theme",
     "security": "Security",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "profile": "Profile Settings"
   },
   "dashboard": {
     "title": "Dashboard",

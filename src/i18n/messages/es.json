@@ -195,7 +195,8 @@
     "currency": "Moneda",
     "theme": "Tema",
     "security": "Seguridad",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "profile": "Configuración de Perfil"
   },
   "dashboard": {
     "title": "Panel",

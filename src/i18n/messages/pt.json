@@ -195,7 +195,8 @@
     "currency": "Moeda",
     "theme": "Tema",
     "security": "Segurança",
-    "logout": "Sair"
+    "logout": "Sair",
+    "profile": "Configurações de Perfil"
   },
   "dashboard": {
     "title": "Painel",
