@@ -149,5 +149,16 @@
     "typing": "typing...",
     "seen": "Seen",
     "assistant": "AI Assistant"
+  },
+  "user": {
+    "guest": "guest"
+  },
+  "greetings": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "errors": {
+    "fetchProfile": "Error fetching your profile"
   }
 } 

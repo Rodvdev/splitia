@@ -53,8 +53,28 @@ export default function GroupsPage() {
       try {
         const response = await fetchUserGroups() as UserGroupsResponse;
         setGroups(response.userGroups || []);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to fetch groups:', error);
+        
+        // Check if it's an authentication error
+        const err = error as { 
+          message?: string; 
+          response?: { 
+            errors?: Array<{ 
+              extensions?: { 
+                code?: string 
+              } 
+            }> 
+          } 
+        };
+        
+        if (err.message?.includes('Not authenticated') || 
+            err.response?.errors?.some(e => e.extensions?.code === 'UNAUTHENTICATED')) {
+          // Handle auth error - could redirect to login or show a specific message
+          console.error('Authentication error when fetching groups');
+          // Could redirect to login page if needed
+          // router.push('/sign-in');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -95,9 +115,7 @@ export default function GroupsPage() {
         <div>
           <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="text-muted-foreground">
-            {t.rich('description', { 
-              defaultMessage: 'Manage your expense groups'
-            })}
+            {t('description')}
           </p>
         </div>
         <Button onClick={handleCreateGroup}>
@@ -109,9 +127,7 @@ export default function GroupsPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder={t.rich('search', { 
-            defaultMessage: 'Search groups...'
-          }) as string}
+          placeholder={t('search')}
           className="pl-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -168,10 +184,7 @@ export default function GroupsPage() {
               <CardContent className="pb-2">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Users className="mr-1 h-4 w-4" />
-                  <span>{t.rich('membersCount', { 
-                    count: 3,
-                    defaultMessage: '{count, plural, =1 {# member} other {# members}}'
-                  })}</span> {/* This should be dynamically populated from the API */}
+                  <span>{t('membersCount', { count: 3 })}</span> {/* This should be dynamically populated from the API */}
                 </div>
               </CardContent>
               <CardFooter className="pt-2 flex justify-between">
@@ -206,9 +219,7 @@ export default function GroupsPage() {
           <Users className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-medium">{t('noGroups')}</h3>
           <p className="mt-2 text-muted-foreground">
-            {t.rich('noGroupsDescription', {
-              defaultMessage: 'Create a group to start splitting expenses with others'
-            })}
+            {t('noGroupsDescription')}
           </p>
           <Button className="mt-4" onClick={handleCreateGroup}>
             <Plus className="mr-2 h-4 w-4" />

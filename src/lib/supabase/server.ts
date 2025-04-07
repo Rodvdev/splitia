@@ -11,8 +11,7 @@ import { Database } from './client';
  * IMPORTANT: This can only be used in Server Components
  */
 export function createServerClient() {
-  const cookieStore = cookies();
-  return createServerComponentClient<Database>({ cookies: () => cookieStore });
+  return createServerComponentClient<Database>({ cookies });
 }
 
 // Server-only auth actions - DO NOT import in client components

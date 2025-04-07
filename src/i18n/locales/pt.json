@@ -149,5 +149,16 @@
     "typing": "digitando...",
     "seen": "Visto",
     "assistant": "Assistente IA"
+  },
+  "user": {
+    "guest": "convidado"
+  },
+  "greetings": {
+    "morning": "Bom dia",
+    "afternoon": "Boa tarde",
+    "evening": "Boa noite"
+  },
+  "errors": {
+    "fetchProfile": "Erro ao obter seu perfil"
   }
 } 

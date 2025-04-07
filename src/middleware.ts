@@ -40,14 +40,78 @@ export async function middleware(request: NextRequest) {
     newUrl.search = request.nextUrl.search;
     return NextResponse.redirect(newUrl);
   }
-  
+
+  // Define paths that don't need authentication
+  const publicPaths = [
+    '/',
+    '/sign-in',
+    '/sign-up',
+    '/api/auth/callback',
+    '/auth/callback',
+    '/profile-setup'
+  ];
+
+  // Define paths that don't need profile setup
+  const noProfileSetupPaths = [
+    ...publicPaths,
+    '/profile-setup'
+  ];
+
+  // Helper to check if path is public
+  function isPublicPath(p: string) {
+    return publicPaths.some(path => 
+      p === path || 
+      locales.some(locale => p === `/${locale}${path}`) ||
+      p.startsWith('/api/') ||
+      p.startsWith('/_next/') ||
+      p.includes('/favicon.ico') ||
+      p.startsWith('/auth/')
+    );
+  }
+
+  // Helper to check if path needs profile setup check
+  function needsProfileSetup(p: string) {
+    return !noProfileSetupPaths.some(path => 
+      p === path || 
+      locales.some(locale => p === `/${locale}${path}`) ||
+      p.startsWith('/api/') ||
+      p.startsWith('/_next/') ||
+      p.includes('/favicon.ico') ||
+      p.startsWith('/auth/')
+    );
+  }
+
   // Handle authentication routes
-  if (pathname.includes('/dashboard')) {
+  if (!isPublicPath(pathname)) {
     if (!session) {
       // Redirect to login if accessing dashboard without session
       const redirectUrl = new URL('/sign-in', request.url);
       redirectUrl.searchParams.set('redirectTo', pathname);
       return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  // Handle profile setup check
+  if (session && needsProfileSetup(pathname)) {
+    try {
+      // Check if profile is complete
+      const profileResponse = await fetch(new URL('/api/profile/check', request.url), {
+        headers: {
+          cookie: request.headers.get('cookie') || '',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (profileResponse.ok) {
+        const { isComplete } = await profileResponse.json();
+        
+        if (!isComplete) {
+          // Redirect to profile setup if profile is not complete
+          return NextResponse.redirect(new URL('/profile-setup', request.url));
+        }
+      }
+    } catch (error) {
+      console.error('Error checking profile status in middleware:', error);
     }
   }
   

@@ -1,7 +1,36 @@
 import { prisma } from '@/lib/prisma';
 import { GraphQLError } from 'graphql';
-import { getServerSession } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
+
+// Helper function to get the session
+async function getServerSession(context?: Context) {
+  if (context?.user) {
+    // If context already has user data, create a session-like object
+    return {
+      user: {
+        id: context.user.id,
+        email: context.user.email
+      }
+    };
+  }
+  
+  // This fallback should rarely be needed since we're handling auth in the API route
+  console.warn('No user context provided to getServerSession - this is unexpected');
+  
+  // Create a Supabase client for fallback authentication
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
+  
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    console.error('Authentication failed: No session found');
+  }
+  
+  return data.session;
+}
 
 // Define ShareType enum to match the Prisma schema
 enum ShareType {
@@ -94,9 +123,11 @@ interface ExpenseShareType {
 
 interface UserType {
   id: string;
-  name?: string | null;
   email: string;
+  name?: string | null;
   image?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface GroupType {
@@ -131,7 +162,7 @@ export const resolvers = {
   Query: {
     // Get expenses with optional filtering
     expenses: async (_parent: unknown, args: ExpenseArgs, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -139,9 +170,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -194,7 +225,7 @@ export const resolvers = {
 
     // Get a single expense by ID
     expense: async (_parent: unknown, args: { id: string }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -202,9 +233,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -247,7 +278,7 @@ export const resolvers = {
 
     // Get user's categories
     categories: async (_parent: unknown, _args: unknown, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -255,9 +286,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -269,20 +300,24 @@ export const resolvers = {
 
     // Get groups the user is a member of
     userGroups: async (_parent: unknown, _args: unknown, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
+        console.error('Authentication failed in userGroups resolver', { context });
         throw new GraphQLError('Not authenticated', {
           extensions: { code: 'UNAUTHENTICATED' },
         });
       }
 
-      const userId = context.user?.id;
+      // Get userId preferring context.user over session.user for consistency
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
+
+      console.log('Fetching groups for user:', userId);
 
       // Find groups where the user is a member
       const userGroupMemberships = await prisma.groupUser.findMany({
@@ -296,7 +331,7 @@ export const resolvers = {
 
     // Get a single group by ID with its members
     group: async (_parent: unknown, { id }: { id: string }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -304,9 +339,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -360,7 +395,7 @@ export const resolvers = {
   Mutation: {
     // Create a new expense
     createExpense: async (_parent: unknown, { data }: { data: ExpenseInput }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -368,9 +403,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -480,7 +515,7 @@ export const resolvers = {
 
     // Update an existing expense
     updateExpense: async (_parent: unknown, { data }: { data: ExpenseInput }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -488,9 +523,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -597,7 +632,7 @@ export const resolvers = {
 
     // Delete an expense
     deleteExpense: async (_parent: unknown, args: { id: string }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -605,9 +640,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -662,7 +697,7 @@ export const resolvers = {
 
     // Create a new custom category
     createCategory: async (_parent: unknown, args: CategoryInput, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -670,9 +705,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -704,7 +739,7 @@ export const resolvers = {
 
     // Create a new group
     createGroup: async (_parent: unknown, { data }: { data: GroupInput }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -712,9 +747,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -747,7 +782,7 @@ export const resolvers = {
     addGroupMember: async (_parent: unknown, 
       { groupId, data }: { groupId: string; data: GroupMemberInput }, 
       context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -755,9 +790,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -818,7 +853,7 @@ export const resolvers = {
     removeGroupMember: async (_parent: unknown, 
       { groupId, userId: memberIdToRemove }: { groupId: string; userId: string }, 
       context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -826,9 +861,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -890,7 +925,7 @@ export const resolvers = {
 
     // Leave a group
     leaveGroup: async (_parent: unknown, { groupId }: { groupId: string }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -898,9 +933,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
@@ -947,7 +982,7 @@ export const resolvers = {
 
     // Delete a group
     deleteGroup: async (_parent: unknown, { id }: { id: string }, context: Context) => {
-      const session = await getServerSession();
+      const session = await getServerSession(context);
       
       if (!session?.user) {
         throw new GraphQLError('Not authenticated', {
@@ -955,9 +990,9 @@ export const resolvers = {
         });
       }
 
-      const userId = context.user?.id;
+      const userId = context.user?.id || session.user.id;
       if (!userId) {
-        throw new GraphQLError('User ID not found in context', {
+        throw new GraphQLError('User ID not found in session', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }

@@ -1,4 +1,5 @@
 import { GraphQLClient } from 'graphql-request';
+import { createClient } from './supabase/client';
 
 // Create a client for consuming the GraphQL API
 // In a browser environment, we need to construct a full URL
@@ -12,6 +13,30 @@ const getGraphQLEndpoint = () => {
   return '/api/graphql';
 };
 
+// Function to get authenticated GraphQL client
+export async function getAuthenticatedClient() {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  
+  // Create client with authentication headers if session exists
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (data.session) {
+    // Use the correct header format: Bearer token
+    headers['Authorization'] = `Bearer ${data.session.access_token}`;
+  } else {
+    console.warn('No active session found for authenticated request');
+  }
+  
+  return new GraphQLClient(getGraphQLEndpoint(), {
+    credentials: 'include',
+    headers,
+  });
+}
+
+// Base GraphQL client without authentication
 export const graphqlClient = new GraphQLClient(getGraphQLEndpoint(), {
   credentials: 'include',
   headers: {
@@ -304,11 +329,23 @@ export async function fetchUserGroups() {
   `;
 
   try {
-    const response = await graphqlClient.request(query);
+    // Get the current session first to verify we have an active session
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error('No active session found when attempting to fetch user groups');
+      throw new Error('Authentication required to access user groups');
+    }
+    
+    // Use authenticated client to ensure session is included
+    const client = await getAuthenticatedClient();
+    const response = await client.request(query);
     return response;
   } catch (error) {
     console.error('Error fetching user groups:', error);
-    return { userGroups: [] };
+    // Return empty array but don't swallow the error
+    throw error;
   }
 }
 
@@ -333,7 +370,9 @@ export async function getGroup(id: string) {
   `;
 
   try {
-    return await graphqlClient.request(query, { id });
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(query, { id });
   } catch (error) {
     console.error('Error fetching group:', error);
     return { group: null };
@@ -358,7 +397,10 @@ export async function createGroup(data: {
   `;
 
   try {
-    return await graphqlClient.request(mutation, { data });
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    const result = await client.request(mutation, { data });
+    return result;
   } catch (error) {
     console.error('Error creating group:', error);
     throw error;

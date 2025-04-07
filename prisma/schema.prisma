@@ -10,7 +10,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // User model
@@ -22,6 +23,8 @@ model User {
   email         String         @unique
   externalId    String?        @unique // For Clerk authentication
   image         String?
+  currency      String         @default("PEN") // Default currency
+  language      String         @default("es") // Default language
   // Relations
   groups        GroupUser[]
   expenses      Expense[]
@@ -211,8 +214,6 @@ model UserPreference {
   id          String   @id @default(cuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  language    String   @default("en") // Language code (en, es, pt, etc.)
-  currency    String   @default("USD") // Default currency
   theme       String   @default("light") // UI theme
   dateFormat  String   @default("MM/DD/YYYY") // Date format preference
   timeFormat  String   @default("12h") // 12h or 24h
