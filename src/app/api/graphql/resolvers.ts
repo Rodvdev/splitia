@@ -27,6 +27,12 @@ enum ShareType {
   FIXED = 'FIXED'
 }
 
+// Define GroupRole enum to match the Prisma schema
+enum GroupRole {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER'
+}
+
 // Basic type definitions for resolvers
 interface Context {
   user?: {
@@ -81,7 +87,7 @@ interface GroupInput {
 
 interface GroupMemberInput {
   email: string;
-  role: string;
+  role: GroupRole;
 }
 
 // Define types based on the Prisma models
@@ -580,7 +586,7 @@ export const resolvers = {
             where: {
               userId,
               groupId: existingExpense.groupId,
-              role: 'ADMIN',
+              role: GroupRole.ADMIN,
             },
           });
 
@@ -694,7 +700,7 @@ export const resolvers = {
             where: {
               userId,
               groupId: expense.groupId,
-              role: 'ADMIN',
+              role: GroupRole.ADMIN,
             },
           });
 
@@ -806,7 +812,7 @@ export const resolvers = {
             data: {
               userId,
               groupId: group.id,
-              role: 'ADMIN',
+              role: GroupRole.ADMIN,
             },
           });
 
@@ -839,7 +845,7 @@ export const resolvers = {
         where: {
           userId,
           groupId,
-          role: 'ADMIN',
+          role: GroupRole.ADMIN,
         },
       });
 
@@ -910,7 +916,7 @@ export const resolvers = {
         where: {
           userId,
           groupId,
-          role: 'ADMIN',
+          role: GroupRole.ADMIN,
         },
       });
 
@@ -935,11 +941,11 @@ export const resolvers = {
       }
 
       // Don't allow removing the last admin
-      if (membershipToRemove.role === 'ADMIN') {
+      if (membershipToRemove.role === GroupRole.ADMIN) {
         const adminCount = await prisma.groupUser.count({
           where: {
             groupId,
-            role: 'ADMIN',
+            role: GroupRole.ADMIN,
           },
         });
 
@@ -992,11 +998,11 @@ export const resolvers = {
       }
 
       // Don't allow leaving if the user is the last admin
-      if (membership.role === 'ADMIN') {
+      if (membership.role === GroupRole.ADMIN) {
         const adminCount = await prisma.groupUser.count({
           where: {
             groupId,
-            role: 'ADMIN',
+            role: GroupRole.ADMIN,
           },
         });
 
@@ -1039,7 +1045,7 @@ export const resolvers = {
         where: {
           userId,
           groupId: id,
-          role: 'ADMIN',
+          role: GroupRole.ADMIN,
         },
       });
 
