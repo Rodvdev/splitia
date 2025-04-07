@@ -4,9 +4,6 @@ import { useTranslations } from 'next-intl';
 // Mark page as static to be pre-rendered at build time
 export const dynamic = 'force-static';
 
-// Define locales directly without using params
-export const locales = ['en', 'es', 'pt'];
-
 export default function CategoriesPage() {
   const t = useTranslations('Categories');
   
