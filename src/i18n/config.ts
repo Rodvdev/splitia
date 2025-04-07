@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
-import type { IntlConfig } from 'next-intl';
 
 // List of supported locales
 export const locales = ['en', 'es', 'pt'] as const;
@@ -15,6 +14,7 @@ export function isValidLocale(locale: string): locale is Locale {
 
 // Configuration for next-intl
 export default getRequestConfig(async ({ locale }) => {
+  // Always ensure we have a locale, defaulting to 'en' if not provided
   const currentLocale = locale || defaultLocale;
   
   // Validate that the locale is supported
@@ -22,13 +22,25 @@ export default getRequestConfig(async ({ locale }) => {
     notFound();
   }
 
-  // Import the locale messages
-  const messages = (await import(`./messages/${currentLocale}.json`)).default;
+  try {
+    // Import the locale messages
+    const messages = (await import(`./messages/${currentLocale}.json`)).default;
 
-  return {
-    locale,
-    messages,
-    timeZone: 'UTC',
-    now: new Date(),
-  } as IntlConfig;
+    return {
+      locale: currentLocale, // Use currentLocale which is guaranteed to have a value
+      messages,
+      timeZone: 'UTC',
+      now: new Date(),
+    };
+  } catch (error) {
+    console.error(`Failed to load messages for locale: ${currentLocale}`, error);
+    
+    // Still return a valid config with the locale even if messages fail to load
+    return {
+      locale: currentLocale,
+      messages: {},
+      timeZone: 'UTC',
+      now: new Date(),
+    };
+  }
 }); 
