@@ -3,6 +3,7 @@ import { typeDefs } from './schema';
 import { resolvers } from './resolvers';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
 
 // Create executable schema
 const schema = makeExecutableSchema({
@@ -78,5 +79,5 @@ const yoga = createYoga({
 });
 
 // Route handlers for Next.js App Router
-export const GET = yoga;
-export const POST = yoga; 
+export const GET = (request: NextRequest) => yoga.fetch(request);
+export const POST = (request: NextRequest) => yoga.fetch(request); 
