@@ -142,7 +142,7 @@ export default function ExpensesPage() {
     }
     
     loadData();
-  }, []);
+  }, [t]);
   
   // Handle expense selection
   const handleExpenseClick = (id: string) => {
