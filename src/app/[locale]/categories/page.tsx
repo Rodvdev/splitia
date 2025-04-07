@@ -1,28 +1,11 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
-import type { Metadata } from 'next';
 
 // Mark page as static to be pre-rendered at build time
 export const dynamic = 'force-static';
 
-// Define generator function for static paths
-export function generateStaticParams() {
-  return [{ locale: 'en' }, { locale: 'es' }, { locale: 'pt' }];
-}
-
-// Use a simpler approach without custom types for metadata
-export async function generateMetadata({ 
-  params: { locale } 
-}: { 
-  params: { locale: string } 
-}): Promise<Metadata> {
-  const t = await getTranslations({ locale, namespace: 'Categories' });
-  return {
-    title: t('title'),
-    description: t('description'),
-  };
-}
+// Define locales directly without using params
+export const locales = ['en', 'es', 'pt'];
 
 export default function CategoriesPage() {
   const t = useTranslations('Categories');
