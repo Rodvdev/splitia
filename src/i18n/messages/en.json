@@ -404,5 +404,79 @@
       "saturday": "Saturday",
       "sunday": "Sunday"
     }
+  },
+  "budget": {
+    "title": "Budget",
+    "description": "Plan and track your monthly budget",
+    "overview": "Budget Overview",
+    "create": "Create Budget",
+    "edit": "Edit Budget",
+    "month": "Month",
+    "income": "Income",
+    "expenses": "Expenses",
+    "categories": "Budget Categories",
+    "remaining": "Remaining",
+    "spent": "Spent",
+    "allocation": "Allocation",
+    "savings": "Savings",
+    "progress": "Budget Progress",
+    "statistics": "Budget Statistics",
+    "addCategory": "Add Category",
+    "empty": {
+      "title": "No budget found",
+      "description": "Create your first budget to start tracking your spending",
+      "action": "Create Budget"
+    },
+    "form": {
+      "monthLabel": "Month",
+      "monthPlaceholder": "Select month",
+      "incomeLabel": "Monthly Income",
+      "incomePlaceholder": "Enter your monthly income",
+      "expensesLabel": "Planned Expenses",
+      "savingsLabel": "Planned Savings",
+      "savingsTarget": "Savings Target",
+      "categoryLabel": "Category",
+      "categoryPlaceholder": "Select or create a category",
+      "amountLabel": "Amount",
+      "amountPlaceholder": "Budget amount for this category",
+      "actions": {
+        "submit": "Save Budget",
+        "submitting": "Saving...",
+        "cancel": "Cancel"
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "description": "Message with group members and friends",
+    "noMessages": "No messages yet",
+    "noConversations": "No conversations yet",
+    "newMessage": "New Message",
+    "newChat": "New Chat",
+    "send": "Send",
+    "typing": "typing...",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "messageInput": "Type a message...",
+    "search": "Search conversations",
+    "groupChat": "Group Chat",
+    "privateChat": "Private Chat",
+    "createGroup": "Create Group Chat",
+    "addMembers": "Add Members",
+    "leaveChat": "Leave Chat",
+    "deleteChat": "Delete Chat",
+    "empty": {
+      "title": "No conversations found",
+      "description": "Start a new conversation with your friends or group members",
+      "action": "Start Conversation"
+    },
+    "form": {
+      "titleLabel": "Chat Title",
+      "titlePlaceholder": "Enter a title for this conversation",
+      "participantsLabel": "Participants",
+      "participantsPlaceholder": "Select participants",
+      "messageLabel": "First Message",
+      "messagePlaceholder": "Start the conversation with a message"
+    }
   }
 } 

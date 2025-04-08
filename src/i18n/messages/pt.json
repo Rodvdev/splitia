@@ -340,5 +340,79 @@
       "saturday": "Sábado",
       "sunday": "Domingo"
     }
+  },
+  "budget": {
+    "title": "Orçamento",
+    "description": "Planeje e acompanhe seu orçamento mensal",
+    "overview": "Visão Geral do Orçamento",
+    "create": "Criar Orçamento",
+    "edit": "Editar Orçamento",
+    "month": "Mês",
+    "income": "Receita",
+    "expenses": "Despesas",
+    "categories": "Categorias do Orçamento",
+    "remaining": "Restante",
+    "spent": "Gasto",
+    "allocation": "Alocação",
+    "savings": "Economia",
+    "progress": "Progresso do Orçamento",
+    "statistics": "Estatísticas do Orçamento",
+    "addCategory": "Adicionar Categoria",
+    "empty": {
+      "title": "Nenhum orçamento encontrado",
+      "description": "Crie seu primeiro orçamento para começar a acompanhar seus gastos",
+      "action": "Criar Orçamento"
+    },
+    "form": {
+      "monthLabel": "Mês",
+      "monthPlaceholder": "Selecionar mês",
+      "incomeLabel": "Receita Mensal",
+      "incomePlaceholder": "Digite sua receita mensal",
+      "expensesLabel": "Despesas Planejadas",
+      "savingsLabel": "Economia Planejada",
+      "savingsTarget": "Meta de Economia",
+      "categoryLabel": "Categoria",
+      "categoryPlaceholder": "Selecione ou crie uma categoria",
+      "amountLabel": "Valor",
+      "amountPlaceholder": "Valor orçado para esta categoria",
+      "actions": {
+        "submit": "Salvar Orçamento",
+        "submitting": "Salvando...",
+        "cancel": "Cancelar"
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "description": "Envie mensagens aos membros do grupo e amigos",
+    "noMessages": "Ainda não há mensagens",
+    "noConversations": "Ainda não há conversas",
+    "newMessage": "Nova Mensagem",
+    "newChat": "Novo Chat",
+    "send": "Enviar",
+    "typing": "digitando...",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "messageInput": "Digite uma mensagem...",
+    "search": "Buscar conversas",
+    "groupChat": "Chat em Grupo",
+    "privateChat": "Chat Privado",
+    "createGroup": "Criar Chat em Grupo",
+    "addMembers": "Adicionar Membros",
+    "leaveChat": "Sair do Chat",
+    "deleteChat": "Excluir Chat",
+    "empty": {
+      "title": "Nenhuma conversa encontrada",
+      "description": "Inicie uma nova conversa com seus amigos ou membros do grupo",
+      "action": "Iniciar Conversa"
+    },
+    "form": {
+      "titleLabel": "Título do Chat",
+      "titlePlaceholder": "Digite um título para esta conversa",
+      "participantsLabel": "Participantes",
+      "participantsPlaceholder": "Selecionar participantes",
+      "messageLabel": "Primeira Mensagem",
+      "messagePlaceholder": "Inicie a conversa com uma mensagem"
+    }
   }
 } 

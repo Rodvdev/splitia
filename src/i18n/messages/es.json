@@ -339,6 +339,80 @@
       "friday": "Viernes",
       "saturday": "Sábado",
       "sunday": "Domingo"
+    },
+    "budget": {
+      "title": "Presupuesto",
+      "description": "Planifica y rastrea tu presupuesto mensual",
+      "overview": "Resumen del Presupuesto",
+      "create": "Crear Presupuesto",
+      "edit": "Editar Presupuesto",
+      "month": "Mes",
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "categories": "Categorías del Presupuesto",
+      "remaining": "Restante",
+      "spent": "Gastado",
+      "allocation": "Asignación",
+      "savings": "Ahorros",
+      "progress": "Progreso del Presupuesto",
+      "statistics": "Estadísticas del Presupuesto",
+      "addCategory": "Añadir Categoría",
+      "empty": {
+        "title": "No se encontró ningún presupuesto",
+        "description": "Crea tu primer presupuesto para comenzar a rastrear tus gastos",
+        "action": "Crear Presupuesto"
+      },
+      "form": {
+        "monthLabel": "Mes",
+        "monthPlaceholder": "Seleccionar mes",
+        "incomeLabel": "Ingresos Mensuales",
+        "incomePlaceholder": "Ingresa tus ingresos mensuales",
+        "expensesLabel": "Gastos Planificados",
+        "savingsLabel": "Ahorros Planificados",
+        "savingsTarget": "Objetivo de Ahorro",
+        "categoryLabel": "Categoría",
+        "categoryPlaceholder": "Selecciona o crea una categoría",
+        "amountLabel": "Importe",
+        "amountPlaceholder": "Importe presupuestado para esta categoría",
+        "actions": {
+          "submit": "Guardar Presupuesto",
+          "submitting": "Guardando...",
+          "cancel": "Cancelar"
+        }
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "description": "Comunícate con miembros de grupos y amigos",
+    "noMessages": "Aún no hay mensajes",
+    "noConversations": "Aún no hay conversaciones",
+    "newMessage": "Nuevo Mensaje",
+    "newChat": "Nuevo Chat",
+    "send": "Enviar",
+    "typing": "escribiendo...",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "messageInput": "Escribe un mensaje...",
+    "search": "Buscar conversaciones",
+    "groupChat": "Chat Grupal",
+    "privateChat": "Chat Privado",
+    "createGroup": "Crear Chat Grupal",
+    "addMembers": "Añadir Miembros",
+    "leaveChat": "Salir del Chat",
+    "deleteChat": "Eliminar Chat",
+    "empty": {
+      "title": "No se encontraron conversaciones",
+      "description": "Inicia una nueva conversación con tus amigos o miembros del grupo",
+      "action": "Iniciar Conversación"
+    },
+    "form": {
+      "titleLabel": "Título del Chat",
+      "titlePlaceholder": "Ingresa un título para esta conversación",
+      "participantsLabel": "Participantes",
+      "participantsPlaceholder": "Seleccionar participantes",
+      "messageLabel": "Primer Mensaje",
+      "messagePlaceholder": "Inicia la conversación con un mensaje"
     }
   }
 } 
