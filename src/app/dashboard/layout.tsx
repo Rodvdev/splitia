@@ -42,17 +42,17 @@ export default function DashboardLayout({
       icon: <Users className="h-5 w-5" />,
     },
     {
-      href: '/budget',
+      href: '/dashboard/budget',
       label: t('navigation.budget'),
       icon: <Wallet className="h-5 w-5" />,
     },
     {
-      href: '/chat',
+      href: '/dashboard/chat',
       label: t('navigation.chat'),
       icon: <MessageSquare className="h-5 w-5" />,
     },
     {
-      href: '/settings',
+      href: '/dashboard/settings',
       label: t('navigation.settings'),
       icon: <Settings className="h-5 w-5" />,
     },
