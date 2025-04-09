@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 
-export default function JoinGroupPage() {
+function JoinGroupContent() {
   const t = useTranslations('groups');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -304,5 +304,28 @@ export default function JoinGroupPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+function JoinGroupFallback() {
+  return (
+    <div className="container mx-auto py-10 max-w-md flex flex-col items-center justify-center">
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <CardTitle>Loading...</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function JoinGroupPage() {
+  return (
+    <Suspense fallback={<JoinGroupFallback />}>
+      <JoinGroupContent />
+    </Suspense>
   );
 } 
