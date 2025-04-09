@@ -15,9 +15,10 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/components/auth/auth-provider';
 import { useProfile } from '@/hooks/use-profile';
 import UserProfileDisplay from '@/components/user/UserProfileDisplay';
+
 
 export default function DashboardLayout({
   children,
@@ -27,7 +28,7 @@ export default function DashboardLayout({
   const t = useTranslations();
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut, isLoading: isSigningOut } = useAuth();
+  const { isSigningOut, signOut } = useAuth();
   const { profile } = useProfile();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [userLocale, setUserLocale] = useState<string>('');
@@ -139,7 +140,7 @@ export default function DashboardLayout({
         <div className="border-t p-4">
           <button 
             className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={signOut}
+            onClick={() => signOut()}
             disabled={isSigningOut}
           >
             <LogOut className="h-5 w-5" />
@@ -183,7 +184,7 @@ export default function DashboardLayout({
         <div className="border-t p-4">
           <button 
             className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={signOut}
+            onClick={() => signOut()}
             disabled={isSigningOut}
           >
             <LogOut className="h-5 w-5" />

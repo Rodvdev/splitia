@@ -1,6 +1,6 @@
 'use client';
 
-import { SessionProvider, useSession } from 'next-auth/react';
+import { SessionProvider, useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 import { ReactNode, useEffect, createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -13,12 +13,16 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   userId: string | null;
+  signOut: () => Promise<void>;
+  isSigningOut: boolean;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   userId: null,
+  signOut: async () => {},
+  isSigningOut: false,
 });
 
 // Hook to use auth context
@@ -29,6 +33,7 @@ function AuthStateManager({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
 
   // Check custom auth on mount
@@ -88,18 +93,49 @@ function AuthStateManager({ children }: { children: ReactNode }) {
     validateAuth();
   }, [session, status, router]);
 
+  const signOut = async () => {
+    try {
+      setIsSigningOut(true);
+      // Sign out from NextAuth
+      await nextAuthSignOut({ redirect: false });
+      
+      // Also clear custom cookies
+      document.cookie = 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'user_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      
+      // Also call server action to clear cookies on the server (optional)
+      try {
+        // This would be even better if you have a server action to clear cookies
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (error) {
+        console.error('Error clearing server cookies:', error);
+      }
+      
+      router.push('/sign-in');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
   return (
     <AuthContext.Provider 
       value={{ 
         isAuthenticated: !!userId, 
         isLoading, 
-        userId 
+        userId,
+        signOut,
+        isSigningOut
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
+
+// Export signOut function for direct import
+export { nextAuthSignOut };
 
 export function AuthProvider({ children }: AuthProviderProps) {
   return (
