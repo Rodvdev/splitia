@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { GroupRole } from '@prisma/client';
 import { prisma } from './prisma';
 
 /**
@@ -12,7 +12,7 @@ export async function createGroupWithConversation(
     image?: string;
   }
 ) {
-  return await prisma.$transaction(async (tx: PrismaClient) => {
+  return await prisma.$transaction(async (tx) => {
     // Create the conversation first
     const conversation = await tx.conversation.create({
       data: {
@@ -32,7 +32,7 @@ export async function createGroupWithConversation(
         members: {
           create: {
             userId: userId,
-            role: 'ADMIN'
+            role: 'ADMIN' as GroupRole
           }
         }
       },
@@ -70,7 +70,7 @@ export async function createGroupChatWithGroup(
     participantIds: string[];
   }
 ) {
-  return await prisma.$transaction(async (tx: PrismaClient) => {
+  return await prisma.$transaction(async (tx) => {
     // Create the conversation
     const conversation = await tx.conversation.create({
       data: {
@@ -93,10 +93,10 @@ export async function createGroupChatWithGroup(
         createdById: userId,
         members: {
           create: [
-            { userId, role: 'ADMIN' },
+            { userId, role: 'ADMIN' as GroupRole },
             ...conversationData.participantIds.map(id => ({ 
               userId: id, 
-              role: 'MEMBER' 
+              role: 'MEMBER' as GroupRole 
             }))
           ]
         }
@@ -126,9 +126,9 @@ export async function createGroupChatWithGroup(
 export async function addUserToGroupAndConversation(
   groupId: string,
   userId: string,
-  role: 'ADMIN' | 'MEMBER' | 'GUEST' | 'ASSISTANT' = 'MEMBER'
+  role: GroupRole = 'MEMBER' as GroupRole
 ) {
-  return await prisma.$transaction(async (tx: PrismaClient) => {
+  return await prisma.$transaction(async (tx) => {
     // Get the group with its conversation
     const group = await tx.group.findUnique({
       where: { id: groupId },
@@ -137,6 +137,10 @@ export async function addUserToGroupAndConversation(
 
     if (!group) {
       throw new Error('Group not found');
+    }
+
+    if (!group.conversationId) {
+      throw new Error('Group has no associated conversation');
     }
 
     // Add user to group
