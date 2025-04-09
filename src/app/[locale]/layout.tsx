@@ -18,19 +18,24 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default function LocaleLayout(props: { 
+export default function LocaleLayout({
+  children,
+  params
+}: {
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  const { locale } = props.params;
-  
-  // Ensure we're using a valid locale or default to 'en'
-  const currentLocale = (locale && locale in messages) ? locale : 'en';
+  // Set the locale from the URL param
+  const { locale } = params;
   
   return (
-    <NextIntlClientProvider locale={currentLocale} messages={messages[currentLocale as keyof typeof messages]} timeZone="UTC">
-      <LocaleClientLayout {...props}>
-        {props.children}
+    <NextIntlClientProvider 
+      locale={locale} 
+      messages={messages[locale as keyof typeof messages]}
+      timeZone="UTC"
+    >
+      <LocaleClientLayout params={params}>
+        {children}
       </LocaleClientLayout>
     </NextIntlClientProvider>
   );

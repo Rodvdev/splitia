@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useProfile } from '@/hooks/use-profile';
-import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const t = useTranslations();
-  const router = useRouter();
   const { profile, isLoading, updateProfile } = useProfile();
   
   const [name, setName] = useState('');
@@ -61,9 +59,8 @@ export default function SettingsPage() {
         // If language changed, reload the page with new locale after a short delay
         if (profile && profile.language !== language) {
           setTimeout(() => {
-            // Redirect to the new locale version
-            router.push(`/${language}/dashboard/settings`);
-            router.refresh();
+            // Force a full page reload with the new locale
+            window.location.href = `/${language}/dashboard/settings`;
           }, 1500);
         }
       } else {
