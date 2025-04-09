@@ -320,7 +320,6 @@
     "sending": "Enviando...",
     "sendInvite": "Enviar Invitación",
     "inviteSent": "Invitación enviada con éxito",
-    "inviteError": "Error al enviar la invitación",
     "invalidEmail": "Por favor ingresa una dirección de correo electrónico válida",
     "limitUses": "Limitar Número de Usos",
     "limitUsesDescription": "Limita cuántas veces se puede usar este enlace de invitación",

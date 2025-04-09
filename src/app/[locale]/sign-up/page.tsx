@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { createUser } from '@/lib/auth/server-actions';
 import { signIn } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
 
-export default function SignUpPage() {
+// Componente interno que usa useSearchParams
+function SignUpForm() {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,11 +42,23 @@ export default function SignUpPage() {
     { value: 'MXN', label: 'Peso Mexicano ($)' },
     { value: 'COP', label: 'Peso Colombiano ($)' },
     { value: 'ARS', label: 'Peso Argentino ($)' },
+    { value: 'BRL', label: 'Real Brasileño (R$)' },
+    { value: 'CLP', label: 'Peso Chileno ($)' },
+    { value: 'UYU', label: 'Peso Uruguayo ($)' },
+    { value: 'PYG', label: 'Guaraní Paraguayo (₲)' },
+    { value: 'VEF', label: 'Bolívar Venezolano (Bs.S)' },
+    { value: 'GBP', label: 'Libra Esterlina (£)' },
+    { value: 'CAD', label: 'Dólar Canadiense ($)' },
+    { value: 'CHF', label: 'Franco Suizo (CHF)' },
+    { value: 'AUD', label: 'Dólar Australiano ($)' },
+    { value: 'NZD', label: 'Dólar Neozelandés ($)' },
+    { value: 'JPY', label: 'Yen Japonés (¥)' },
   ];
 
   const languages = [
     { value: 'es', label: 'Español' },
     { value: 'en', label: 'English' },
+    { value: 'pt', label: 'Português' },
   ];
 
   async function handleSignUp(e: React.FormEvent) {
@@ -271,5 +285,26 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Componente de carga para mostrar mientras el componente está suspendido
+function SignUpLoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+      <div className="flex flex-col items-center space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-lg">Cargando...</p>
+      </div>
+    </div>
+  );
+}
+
+// Componente principal envuelto en Suspense
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<SignUpLoadingFallback />}>
+      <SignUpForm />
+    </Suspense>
   );
 } 
