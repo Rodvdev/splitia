@@ -11,20 +11,18 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-type LayoutProps = {
-  children: React.ReactNode;
-  params: { locale: keyof typeof messages };
-};
-
 export default async function LocaleLayout({
   children,
   params,
-}: LayoutProps) {
-  const { locale } = params;
+}: {
+  children: React.ReactNode;
+  params: { locale: string };
+}) {
+  const locale = params.locale as keyof typeof messages;
 
   return (
-    <NextIntlClientProvider 
-      locale={locale} 
+    <NextIntlClientProvider
+      locale={locale}
       messages={messages[locale]}
       timeZone="UTC"
     >
