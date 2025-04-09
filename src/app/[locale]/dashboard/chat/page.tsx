@@ -30,6 +30,21 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // GraphQL hooks
 import { 
@@ -38,7 +53,8 @@ import {
   sendMessage as sendMessageApi, 
   Conversation,
   Message as ApiMessage,
-  deleteConversation
+  deleteConversation,
+  addGroupMember
 } from '@/lib/chat-graphql';
 import { useSession } from 'next-auth/react';
 
@@ -68,6 +84,11 @@ interface ChatConversation {
     name: string;
     avatar?: string;
   }[];
+  group?: {
+    id: string;
+    name?: string;
+    image?: string;
+  };
 }
 
 interface AIMessageAction {
@@ -88,6 +109,10 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
+  const [memberEmail, setMemberEmail] = useState('');
+  const [memberRole, setMemberRole] = useState('MEMBER');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   
   // Fetch conversations using GraphQL
   const { conversations, loading: loadingConversations, error: conversationsError, refetch: refetchConversations } = useConversations();
@@ -147,7 +172,8 @@ export default function ChatPage() {
           id: p.id,
           name: p.name,
           avatar: p.image
-        }))
+        })),
+        group: conv.group
       };
     });
   }, [conversations, session?.user?.id]);
@@ -420,6 +446,35 @@ export default function ChatPage() {
     }
   };
 
+  // Handle adding a member to a group chat
+  const handleAddUserToGroup = async (groupId: string) => {
+    if (!memberEmail) {
+      toast.error(t('emailRequired'));
+      return;
+    }
+
+    setIsAddingMember(true);
+    
+    try {
+      await addGroupMember(groupId, memberEmail, memberRole);
+      toast.success(t('memberAdded'));
+      
+      // Clear form and close dialog
+      setMemberEmail('');
+      setShowAddMemberDialog(false);
+      
+      // Refresh conversation to show new member
+      if (selectedConversationId) {
+        refetchConversation();
+      }
+    } catch (error) {
+      console.error('Error adding member:', error);
+      toast.error(t('errorAddingMember'));
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] overflow-hidden">
       {/* Conversations Sidebar */}
@@ -561,7 +616,10 @@ export default function ChatPage() {
                       <DropdownMenuContent align="end">
                         {conversation.isGroup && (
                           <>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setShowAddMemberDialog(true)}
+                              className="cursor-pointer"
+                            >
                               <UserPlus className="h-4 w-4 mr-2" />
                               {t('addMembers')}
                             </DropdownMenuItem>
@@ -902,6 +960,75 @@ export default function ChatPage() {
           null
         )}
       </div>
+      
+      {/* Add Member Dialog */}
+      <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('addMembers')}</DialogTitle>
+            <DialogDescription>
+              {t('addMembersDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                {t('email')}
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="email@example.com"
+                value={memberEmail}
+                onChange={(e) => setMemberEmail(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <label htmlFor="role" className="text-sm font-medium">
+                {t('role')}
+              </label>
+              <Select
+                value={memberRole}
+                onValueChange={setMemberRole}
+              >
+                <SelectTrigger id="role">
+                  <SelectValue placeholder={t('selectRole')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ADMIN">{t('roles.admin')}</SelectItem>
+                  <SelectItem value="MEMBER">{t('roles.member')}</SelectItem>
+                  <SelectItem value="GUEST">{t('roles.guest')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddMemberDialog(false)}
+            >
+              {t('cancel')}
+            </Button>
+            <Button 
+              onClick={() => {
+                const selectedConversation = filteredConversations.find(c => c.id === selectedConversationId);
+                if (selectedConversation?.isGroup && selectedConversation?.group?.id) {
+                  handleAddUserToGroup(selectedConversation.group.id);
+                } else {
+                  toast.error(t('noGroupSelected'));
+                }
+              }}
+              disabled={isAddingMember || !memberEmail}
+            >
+              {isAddingMember ? t('adding') : t('addMember')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 
