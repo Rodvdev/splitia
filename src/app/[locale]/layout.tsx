@@ -16,7 +16,7 @@ type LayoutProps = {
   params: { locale: keyof typeof messages };
 };
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: LayoutProps) {
