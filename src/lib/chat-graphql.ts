@@ -156,6 +156,12 @@ const MARK_MESSAGE_SEEN_MUTATION = `
   }
 `;
 
+const DELETE_CONVERSATION_MUTATION = `
+  mutation DeleteConversation($id: ID!) {
+    deleteConversation(id: $id)
+  }
+`;
+
 // GraphQL Error interface
 interface GraphQLError {
   message: string;
@@ -342,6 +348,17 @@ export async function markMessageAsSeen(messageId: string) {
     return data.markMessageAsSeen;
   } catch (error) {
     console.error('Error marking message as seen:', error);
+    throw error;
+  }
+}
+
+// Función para eliminar una conversación
+export async function deleteConversation(id: string) {
+  try {
+    const data = await fetchGraphQL(DELETE_CONVERSATION_MUTATION, { id });
+    return data.deleteConversation;
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
     throw error;
   }
 }

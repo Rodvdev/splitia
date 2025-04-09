@@ -37,7 +37,8 @@ import {
   useConversation, 
   sendMessage as sendMessageApi, 
   Conversation,
-  Message as ApiMessage
+  Message as ApiMessage,
+  deleteConversation
 } from '@/lib/chat-graphql';
 import { useSession } from 'next-auth/react';
 
@@ -398,6 +399,27 @@ export default function ChatPage() {
     }
   };
 
+  // Inside the ChatPage component, add a handler for deleting conversations
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!conversationId) return;
+    
+    try {
+      await deleteConversation(conversationId);
+      toast.success(t('conversationDeleted'));
+      
+      // If the deleted conversation was selected, reset selection
+      if (selectedConversationId === conversationId) {
+        setSelectedConversationId(null);
+      }
+      
+      // Refresh the conversations list
+      refetchConversations();
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast.error(t('errorDeletingConversation'));
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] overflow-hidden">
       {/* Conversations Sidebar */}
@@ -487,42 +509,80 @@ export default function ChatPage() {
                   className={`flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-accent ${
                     selectedConversationId === conversation.id ? 'bg-accent' : ''
                   }`}
-                  onClick={() => setSelectedConversationId(conversation.id)}
                 >
-                  <Avatar>
-                    {conversation.avatar ? (
-                      <AvatarImage src={conversation.avatar} alt={conversation.name} />
-                    ) : null}
-                    <AvatarFallback>
-                      {conversation.isGroup ? (
-                        <Users className="h-4 w-4" />
-                      ) : (
-                        getAvatarFallback(conversation.name)
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium truncate">
-                        {conversation.name}
-                      </span>
-                      {conversation.lastMessage && (
-                        <span className="text-xs text-muted-foreground">
-                          {formatTimestamp(conversation.lastMessage.timestamp)}
+                  <div 
+                    className="flex items-center gap-3 flex-1"
+                    onClick={() => setSelectedConversationId(conversation.id)}
+                  >
+                    <Avatar>
+                      {conversation.avatar ? (
+                        <AvatarImage src={conversation.avatar} alt={conversation.name} />
+                      ) : null}
+                      <AvatarFallback>
+                        {conversation.isGroup ? (
+                          <Users className="h-4 w-4" />
+                        ) : (
+                          getAvatarFallback(conversation.name)
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium truncate">
+                          {conversation.name}
                         </span>
+                        {conversation.lastMessage && (
+                          <span className="text-xs text-muted-foreground">
+                            {formatTimestamp(conversation.lastMessage.timestamp)}
+                          </span>
+                        )}
+                      </div>
+                      {conversation.lastMessage && (
+                        <p className="text-sm text-muted-foreground truncate">
+                          {conversation.lastMessage.content}
+                        </p>
                       )}
                     </div>
-                    {conversation.lastMessage && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        {conversation.lastMessage.content}
-                      </p>
-                    )}
                   </div>
-                  {conversation.unread > 0 && (
-                    <Badge variant="default" className="text-xs">
-                      {conversation.unread}
-                    </Badge>
-                  )}
+                  
+                  <div className="flex items-center">
+                    {conversation.unread > 0 && (
+                      <Badge variant="default" className="text-xs mr-2">
+                        {conversation.unread}
+                      </Badge>
+                    )}
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-50 hover:opacity-100">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {conversation.isGroup && (
+                          <>
+                            <DropdownMenuItem>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              {t('addMembers')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(t('confirmDeleteConversation'))) {
+                              handleDeleteConversation(conversation.id);
+                            }
+                          }}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash className="h-4 w-4 mr-2" />
+                          {t('deleteConversation')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               ))}
             </div>
@@ -599,9 +659,16 @@ export default function ChatPage() {
                     {t('leaveChat')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer text-destructive">
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      if (window.confirm(t('confirmDeleteConversation'))) {
+                        handleDeleteConversation(filteredConversations.find(c => c.id === selectedConversationId)?.id || '');
+                      }
+                    }}
+                    className="text-destructive"
+                  >
                     <Trash className="h-4 w-4 mr-2" />
-                    {t('deleteChat')}
+                    {t('deleteConversation')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -758,9 +825,16 @@ export default function ChatPage() {
                     {t('leaveChat')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer text-destructive">
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      if (window.confirm(t('confirmDeleteConversation'))) {
+                        handleDeleteConversation(filteredConversations.find(c => c.id === selectedConversationId)?.id || '');
+                      }
+                    }}
+                    className="text-destructive"
+                  >
                     <Trash className="h-4 w-4 mr-2" />
-                    {t('deleteChat')}
+                    {t('deleteConversation')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
