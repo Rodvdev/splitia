@@ -79,14 +79,7 @@ function AuthStateManager({ children }: { children: ReactNode }) {
       // If neither authentication method worked and we're done loading
       if (status !== 'loading') {
         setIsLoading(false);
-        
-        // Optional: redirect to login
-        const currentPath = window.location.pathname;
-        if (!currentPath.includes('/sign-in') && 
-            !currentPath.includes('/sign-up') && 
-            !currentPath.includes('/forgot-password')) {
-          router.push('/sign-in');
-        }
+
       }
     }
 

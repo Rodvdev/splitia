@@ -180,6 +180,8 @@ export const typeDefs = gql`
     conversation(id: ID!): Conversation
     messages(conversationId: ID!, limit: Int, offset: Int): [Message!]!
     verifyInviteToken(token: String!): GroupInviteLink
+    checkUserExists(email: String!): UserExistsResult!
+    getGroupDetailsFromToken(token: String!): Group
   }
 
   type Mutation {
@@ -204,5 +206,9 @@ export const typeDefs = gql`
   input GroupChatInput {
     name: String!
     participantIds: [ID!]!
+  }
+
+  type UserExistsResult {
+    exists: Boolean!
   }
 `; 

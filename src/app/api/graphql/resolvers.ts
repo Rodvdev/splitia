@@ -651,45 +651,125 @@ export const resolvers = {
     // Verify if an invite token is valid
     verifyInviteToken: async (_parent: unknown, { token }: { token: string }) => {
       try {
-        // Find the invitation by token
-        const invitation = await prisma.groupInvitation.findUnique({
-          where: { token },
+        const invitation = await prisma.groupInvitation.findFirst({
+          where: {
+            token,
+          },
           include: {
-            group: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                image: true,
+              }
+            },
           },
         });
-
+  
         if (!invitation) {
-          throw new GraphQLError('Invalid invitation token', {
-            extensions: { code: 'BAD_REQUEST' },
+          throw new GraphQLError('Invalid invite token', {
+            extensions: { code: 'BAD_USER_INPUT' },
           });
         }
-
-        // Check if the invitation has expired
-        if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
-          throw new GraphQLError('Invitation has expired', {
-            extensions: { code: 'BAD_REQUEST' },
-          });
-        }
-
-        // Check if the invitation has reached maximum uses
-        if (invitation.maxUses && invitation.useCount >= invitation.maxUses) {
-          throw new GraphQLError('Invitation has reached maximum number of uses', {
-            extensions: { code: 'BAD_REQUEST' },
-          });
-        }
-
-        // Construct the URL for the invitation link
-        const baseUrl = 'https://splitia.vercel.app';
-        const url = `${baseUrl}/join?token=${token}`;
-
+  
         return {
-          ...invitation,
-          url,
+          id: invitation.id,
+          token: invitation.token,
+          maxUses: invitation.maxUses,
+          usedCount: invitation.useCount,
+          expiresAt: invitation.expiresAt,
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://splitia.vercel.app'}/join?token=${token}`,
+          groupName: invitation.group?.name,
         };
       } catch (error) {
         console.error('Error verifying invite token:', error);
-        throw error;
+        throw new GraphQLError('Error verifying invite token', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
+
+    // Get group details from an invite token
+    getGroupDetailsFromToken: async (_parent: unknown, { token }: { token: string }, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      try {
+        // Find the invitation by token
+        const invitation = await prisma.groupInvitation.findFirst({
+          where: { token },
+          include: {
+            group: {
+              include: {
+                members: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!invitation || !invitation.group) {
+          throw new GraphQLError('Invalid invite token or group not found', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
+
+        // Transform the data to match our schema
+        return {
+          id: invitation.group.id,
+          name: invitation.group.name,
+          description: invitation.group.description,
+          image: invitation.group.image,
+          members: invitation.group.members.map((member: { 
+            user: { 
+              id: string;
+              name: string | null;
+              email: string;
+              image: string | null;
+            };
+            role: string;
+          }) => ({
+            id: member.user.id,
+            name: member.user.name,
+            email: member.user.email,
+            image: member.user.image,
+            role: member.role,
+          })),
+        };
+      } catch (error) {
+        console.error('Error getting group details from token:', error);
+        throw new GraphQLError('Error getting group details', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
+
+    // Check if a user exists with the given email
+    checkUserExists: async (_parent: unknown, { email }: { email: string }) => {
+      try {
+        const user = await prisma.user.findUnique({
+          where: {
+            email,
+          },
+        });
+
+        return {
+          exists: !!user,
+        };
+      } catch (error) {
+        console.error('Error checking if user exists:', error);
+        throw new GraphQLError('Error checking if user exists', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
       }
     },
   },

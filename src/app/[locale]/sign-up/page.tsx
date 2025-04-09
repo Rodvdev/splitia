@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { createUser } from '@/lib/auth/server-actions';
@@ -10,6 +10,7 @@ import { signIn } from 'next-auth/react';
 export default function SignUpPage() {
   const t = useTranslations();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,6 +21,17 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Get the callback URL and email from URL parameters
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
+  const emailParam = searchParams?.get('email') || '';
+
+  // Set the email from URL parameter when component loads
+  useEffect(() => {
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [emailParam]);
 
   const currencies = [
     { value: 'PEN', label: 'Sol Peruano (S/)' },
@@ -63,20 +75,29 @@ export default function SignUpPage() {
       
       // Now sign in the user with NextAuth (client-side)
       try {
-        await signIn('credentials', {
+        const signInResult = await signIn('credentials', {
           redirect: false,
           email,
           password,
         });
+        
+        if (signInResult?.error) {
+          console.error('NextAuth sign in error:', signInResult.error);
+          throw new Error(signInResult.error);
+        }
+        
+        // Redirect to the callback URL after successful signup
+        setTimeout(() => {
+          router.push(callbackUrl);
+        }, 1500);
+        
       } catch (signInError) {
         console.error('NextAuth sign in error:', signInError);
         // Continue even if NextAuth sign-in fails as we have the server-side session
+        setTimeout(() => {
+          router.push(callbackUrl);
+        }, 1500);
       }
-      
-      // Redirect to dashboard after successful signup
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 2000);
       
     } catch (err) {
       console.error('Sign up error:', err);
@@ -92,6 +113,11 @@ export default function SignUpPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold">{t('app.name')}</h1>
           <p className="mt-2 text-muted-foreground">{t('auth.createAccount')}</p>
+          {callbackUrl.includes('join') && (
+            <p className="mt-2 text-sm text-primary font-medium">
+              {t('auth.signUpToJoinGroup') || 'Sign up to join the group'}
+            </p>
+          )}
         </div>
         
         {error && (
@@ -141,6 +167,7 @@ export default function SignUpPage() {
                 required
                 className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
                 placeholder="email@example.com"
+                disabled={!!emailParam} // Disable if email is provided in URL
               />
             </div>
             
