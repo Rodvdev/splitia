@@ -11,12 +11,15 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-type Props = {
+type LayoutProps = {
   children: React.ReactNode;
   params: { locale: keyof typeof messages };
 };
 
-export default function LocaleLayout({ children, params }: Props) {
+export default function LocaleLayout({
+  children,
+  params,
+}: LayoutProps) {
   const { locale } = params;
 
   return (
