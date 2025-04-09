@@ -38,6 +38,7 @@ export const authActions = {
         data: {
           email,
           password: hashedPassword,
+          name: email.split('@')[0], // Use part of the email as the default name
         },
       });
 
