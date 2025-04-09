@@ -10,8 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  url      = env("DATABASE_URL")
 }
 
 // User model
@@ -21,6 +20,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   name          String
   email         String         @unique
+  password      String         // Added for Next-Auth credentials
   externalId    String?        @unique // For Supabase authentication
   image         String?
   currency      String         @default("PEN") // Default currency
@@ -53,7 +53,8 @@ model Group {
   // Relations
   members       GroupUser[]
   expenses      Expense[]
-  conversation  Conversation?
+  conversation  Conversation?  @relation("GroupConversation", fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String?       @unique
   invitations   GroupInvitation[]
   createdBy     User           @relation("CreatedGroups", fields: [createdById], references: [id])
   createdById   String
@@ -152,11 +153,12 @@ model Conversation {
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
   isGroupChat   Boolean                   @default(false)
+  name          String?                   // Optional name for non-group chats
   // Relations
   participants  ConversationParticipant[]
   messages      Message[]
-  group         Group?                     @relation(fields: [groupId], references: [id])
-  groupId       String?                    @unique // One-to-one with Group
+  group         Group?                    @relation("GroupConversation")
+  groupId       String?                   @unique
 }
 
 // ConversationParticipant model
@@ -249,6 +251,7 @@ enum GroupRole {
   ADMIN
   MEMBER
   GUEST
+  ASSISTANT
 }
 
 enum ShareType {
@@ -264,4 +267,7 @@ enum AIActionType {
   CREATE_GROUP
   ADD_USER_TO_GROUP
   SUGGEST_SETTLEMENT
+  CREATE_GROUP_CHAT
+  SEND_MESSAGE
+  CREATE_CONVERSATION
 }

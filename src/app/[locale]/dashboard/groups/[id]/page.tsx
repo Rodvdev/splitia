@@ -38,7 +38,6 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { fetchGroup, deleteGroup, changeGroupMemberRole, removeGroupMember } from '@/lib/graphql-client';
-import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { GroupMembers } from './_components/GroupMembers';
 
@@ -98,10 +97,12 @@ export default function GroupPage() {
   useEffect(() => {
     const getCurrentUser = async () => {
       try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-          setCurrentUserId(data.user.id);
+        // TODO: Replace with appropriate authentication method
+        // This is a temporary placeholder - replace with your actual auth implementation
+        // You might want to use a JWT token, session cookie, or other auth mechanism
+        const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        if (userId) {
+          setCurrentUserId(userId);
         }
       } catch (error) {
         console.error('Failed to get current user:', error);
@@ -159,7 +160,7 @@ export default function GroupPage() {
       await changeGroupMemberRole({
         groupId,
         memberId,
-        role: newRole as 'ADMIN' | 'MEMBER' | 'GUEST',
+        role: newRole as 'ADMIN' | 'MEMBER' | 'GUEST' | 'ASSISTANT',
       });
       
       // Update the local state

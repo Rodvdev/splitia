@@ -29,6 +29,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+// Import the centralized formatCurrency function
+import { formatCurrency } from '@/lib/format';
+
 // Interface for budget data
 interface BudgetCategory {
   id: string;
@@ -119,12 +122,12 @@ export default function BudgetPage() {
     router.push('/dashboard/budget/create');
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: budget?.currency || 'USD',
-    }).format(amount);
+  // Format currency helper that uses the budget's currency
+  const formatBudgetCurrency = (amount: number) => {
+    return formatCurrency(amount, budget?.currency || 'USD', {
+      // Optionally pass locale if needed
+      // locale: budget?.locale || 'en-US',
+    });
   };
 
   return (
@@ -207,7 +210,7 @@ export default function BudgetPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">
-                  {formatCurrency(budget.income)}
+                  {formatBudgetCurrency(budget.income)}
                 </p>
                 <p className="text-muted-foreground text-sm">
                   {`${selectedMonth} ${selectedYear}`}
@@ -224,10 +227,10 @@ export default function BudgetPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">
-                  {formatCurrency(totalBudget)}
+                  {formatBudgetCurrency(totalBudget)}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                  {t('spent')}: {formatCurrency(totalSpent)}
+                  {t('spent')}: {formatBudgetCurrency(totalSpent)}
                 </p>
                 <Progress 
                   value={(totalSpent / totalBudget) * 100} 
@@ -245,10 +248,10 @@ export default function BudgetPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">
-                  {formatCurrency(budget.savings)}
+                  {formatBudgetCurrency(budget.savings)}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                  {t('remaining')}: {formatCurrency(remaining > 0 ? remaining : 0)}
+                  {t('remaining')}: {formatBudgetCurrency(remaining > 0 ? remaining : 0)}
                 </p>
               </CardContent>
             </Card>
@@ -271,7 +274,7 @@ export default function BudgetPage() {
                       </div>
                       <div className="text-right">
                         <span className="font-medium">
-                          {formatCurrency(category.spent)} / {formatCurrency(category.amount)}
+                          {formatBudgetCurrency(category.spent)} / {formatBudgetCurrency(category.amount)}
                         </span>
                       </div>
                     </div>
@@ -285,8 +288,8 @@ export default function BudgetPage() {
                       </span>
                       <span>
                         {category.spent > category.amount 
-                          ? `${formatCurrency(category.spent - category.amount)} over` 
-                          : `${formatCurrency(category.amount - category.spent)} left`}
+                          ? `${formatBudgetCurrency(category.spent - category.amount)} over` 
+                          : `${formatBudgetCurrency(category.amount - category.spent)} left`}
                       </span>
                     </div>
                   </CardContent>

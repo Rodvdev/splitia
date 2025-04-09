@@ -115,14 +115,16 @@ export function GroupMembers({
   const roleLabels: Record<string, string> = {
     ADMIN: t('roles.admin'),
     MEMBER: t('roles.member'),
-    GUEST: t('roles.guest')
+    GUEST: t('roles.guest'),
+    ASSISTANT: t('roles.assistant')
   };
 
   // Role badge variants - using types supported by Badge component
   const roleBadgeVariants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
     ADMIN: "default",
     MEMBER: "secondary",
-    GUEST: "outline"
+    GUEST: "outline",
+    ASSISTANT: "destructive"
   };
 
   return (
@@ -207,6 +209,14 @@ export function GroupMembers({
                         >
                           <UserCog className="mr-2 h-4 w-4" />
                           {t('actions.makeGuest')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="flex items-center cursor-pointer"
+                          onClick={() => handleChangeRole(member.id, 'ASSISTANT')}
+                          disabled={member.role === 'ASSISTANT'}
+                        >
+                          <UserCog className="mr-2 h-4 w-4" />
+                          {t('actions.makeAssistant')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialog>

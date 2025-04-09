@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useSession } from 'next-auth/react';
 
 interface UserProfile {
   id: string;
@@ -15,10 +15,10 @@ interface UserProfile {
 }
 
 export function useUserProfile() {
+  const { data: session, status } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     async function fetchUserProfile() {
@@ -26,10 +26,7 @@ export function useUserProfile() {
         setIsLoading(true);
         setError(null);
         
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
+        if (!session || status !== 'authenticated') {
           setError('Not authenticated');
           return;
         }
@@ -61,7 +58,7 @@ export function useUserProfile() {
     }
     
     fetchUserProfile();
-  }, [supabase]);
+  }, [session, status]);
 
   return { profile, isLoading, error };
 } 

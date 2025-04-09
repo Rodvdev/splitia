@@ -25,6 +25,8 @@ export const typeDefs = gql`
     members: [GroupMember!]
     createdBy: User
     createdById: ID
+    conversation: Conversation
+    conversationId: ID
   }
 
   type GroupMember {
@@ -39,6 +41,7 @@ export const typeDefs = gql`
     ADMIN
     MEMBER
     GUEST
+    ASSISTANT
   }
 
   input GroupInput {
@@ -116,6 +119,29 @@ export const typeDefs = gql`
     shares: [ExpenseShareInput!]
   }
 
+  type Conversation {
+    id: ID!
+    isGroupChat: Boolean!
+    participants: [User!]!
+    messages: [Message!]!
+    group: Group
+  }
+
+  type Message {
+    id: ID!
+    content: String!
+    createdAt: DateTime!
+    conversationId: ID!
+    sender: User!
+    seenBy: [User!]!
+    isAI: Boolean
+  }
+
+  input MessageInput {
+    content: String!
+    conversationId: ID!
+  }
+
   type Query {
     expenses(
       limit: Int
@@ -129,6 +155,9 @@ export const typeDefs = gql`
     categories: [CustomCategory!]!
     userGroups: [Group!]!
     group(id: ID!): Group
+    conversations: [Conversation!]!
+    conversation(id: ID!): Conversation
+    messages(conversationId: ID!, limit: Int, offset: Int): [Message!]!
   }
 
   type Mutation {
@@ -141,5 +170,15 @@ export const typeDefs = gql`
     removeGroupMember(groupId: ID!, userId: ID!): Boolean!
     leaveGroup(groupId: ID!): Boolean!
     deleteGroup(id: ID!): Boolean!
+    sendMessage(data: MessageInput!): Message!
+    createConversation(participantIds: [ID!]!): Conversation!
+    createGroupChat(data: GroupChatInput!): Conversation!
+    markMessageAsSeen(messageId: ID!): Boolean!
+    deleteConversation(id: ID!): Boolean!
+  }
+
+  input GroupChatInput {
+    name: String!
+    participantIds: [ID!]!
   }
 `; 

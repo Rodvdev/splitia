@@ -3,14 +3,21 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Copy, Mail } from 'lucide-react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { ArrowLeft, Mail, Link, Copy, QrCode } from 'lucide-react';
 
 // UI Components
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -20,164 +27,172 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Switch } from "@/components/ui/switch";
 
-// Import GraphQL client functions
-import { inviteToGroup, generateBasicGroupInviteLink } from '@/lib/graphql-client';
-
-// Define form schema for email invitation
-const emailInviteSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  role: z.enum(['ADMIN', 'MEMBER', 'GUEST']),
-});
-
-// Define form schema for link invitation
-const linkInviteSchema = z.object({
-  useLimit: z.boolean(),
-  maxUses: z.coerce.number().min(1).optional(),
-  useExpiry: z.boolean(),
-  expiresAt: z.coerce.number().min(1).optional(),
-  expiresUnit: z.enum(['hours', 'days']),
-});
-
-// Define the form values types
-type EmailInviteFormValues = z.infer<typeof emailInviteSchema>;
-type LinkInviteFormValues = z.infer<typeof linkInviteSchema>;
-
-// Interfaces for GraphQL responses
-interface GroupInviteLinkResponse {
-  generateGroupInviteLink: {
-    id: string;
-    token: string;
-    url: string;
-    maxUses?: number;
-    usedCount: number;
-    expiresAt?: string;
-  };
-}
-
-// Define error type for GraphQL errors
-interface GraphQLError {
-  message?: string;
-  response?: {
-    errors?: Array<{
-      message?: string;
-      extensions?: {
-        code?: string;
-      };
-    }>;
-  };
-}
-
-export default function InviteGroupPage() {
+export default function InviteToGroupPage() {
   const t = useTranslations('groups');
   const router = useRouter();
   const params = useParams();
-  const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
-  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const groupId = params?.id as string;
+  
+  const [isSending, setIsSending] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [useLimitEnabled, setUseLimitEnabled] = useState(false);
+  const [expiryEnabled, setExpiryEnabled] = useState(false);
 
-  // Initialize email invite form
-  const emailForm = useForm<EmailInviteFormValues>({
-    resolver: zodResolver(emailInviteSchema),
+  // Form schema for email invitations
+  const emailFormSchema = z.object({
+    email: z.string().email(t('invalidEmail')),
+    role: z.enum(['ADMIN', 'MEMBER', 'GUEST', 'ASSISTANT']),
+  });
+
+  // Form schema for link invitations
+  const linkFormSchema = z.object({
+    maxUses: z.number().optional(),
+    expiryTime: z.number().optional(),
+    expiryUnit: z.enum(['hours', 'days']).optional(),
+  });
+  
+  // Initialize forms
+  const emailForm = useForm<z.infer<typeof emailFormSchema>>({
+    resolver: zodResolver(emailFormSchema),
     defaultValues: {
       email: '',
       role: 'MEMBER',
     },
   });
-
-  // Initialize link invite form
-  const linkForm = useForm<LinkInviteFormValues>({
-    resolver: zodResolver(linkInviteSchema),
+  
+  const linkForm = useForm<z.infer<typeof linkFormSchema>>({
+    resolver: zodResolver(linkFormSchema),
     defaultValues: {
-      useLimit: false,
       maxUses: 5,
-      useExpiry: false,
-      expiresAt: 7,
-      expiresUnit: 'days',
+      expiryTime: 24,
+      expiryUnit: 'hours',
     },
   });
 
-  // Watch the form fields for conditional rendering
-  const useLimit = linkForm.watch('useLimit');
-  const useExpiry = linkForm.watch('useExpiry');
-
-  // Navigate back
-  const handleBack = () => {
-    router.push(`/dashboard/groups/${params?.id}`);
-  };
-
-  // Handle email invite form submission
-  const onEmailSubmit = async (data: EmailInviteFormValues) => {
-    setIsSubmittingEmail(true);
+  // Handle email invitation
+  const handleSendInvite = async (values: z.infer<typeof emailFormSchema>) => {
+    setIsSending(true);
     
     try {
-      // Call the GraphQL mutation to send the invitation
-      const groupId = params?.id as string;
-      await inviteToGroup({
-        groupId,
-        email: data.email,
-        role: data.role,
+      const response = await fetch('/api/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            mutation AddGroupMember($groupId: ID!, $data: GroupMemberInput!) {
+              addGroupMember(groupId: $groupId, data: $data)
+            }
+          `,
+          variables: {
+            groupId,
+            data: {
+              email: values.email,
+              role: values.role,
+            },
+          },
+        }),
       });
       
-      toast.success(t.raw('inviteSent') || 'Invitation sent successfully');
+      const result = await response.json();
+      
+      if (result.errors) {
+        throw new Error(result.errors[0].message);
+      }
+      
+      toast.success(t('inviteSent'));
       emailForm.reset();
     } catch (error) {
-      console.error('Failed to send invitation:', error);
-      toast.error(t.raw('inviteError') || 'Failed to send invitation');
+      console.error('Error sending invitation:', error);
+      toast.error(t('inviteError'));
     } finally {
-      setIsSubmittingEmail(false);
+      setIsSending(false);
     }
   };
 
-  // Handle link generation
-  const onGenerateLink = async () => {
-    setIsGeneratingLink(true);
+  // Generate invite link
+  const handleGenerateLink = async (values: z.infer<typeof linkFormSchema>) => {
+    setIsGenerating(true);
     
     try {
-      // Use only the basic invite link generation to avoid issues
-      const groupId = params?.id as string;
-      const response = await generateBasicGroupInviteLink(groupId) as GroupInviteLinkResponse;
+      const variables: { 
+        groupId: string; 
+        maxUses?: number; 
+        expiresAt?: string; 
+      } = { groupId };
       
-      // Set the generated invite link
-      setInviteLink(response.generateGroupInviteLink.url);
+      if (useLimitEnabled && values.maxUses) {
+        variables.maxUses = values.maxUses;
+      }
       
-      toast.success(t.raw('linkGenerated') || 'Invitation link generated');
-    } catch (error: unknown) {
-      console.error('Failed to generate invitation link:', error);
+      if (expiryEnabled && values.expiryTime && values.expiryUnit) {
+        // Calculate expiry date
+        const now = new Date();
+        if (values.expiryUnit === 'hours') {
+          now.setHours(now.getHours() + values.expiryTime);
+        } else {
+          now.setDate(now.getDate() + values.expiryTime);
+        }
+        variables.expiresAt = now.toISOString();
+      }
       
-      // Cast to GraphQLError type
-      const graphqlError = error as GraphQLError;
+      const response = await fetch('/api/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            mutation GenerateInviteLink($groupId: ID!, $maxUses: Int, $expiresAt: String) {
+              generateGroupInviteLink(data: {
+                groupId: $groupId,
+                maxUses: $maxUses,
+                expiresAt: $expiresAt
+              }) {
+                token
+                url
+              }
+            }
+          `,
+          variables,
+        }),
+      });
       
-      // Provide more specific error messaging based on the error
-      const errorMessage = 
-        graphqlError.response?.errors?.[0]?.message || 
-        graphqlError.message || 
-        t.raw('linkError') || 
-        'Failed to generate invitation link';
-        
-      toast.error(errorMessage);
+      const result = await response.json();
+      
+      if (result.errors) {
+        throw new Error(result.errors[0].message);
+      }
+      
+      const linkUrl = result.data?.generateGroupInviteLink?.url || 
+        `${window.location.origin}/join?token=${result.data?.generateGroupInviteLink?.token}`;
+      
+      setInviteLink(linkUrl);
+      toast.success(t('linkGenerated'));
+    } catch (error) {
+      console.error('Error generating link:', error);
+      toast.error(t('linkError'));
     } finally {
-      setIsGeneratingLink(false);
+      setIsGenerating(false);
     }
   };
 
-  // Copy invitation link to clipboard
+  // Copy link to clipboard
   const handleCopyLink = () => {
-    if (inviteLink) {
-      navigator.clipboard.writeText(inviteLink);
-      toast.success(t.raw('linkCopied') || 'Link copied to clipboard');
-    }
+    navigator.clipboard.writeText(inviteLink);
+    toast.success(t('linkCopied'));
+  };
+
+  // Go back to group details
+  const handleBack = () => {
+    router.push(`/dashboard/groups/${groupId}`);
   };
 
   return (
@@ -196,21 +211,21 @@ export default function InviteGroupPage() {
           <CardTitle className="text-2xl">{t('invite')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="email">
-            <TabsList className="w-full mb-6">
-              <TabsTrigger value="email" className="flex-1">
-                <Mail className="mr-2 h-4 w-4" />
-                {t.raw('inviteByEmail') || 'Invite by Email'}
+          <Tabs defaultValue="email" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email">
+                <Mail className="h-4 w-4 mr-2" />
+                {t('inviteByEmail')}
               </TabsTrigger>
-              <TabsTrigger value="link" className="flex-1">
-                <Copy className="mr-2 h-4 w-4" />
-                {t.raw('inviteByLink') || 'Invite by Link'}
+              <TabsTrigger value="link">
+                <Link className="h-4 w-4 mr-2" />
+                {t('inviteByLink')}
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="email">
+            <TabsContent value="email" className="mt-4">
               <Form {...emailForm}>
-                <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
+                <form onSubmit={emailForm.handleSubmit(handleSendInvite)} className="space-y-4">
                   <FormField
                     control={emailForm.control}
                     name="email"
@@ -220,12 +235,11 @@ export default function InviteGroupPage() {
                         <FormControl>
                           <Input 
                             placeholder="email@example.com" 
-                            type="email" 
                             {...field} 
                           />
                         </FormControl>
                         <FormDescription>
-                          {t.raw('emailDescription') || 'Enter the email address of the person you want to invite'}
+                          {t('emailDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -237,107 +251,72 @@ export default function InviteGroupPage() {
                     name="role"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('role')}</FormLabel>
+                        <FormLabel>{t('selectRole')}</FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder={t.raw('selectRole') || 'Select a role'} />
+                              <SelectValue placeholder={t('selectRole')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="ADMIN">{t('admin')}</SelectItem>
                             <SelectItem value="MEMBER">{t('member')}</SelectItem>
                             <SelectItem value="GUEST">{t('guest')}</SelectItem>
+                            <SelectItem value="ASSISTANT">{t('roles.assistant')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          {t.raw('roleDescription') || 'The role determines what actions the user can perform'}
+                          {t('roleDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   
-                  <div className="flex justify-end">
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmittingEmail}
-                    >
-                      {isSubmittingEmail ? t.raw('sending') || 'Sending...' : t.raw('sendInvite') || 'Send Invite'}
-                    </Button>
-                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isSending}
+                  >
+                    {isSending ? t('sending') : t('sendInvite')}
+                  </Button>
                 </form>
               </Form>
             </TabsContent>
             
-            <TabsContent value="link">
-              {inviteLink ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-muted rounded-md">
+            <TabsContent value="link" className="mt-4">
+              <Form {...linkForm}>
+                <form onSubmit={linkForm.handleSubmit(handleGenerateLink)} className="space-y-4">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium break-all">{inviteLink}</p>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={handleCopyLink}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
+                      <div>
+                        <p className="font-medium">{t('limitUses')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {t('limitUsesDescription')}
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={useLimitEnabled}
+                        onCheckedChange={setUseLimitEnabled}
+                      />
                     </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setInviteLink(null)}
-                    >
-                      {t.raw('generateNew') || 'Generate New Link'}
-                    </Button>
-                    <Button onClick={handleBack}>
-                      {t('done')}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Form {...linkForm}>
-                  <form onSubmit={linkForm.handleSubmit(onGenerateLink)} className="space-y-6">
-                    <FormField
-                      control={linkForm.control}
-                      name="useLimit"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              {t.raw('limitUses') || 'Limit Number of Uses'}
-                            </FormLabel>
-                            <FormDescription>
-                              {t.raw('limitUsesDescription') || 'Limit how many times this invitation link can be used'}
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
                     
-                    {useLimit && (
+                    {useLimitEnabled && (
                       <FormField
                         control={linkForm.control}
                         name="maxUses"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t.raw('maxUses') || 'Maximum Uses'}</FormLabel>
+                            <FormLabel>{t('maxUses')}</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
-                                min="1"
-                                {...field} 
+                                min="1" 
+                                {...field}
+                                onChange={e => field.onChange(parseInt(e.target.value))}
                               />
                             </FormControl>
                             <FormMessage />
@@ -345,90 +324,113 @@ export default function InviteGroupPage() {
                         )}
                       />
                     )}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{t('useExpiry')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {t('useExpiryDescription')}
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={expiryEnabled}
+                        onCheckedChange={setExpiryEnabled}
+                      />
+                    </div>
                     
-                    <FormField
-                      control={linkForm.control}
-                      name="useExpiry"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Set Expiration Time
-                            </FormLabel>
-                            <FormDescription>
-                              Make the invitation link expire after a certain time
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {useExpiry && (
-                      <div className="flex flex-col space-y-2">
+                    {expiryEnabled && (
+                      <div className="grid grid-cols-2 gap-2">
                         <FormField
                           control={linkForm.control}
-                          name="expiresAt"
+                          name="expiryTime"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t.raw('expires') || 'Expires After'}</FormLabel>
-                              <div className="flex space-x-2">
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    min="1"
-                                    {...field} 
-                                    className="w-20"
-                                  />
-                                </FormControl>
-                                
-                                <FormField
-                                  control={linkForm.control}
-                                  name="expiresUnit"
-                                  render={({ field }) => (
-                                    <Select 
-                                      onValueChange={field.onChange} 
-                                      defaultValue={field.value}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger className="w-24">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="hours">{t('hours')}</SelectItem>
-                                        <SelectItem value="days">{t('days')}</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  )}
+                              <FormLabel>{t('expires')}</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="1" 
+                                  {...field}
+                                  onChange={e => field.onChange(parseInt(e.target.value))}
                                 />
-                              </div>
-                              <FormDescription>
-                                {t.raw('expiresDescription') || 'The link will expire after this time period'}
-                              </FormDescription>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={linkForm.control}
+                          name="expiryUnit"
+                          render={({ field }) => (
+                            <FormItem className="pt-6">
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="hours">{t('hours')}</SelectItem>
+                                  <SelectItem value="days">{t('days')}</SelectItem>
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
                     )}
-                    
-                    <div className="flex justify-end">
-                      <Button 
-                        type="submit" 
-                        disabled={isGeneratingLink}
-                      >
-                        {isGeneratingLink ? t.raw('generating') || 'Generating...' : t.raw('generateLink') || 'Generate Link'}
-                      </Button>
+                  </div>
+                  
+                  {!inviteLink ? (
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? t('generating') : t('generateLink')}
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex">
+                        <Input value={inviteLink} readOnly className="rounded-r-none" />
+                        <Button 
+                          type="button" 
+                          onClick={handleCopyLink}
+                          className="rounded-l-none"
+                          variant="secondary"
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          {t('copyLink')}
+                        </Button>
+                      </div>
+                      
+                      <div className="flex justify-center">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setInviteLink('')}
+                        >
+                          {t('generateNew')}
+                        </Button>
+                      </div>
+                      
+                      <div className="flex justify-center mt-4">
+                        <div className="bg-white p-4 rounded-lg">
+                          <QrCode className="h-32 w-32 text-primary" />
+                          <p className="text-center text-xs mt-2 text-muted-foreground">{t('qrCode')}</p>
+                        </div>
+                      </div>
                     </div>
-                  </form>
-                </Form>
-              )}
+                  )}
+                </form>
+              </Form>
             </TabsContent>
           </Tabs>
         </CardContent>

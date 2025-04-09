@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { GraphQLError } from 'graphql';
+import { createGroupWithConversation, addUserToGroupAndConversation, createGroupChatWithGroup } from '@/lib/conversations';
 
 // Helper function to get the session
 async function getServerSession(context?: Context) {
@@ -30,7 +31,9 @@ enum ShareType {
 // Define GroupRole enum to match the Prisma schema
 enum GroupRole {
   ADMIN = 'ADMIN',
-  MEMBER = 'MEMBER'
+  MEMBER = 'MEMBER',
+  GUEST = 'GUEST',
+  ASSISTANT = 'ASSISTANT'
 }
 
 // Basic type definitions for resolvers
@@ -38,7 +41,7 @@ interface Context {
   user?: {
     id: string;       // This is now the Prisma User ID
     email: string;
-    externalId?: string; // This is the Supabase User ID
+    externalId?: string; // This is the User ID
   };
   request: Request;
 }
@@ -142,15 +145,55 @@ interface CategoryType {
   color?: string | null;
 }
 
-// NOTE: We've replaced this with more specific types in resolver functions
-// interface GroupUserType {
-//   id: string;
-//   userId: string; 
-//   groupId: string;
-//   role: string;
-//   user: UserType;
-//   group: GroupType;
-// }
+interface ConversationType {
+  id: string;
+  isGroupChat: boolean;
+  participants?: Array<{
+    id: string;
+    user: UserType;
+  }>;
+  messages?: MessageType[];
+  group?: GroupType;
+  groupId?: string | null;
+}
+
+interface MessageType {
+  id: string;
+  content: string;
+  createdAt: Date;
+  senderId: string;
+  conversationId: string;
+  isAI: boolean;
+  sender?: UserType;
+  seenBy?: Array<{
+    id: string;
+    user: UserType;
+  }>;
+}
+
+interface MessageInput {
+  content: string;
+  conversationId: string;
+}
+
+interface ConversationParticipant {
+  id: string;
+  userId: string;
+  user: UserType;
+}
+
+interface MessageSeen {
+  id: string;
+  userId: string;
+  user: UserType;
+}
+
+interface GroupChatInput {
+  name: string;
+  participantIds: string[];
+}
+
+
 
 export const resolvers = {
   Query: {
@@ -325,16 +368,44 @@ export const resolvers = {
           name: string;
           description: string | null;
           image: string | null;
+          members: Array<{
+            user: {
+              id: string;
+              name: string | null;
+              email: string;
+              image: string | null;
+            };
+            role: string;
+          }>;
         }
       };
       
       const userGroupMemberships = await prisma.groupUser.findMany({
         where: { userId },
-        include: { group: true },
+        include: { 
+          group: {
+            include: {
+              members: {
+                include: {
+                  user: true
+                }
+              }
+            }
+          }
+        },
       }) as PrismaGroupUser[];
 
-      // Return just the groups
-      return userGroupMemberships.map(membership => membership.group);
+      // Return groups with members information
+      return userGroupMemberships.map(membership => ({
+        ...membership.group,
+        members: membership.group.members.map(member => ({
+          id: member.user.id,
+          name: member.user.name,
+          email: member.user.email,
+          image: member.user.image,
+          role: member.role,
+        }))
+      }));
     },
 
     // Get a single group by ID with its members
@@ -412,6 +483,165 @@ export const resolvers = {
         })),
       };
     },
+
+    // Get all conversations for the current user
+    conversations: async (_parent: unknown, _args: unknown, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Find all conversations where the user is a participant
+      const participations = await prisma.conversationParticipant.findMany({
+        where: { userId },
+        include: {
+          conversation: {
+            include: {
+              participants: {
+                include: {
+                  user: true,
+                },
+              },
+              messages: {
+                orderBy: {
+                  createdAt: 'desc',
+                },
+                take: 1,
+                include: {
+                  sender: true,
+                },
+              },
+              group: true,
+            },
+          },
+        },
+      });
+
+      // Use explicit type assertion to resolve the issue
+      return participations.map((p) => p.conversation);
+    },
+
+    // Get a specific conversation by ID
+    conversation: async (_parent: unknown, { id }: { id: string }, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Find the conversation and verify the user is a participant
+      const participation = await prisma.conversationParticipant.findFirst({
+        where: {
+          conversationId: id,
+          userId,
+        },
+      });
+
+      if (!participation) {
+        throw new GraphQLError('Conversation not found or not accessible', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      return prisma.conversation.findUnique({
+        where: { id },
+        include: {
+          participants: {
+            include: {
+              user: true,
+            },
+          },
+          messages: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 30,
+            include: {
+              sender: true,
+              seenBy: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+          group: true,
+        },
+      });
+    },
+
+    // Get messages for a conversation
+    messages: async (
+      _parent: unknown, 
+      { conversationId, limit = 50, offset = 0 }: { conversationId: string; limit?: number; offset?: number }, 
+      context: Context
+    ) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Verify the user is a participant in the conversation
+      const participation = await prisma.conversationParticipant.findFirst({
+        where: {
+          conversationId,
+          userId,
+        },
+      });
+
+      if (!participation) {
+        throw new GraphQLError('Conversation not found or not accessible', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Get messages with pagination, ordered by creation time (newest first)
+      return prisma.message.findMany({
+        where: { conversationId },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: offset,
+        take: limit,
+        include: {
+          sender: true,
+          seenBy: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+    },
   },
 
   Mutation: {
@@ -449,96 +679,90 @@ export const resolvers = {
       }
 
       // Create the expense and expense shares in a transaction
-      return prisma.$transaction(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        async (tx: any) => {
-          // Type the transaction parameter properly
-          const txClient = tx as typeof prisma;
-          
-          // Create the expense
-          const expense = await txClient.expense.create({
-            data: {
-              amount: data.amount,
-              description: data.description,
-              date: new Date(data.date),
-              categoryId: data.categoryId || null,
-              currency: data.currency,
-              location: data.location || null,
-              notes: data.notes || null,
-              paidById: userId,
-              groupId: data.groupId || null,
-            },
-            include: {
-              paidBy: true,
-              group: true,
-              category: true,
-            },
+      return prisma.$transaction(async (tx) => {
+        // Create the expense
+        const expense = await tx.expense.create({
+          data: {
+            amount: data.amount,
+            description: data.description,
+            date: new Date(data.date),
+            categoryId: data.categoryId || null,
+            currency: data.currency,
+            location: data.location || null,
+            notes: data.notes || null,
+            paidById: userId,
+            groupId: data.groupId || null,
+          },
+          include: {
+            paidBy: true,
+            group: true,
+            category: true,
+          },
+        });
+
+        // Create expense shares if provided
+        if (data.shares && data.shares.length > 0) {
+          await Promise.all(
+            data.shares.map((share: ExpenseShareInput) =>
+              tx.expenseShare.create({
+                data: {
+                  amount: share.amount,
+                  type: share.type as ShareType,
+                  userId: share.userId,
+                  expenseId: expense.id,
+                },
+              })
+            )
+          );
+        } else if (data.groupId) {
+          // If it's a group expense but no shares provided, 
+          // create equal shares for all group members
+          const groupMembers = await tx.groupUser.findMany({
+            where: { groupId: data.groupId },
+            select: { userId: true },
           });
 
-          // Create expense shares if provided
-          if (data.shares && data.shares.length > 0) {
-            await Promise.all(
-              data.shares.map((share: ExpenseShareInput) =>
-                txClient.expenseShare.create({
-                  data: {
-                    amount: share.amount,
-                    type: share.type as ShareType,
-                    userId: share.userId,
-                    expenseId: expense.id,
-                  },
-                })
-              )
-            );
-          } else if (data.groupId) {
-            // If it's a group expense but no shares provided, 
-            // create equal shares for all group members
-            const groupMembers = await txClient.groupUser.findMany({
-              where: { groupId: data.groupId },
-              select: { userId: true },
-            });
+          const shareAmount = data.amount / groupMembers.length;
 
-            const shareAmount = data.amount / groupMembers.length;
-
-            await Promise.all(
-              groupMembers.map((member: { userId: string }) =>
-                txClient.expenseShare.create({
-                  data: {
-                    amount: shareAmount,
-                    type: ShareType.EQUAL,
-                    userId: member.userId,
-                    expenseId: expense.id,
-                  },
-                })
-              )
-            );
-          } else {
-            // For personal expenses, create a share for the user
-            await txClient.expenseShare.create({
-              data: {
-                amount: data.amount,
-                type: ShareType.FIXED,
-                userId,
-                expenseId: expense.id,
-              },
-            });
-          }
-
-          // Get the complete expense with shares
-          return txClient.expense.findUnique({
-            where: { id: expense.id },
-            include: {
-              paidBy: true,
-              group: true,
-              category: true,
-              shares: {
-                include: {
-                  user: true,
+          await Promise.all(
+            groupMembers.map((member: { userId: string }) =>
+              tx.expenseShare.create({
+                data: {
+                  amount: shareAmount,
+                  type: ShareType.EQUAL,
+                  userId: member.userId,
+                  expenseId: expense.id,
                 },
-              },
+              })
+            )
+          );
+        } else {
+          // For personal expenses, create a share for the user
+          await tx.expenseShare.create({
+            data: {
+              amount: data.amount,
+              type: ShareType.FIXED,
+              userId,
+              expenseId: expense.id,
             },
           });
         }
-      );
+
+        // Get the complete expense with shares
+        return tx.expense.findUnique({
+          where: { id: expense.id },
+          include: {
+            paidBy: true,
+            group: true,
+            category: true,
+            shares: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+      });
     },
 
     // Update an existing expense
@@ -603,65 +827,59 @@ export const resolvers = {
       }
 
       // Update expense and shares in a transaction
-      return prisma.$transaction(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        async (tx: any) => {
-          // Type the transaction parameter properly
-          const txClient = tx as typeof prisma;
-          
-          // Update the expense
-          await txClient.expense.update({
-            where: { id: data.id },
-            data: {
-              amount: data.amount !== undefined ? data.amount : undefined,
-              description: data.description !== undefined ? data.description : undefined,
-              date: data.date !== undefined ? new Date(data.date) : undefined,
-              categoryId: data.categoryId !== undefined ? data.categoryId : undefined,
-              currency: data.currency !== undefined ? data.currency : undefined,
-              location: data.location !== undefined ? data.location : undefined,
-              notes: data.notes !== undefined ? data.notes : undefined,
-              groupId: data.groupId !== undefined ? data.groupId : undefined,
-            },
+      return prisma.$transaction(async (tx) => {
+        // Update the expense
+        await tx.expense.update({
+          where: { id: data.id },
+          data: {
+            amount: data.amount !== undefined ? data.amount : undefined,
+            description: data.description !== undefined ? data.description : undefined,
+            date: data.date !== undefined ? new Date(data.date) : undefined,
+            categoryId: data.categoryId !== undefined ? data.categoryId : undefined,
+            currency: data.currency !== undefined ? data.currency : undefined,
+            location: data.location !== undefined ? data.location : undefined,
+            notes: data.notes !== undefined ? data.notes : undefined,
+            groupId: data.groupId !== undefined ? data.groupId : undefined,
+          },
+        });
+
+        // Update shares if provided
+        if (data.shares && data.shares.length > 0) {
+          // Delete existing shares
+          await tx.expenseShare.deleteMany({
+            where: { expenseId: data.id },
           });
 
-          // Update shares if provided
-          if (data.shares && data.shares.length > 0) {
-            // Delete existing shares
-            await txClient.expenseShare.deleteMany({
-              where: { expenseId: data.id },
-            });
-
-            // Create new shares
-            await Promise.all(
-              data.shares.map((share: ExpenseShareInput) =>
-                txClient.expenseShare.create({
-                  data: {
-                    amount: share.amount,
-                    type: share.type as ShareType,
-                    userId: share.userId,
-                    expenseId: data.id!,
-                  },
-                })
-              )
-            );
-          }
-
-          // Get the complete updated expense with shares
-          return txClient.expense.findUnique({
-            where: { id: data.id },
-            include: {
-              paidBy: true,
-              group: true,
-              category: true,
-              shares: {
-                include: {
-                  user: true,
+          // Create new shares
+          await Promise.all(
+            data.shares.map((share: ExpenseShareInput) =>
+              tx.expenseShare.create({
+                data: {
+                  amount: share.amount,
+                  type: share.type as ShareType,
+                  userId: share.userId,
+                  expenseId: data.id!,
                 },
+              })
+            )
+          );
+        }
+
+        // Get the complete updated expense with shares
+        return tx.expense.findUnique({
+          where: { id: data.id },
+          include: {
+            paidBy: true,
+            group: true,
+            category: true,
+            shares: {
+              include: {
+                user: true,
               },
             },
-          });
-        }
-      );
+          },
+        });
+      });
     },
 
     // Delete an expense
@@ -771,7 +989,7 @@ export const resolvers = {
       });
     },
 
-    // Create a new group
+    // Create a new group with an automatic chat conversation
     createGroup: async (_parent: unknown, { data }: { data: GroupInput }, context: Context) => {
       const session = await getServerSession(context);
       
@@ -790,38 +1008,34 @@ export const resolvers = {
 
       console.log('Creating group with Prisma user ID:', userId);
 
-      // Create the group and add the creator as an admin in a transaction
-      return prisma.$transaction(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        async (tx: any) => {
-          // Type the transaction parameter properly
-          const txClient = tx as typeof prisma;
-          
-          // Create the group
-          const group = await txClient.group.create({
-            data: {
-              name: data.name,
-              description: data.description || null,
-              image: data.image || null,
-              createdById: userId,
-            },
-          });
+      // Use the new utility to create a group with a conversation
+      const group = await createGroupWithConversation(userId, {
+        name: data.name,
+        description: data.description || undefined,
+        image: data.image || undefined
+      });
 
-          // Add the creator as an admin
-          await txClient.groupUser.create({
-            data: {
-              userId,
-              groupId: group.id,
-              role: GroupRole.ADMIN,
-            },
-          });
+      // Assert the group has the expected structure
+      if (!group || typeof group !== 'object' || !('name' in group) || !('conversationId' in group)) {
+        throw new GraphQLError('Failed to create group', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
 
-          return group;
-        }
-      );
+      // Add a welcome message
+      await prisma.message.create({
+        data: {
+          content: `Welcome to the ${group.name} group chat!`,
+          conversationId: group.conversationId as string,
+          senderId: userId,
+          isAI: true,
+        },
+      });
+
+      return group;
     },
 
-    // Add a member to a group
+    // Add a member to a group and to the group's conversation
     addGroupMember: async (_parent: unknown, 
       { groupId, data }: { groupId: string; data: GroupMemberInput }, 
       context: Context) => {
@@ -880,19 +1094,29 @@ export const resolvers = {
         });
       }
 
-      // Add the user to the group
-      await prisma.groupUser.create({
-        data: {
-          userId: userToAdd.id,
-          groupId,
-          role: data.role as GroupRole,
-        },
+      // Use our utility function to add the user to both the group and conversation
+      await addUserToGroupAndConversation(groupId, userToAdd.id, data.role as 'ADMIN' | 'MEMBER' | 'GUEST');
+
+      // Add a notification message
+      const group = await prisma.group.findUnique({
+        where: { id: groupId },
       });
+
+      if (group) {
+        await prisma.message.create({
+          data: {
+            content: `${userToAdd.name || userToAdd.email} has joined the group.`,
+            conversationId: group.conversationId as string,
+            senderId: userId,
+            isAI: true,
+          },
+        });
+      }
 
       return true;
     },
 
-    // Remove a member from a group
+    // Remove a member from a group and from the group's conversation
     removeGroupMember: async (_parent: unknown, 
       { groupId, userId: memberIdToRemove }: { groupId: string; userId: string }, 
       context: Context) => {
@@ -956,11 +1180,52 @@ export const resolvers = {
         }
       }
 
-      // Remove the user from the group
-      await prisma.groupUser.delete({
-        where: {
-          id: membershipToRemove.id,
-        },
+      // Get user info for notification message
+      const userToRemove = await prisma.user.findUnique({
+        where: { id: memberIdToRemove },
+      });
+
+      // Remove the user from the group and from the group's conversation in a transaction
+      await prisma.$transaction(async (tx) => {
+        // Remove the user from the group
+        await tx.groupUser.delete({
+          where: {
+            id: membershipToRemove.id,
+          },
+        });
+
+        // Find the group's conversation
+        const conversation = await tx.conversation.findUnique({
+          where: { groupId },
+          include: {
+            participants: {
+              where: {
+                userId: memberIdToRemove,
+              },
+            },
+          },
+        });
+
+        if (conversation && conversation.participants.length > 0) {
+          // Remove the user from the conversation
+          await tx.conversationParticipant.delete({
+            where: {
+              id: conversation.participants[0].id,
+            },
+          });
+
+          // Add a notification message
+          if (userToRemove) {
+            await tx.message.create({
+              data: {
+                content: `${userToRemove.name || userToRemove.email} has been removed from the group.`,
+                conversationId: conversation.id,
+                senderId: userId,
+                isAI: true,
+              },
+            });
+          }
+        }
       });
 
       return true;
@@ -1056,25 +1321,372 @@ export const resolvers = {
       }
 
       // Delete the group in a transaction, cascading to memberships
-      await prisma.$transaction(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        async (tx: any) => {
-          // Type the transaction parameter properly
-          const txClient = tx as typeof prisma;
-          
-          // Delete all group memberships
-          await txClient.groupUser.deleteMany({
-            where: { groupId: id },
-          });
+      await prisma.$transaction(async (tx) => {
+        // Delete all group memberships
+        await tx.groupUser.deleteMany({
+          where: { groupId: id },
+        });
 
-          // Delete the group
-          await txClient.group.delete({
-            where: { id },
-          });
-        }
-      );
+        // Delete the group
+        await tx.group.delete({
+          where: { id },
+        });
+      });
 
       return true;
+    },
+
+    // Create a new conversation
+    createConversation: async (
+      _parent: unknown, 
+      { participantIds }: { participantIds: string[] }, 
+      context: Context
+    ) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Make sure the current user is included in the participants
+      const allParticipantIds = new Set([userId, ...participantIds]);
+      
+      // Check if all participants exist
+      const users = await prisma.user.findMany({
+        where: {
+          id: {
+            in: Array.from(allParticipantIds),
+          },
+        },
+      });
+
+      if (users.length !== allParticipantIds.size) {
+        throw new GraphQLError('One or more participants do not exist', {
+          extensions: { code: 'BAD_REQUEST' },
+        });
+      }
+
+      // For direct messages (2 participants), check if a conversation already exists
+      if (allParticipantIds.size === 2) {
+        const existingConversations = await prisma.conversation.findMany({
+          where: {
+            isGroupChat: false,
+            participants: {
+              every: {
+                userId: {
+                  in: Array.from(allParticipantIds),
+                },
+              },
+            },
+          },
+          include: {
+            participants: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        // Filter to find a conversation with exactly the requested participants
+        const exactConversation = existingConversations.find((c: { participants: { userId: string }[] }) => 
+          c.participants.length === allParticipantIds.size &&
+          c.participants.every((p: { userId: string }) => allParticipantIds.has(p.userId))
+        );
+
+        if (exactConversation) {
+          return exactConversation;
+        }
+      }
+
+      // Create a new conversation with the participants
+      return prisma.conversation.create({
+        data: {
+          isGroupChat: allParticipantIds.size > 2,
+          participants: {
+            create: Array.from(allParticipantIds).map(id => ({
+              userId: id,
+            })),
+          },
+        },
+        include: {
+          participants: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+    },
+
+    // Send a message in a conversation
+    sendMessage: async (
+      _parent: unknown, 
+      { data }: { data: MessageInput }, 
+      context: Context
+    ) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Verify the user is a participant in the conversation
+      const participation = await prisma.conversationParticipant.findFirst({
+        where: {
+          conversationId: data.conversationId,
+          userId,
+        },
+      });
+
+      if (!participation) {
+        throw new GraphQLError('Conversation not found or not accessible', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Create the message
+      return prisma.message.create({
+        data: {
+          content: data.content,
+          conversationId: data.conversationId,
+          senderId: userId,
+          seenBy: {
+            create: {
+              userId, // The sender has seen the message
+            },
+          },
+        },
+        include: {
+          sender: true,
+          seenBy: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+    },
+
+    // Mark a message as seen
+    markMessageAsSeen: async (
+      _parent: unknown, 
+      { messageId }: { messageId: string }, 
+      context: Context
+    ) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Get the message and check if it exists
+      const message = await prisma.message.findUnique({
+        where: { id: messageId },
+        include: {
+          seenBy: true,
+        },
+      });
+
+      if (!message) {
+        throw new GraphQLError('Message not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Verify the user is a participant in the conversation
+      const participation = await prisma.conversationParticipant.findFirst({
+        where: {
+          conversationId: message.conversationId,
+          userId,
+        },
+      });
+
+      if (!participation) {
+        throw new GraphQLError('Not authorized to access this message', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      // Check if the user has already seen the message
+      const alreadySeen = message.seenBy.some((seen: { userId: string }) => seen.userId === userId);
+      if (alreadySeen) {
+        return true; // Already marked as seen
+      }
+
+      // Mark the message as seen
+      await prisma.messageSeen.create({
+        data: {
+          messageId,
+          userId,
+        },
+      });
+
+      return true;
+    },
+
+    // Create a new group chat directly
+    createGroupChat: async (_parent: unknown, 
+      { data }: { data: GroupChatInput }, 
+      context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      if (!data.participantIds || data.participantIds.length === 0) {
+        throw new GraphQLError('At least one participant is required', {
+          extensions: { code: 'BAD_REQUEST' },
+        });
+      }
+
+      // Check if all participants exist
+      const participants = await prisma.user.findMany({
+        where: {
+          id: {
+            in: data.participantIds
+          }
+        }
+      });
+
+      if (participants.length !== data.participantIds.length) {
+        throw new GraphQLError('One or more participants not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      try {
+        const result = await createGroupChatWithGroup(userId, {
+          name: data.name,
+          participantIds: data.participantIds
+        });
+        
+        // Assert the result has the expected structure
+        if (!result || typeof result !== 'object' || !('conversation' in result)) {
+          throw new GraphQLError('Failed to create group chat', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
+
+        const conversation = result.conversation as { id: string };
+
+        // Add a welcome message
+        await prisma.message.create({
+          data: {
+            content: `Welcome to ${data.name} group chat!`,
+            conversationId: conversation.id,
+            senderId: userId,
+            isAI: true,
+          },
+        });
+
+        return conversation;
+      } catch (error) {
+        console.error('Error creating group chat:', error);
+        throw new GraphQLError('Failed to create group chat', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
+
+    deleteConversation: async (_parent: unknown, { id }: { id: string }, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+      
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+      
+      try {
+        // Verificar que la conversación existe y el usuario es parte de ella
+        const conversation = await prisma.conversation.findFirst({
+          where: {
+            id,
+            participants: {
+              some: {
+                userId
+              }
+            }
+          }
+        });
+        
+        if (!conversation) {
+          throw new GraphQLError('Conversation not found or you do not have permission', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+        
+        // Eliminar todos los mensajes relacionados con la conversación
+        await prisma.message.deleteMany({
+          where: {
+            conversationId: id
+          }
+        });
+        
+        // Eliminar los participantes de la conversación
+        await prisma.conversationParticipant.deleteMany({
+          where: {
+            conversationId: id
+          }
+        });
+        
+        // Finalmente eliminar la conversación
+        await prisma.conversation.delete({
+          where: {
+            id
+          }
+        });
+        
+        return true;
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        return false;
+      }
     },
   },
 
@@ -1132,6 +1744,79 @@ export const resolvers = {
       return prisma.user.findUnique({
         where: { id: parent.createdById },
       });
+    },
+    conversation: async (parent: { id: string }) => {
+      return prisma.conversation.findUnique({
+        where: { groupId: parent.id },
+      });
+    },
+  },
+
+  Conversation: {
+    participants: async (parent: ConversationType) => {
+      if (parent.participants) {
+        return parent.participants.map(p => p.user);
+      }
+
+      const participants = await prisma.conversationParticipant.findMany({
+        where: { conversationId: parent.id },
+        include: {
+          user: true,
+        },
+      });
+
+      return participants.map((p: ConversationParticipant) => p.user);
+    },
+    messages: async (parent: ConversationType) => {
+      if (parent.messages) return parent.messages;
+
+      return prisma.message.findMany({
+        where: { conversationId: parent.id },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 30,
+        include: {
+          sender: true,
+          seenBy: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+    },
+    group: async (parent: ConversationType) => {
+      if (!parent.groupId) return null;
+      if (parent.group) return parent.group;
+
+      return prisma.group.findUnique({
+        where: { id: parent.groupId },
+      });
+    },
+  },
+
+  Message: {
+    sender: async (parent: MessageType) => {
+      if (parent.sender) return parent.sender;
+
+      return prisma.user.findUnique({
+        where: { id: parent.senderId },
+      });
+    },
+    seenBy: async (parent: MessageType) => {
+      if (parent.seenBy) {
+        return parent.seenBy.map((seen: { user: UserType }) => seen.user);
+      }
+
+      const seen = await prisma.messageSeen.findMany({
+        where: { messageId: parent.id },
+        include: {
+          user: true,
+        },
+      });
+
+      return seen.map((s: MessageSeen) => s.user);
     },
   },
 }; 

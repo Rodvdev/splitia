@@ -1,29 +1,24 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getUserId } from '@/lib/auth/get-user-id';
 
 export async function GET() {
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-  
   try {
-    // Get the user session
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
+    // Get the user ID
+    const userId = await getUserId();
+
+    // If no user ID, return unauthorized
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Get the user from the database
+
+    // Fetch user data from the database
     const user = await prisma.user.findUnique({
-      where: {
-        externalId: session.user.id
-      },
+      where: { id: userId },
       select: {
         id: true,
-        name: true,
         email: true,
+        name: true,
         image: true,
         currency: true,
         language: true,
@@ -31,16 +26,17 @@ export async function GET() {
         updatedAt: true
       }
     });
-    
+
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
+
+    // Return the user data
     return NextResponse.json({ user });
   } catch (error) {
-    console.error('Error getting user profile:', error);
+    console.error('Error fetching user profile:', error);
     return NextResponse.json(
-      { error: 'Failed to get user profile' }, 
+      { error: 'Error fetching user profile' },
       { status: 500 }
     );
   }

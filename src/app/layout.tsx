@@ -5,9 +5,9 @@ import { Providers } from "./providers";
 import { locales } from "@/i18n/config";
 
 // Import language messages
-import en from '@/i18n/messages/en.json';
-import es from '@/i18n/messages/es.json';
-import pt from '@/i18n/messages/pt.json';
+import en from '@/i18n/locales/en.json';
+import es from '@/i18n/locales/es.json';
+import pt from '@/i18n/locales/pt.json';
 
 // Define messages by locale
 const messages = {
@@ -52,7 +52,7 @@ export default function RootLayout({
   const locale = (params.locale || 'en') as keyof typeof messages;
   
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers locale={locale} messages={messages[locale]}>
           {children}

@@ -24,10 +24,10 @@ export default getRequestConfig(async ({ locale }) => {
 
   try {
     // Import the locale messages
-    const messages = (await import(`./messages/${currentLocale}.json`)).default;
+    const messages = (await import(`./locales/${currentLocale}.json`)).default;
 
     return {
-      locale: currentLocale, // Use currentLocale which is guaranteed to have a value
+      locale: currentLocale,
       messages,
       timeZone: 'UTC',
       now: new Date(),

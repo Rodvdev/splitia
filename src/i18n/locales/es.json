@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Splitia",
-    "tagline": "División de gastos simple para grupos"
+    "tagline": "Divide gastos con amigos y familia"
   },
   "common": {
     "save": "Guardar",
@@ -13,7 +13,10 @@
     "error": "Ha ocurrido un error",
     "success": "¡Éxito!",
     "currency": "Moneda",
-    "language": "Idioma"
+    "language": "Idioma",
+    "create": "Crear",
+    "date": "Fecha",
+    "user": "Usuario"
   },
   "auth": {
     "signIn": "Iniciar Sesión",
@@ -25,10 +28,54 @@
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "noAccount": "¿No tienes una cuenta?",
     "hasAccount": "¿Ya tienes una cuenta?",
+    "name": "Nombre",
+    "namePlaceholder": "Nombre",
+    "emailPlaceholder": "email@ejemplo.com",
+    "currencyLabel": "Moneda",
+    "currencyPEN": "Sol Peruano (S/)",
+    "currencyUSD": "Dólar Estadounidense ($)",
+    "currencyEUR": "Euro (€)",
+    "currencyMXN": "Peso Mexicano ($)",
+    "currencyCOP": "Peso Colombiano ($)",
+    "currencyARS": "Peso Argentino ($)",
+    "languageLabel": "Idioma",
+    "languageES": "Español",
+    "languageEN": "Inglés",
+    "languagePT": "Portugués",
+    "passwordPlaceholder": "••••••••",
+    "confirmPasswordPlaceholder": "••••••••",
+    "currency": "Moneda",
+    "language": "Idioma",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "accountCreated": "¡Cuenta creada exitosamente!",
+    "haveAccount": "¿Ya tienes una cuenta?",
     "signInError": "Error al iniciar sesión. Por favor, verifica tus credenciales.",
     "signUpError": "Error al registrarse. Por favor, inténtalo de nuevo.",
     "passwordsNoMatch": "Las contraseñas no coinciden.",
-    "checkEmail": "Por favor, revisa tu correo electrónico para confirmar tu cuenta."
+    "checkEmail": "Por favor, revisa tu correo electrónico para confirmar tu cuenta.",
+    "createAccount": "Crear una nueva cuenta",
+    "resetPassword": "Restablecer Contraseña",
+    "verificationSent": "Te hemos enviado un enlace de verificación",
+    "verificationInstructions": "Haz clic en el enlace del correo electrónico para verificar tu cuenta e iniciar sesión",
+    "noEmailReceived": "¿No recibiste un correo electrónico?",
+    "checkSpam": "Revisa tu carpeta de spam o inténtalo de nuevo",
+    "backToSignIn": "Volver a Iniciar Sesión"
+  },
+  "dashboard": {
+    "recentActivity": "Actividad Reciente",
+    "viewAll": "Ver Todo",
+    "empty": "No hay datos disponibles",
+    "totalExpenses": "Gastos Totales",
+    "description": "Resumen de tus gastos y grupos",
+    "title": "Panel",
+    "tagline": "Administra tus gastos y grupos",
+    "expenses": "Gastos",
+    "groups": "Grupos",
+    "budget": "Presupuesto",
+    "chat": "Chat",
+    "settings": "Configuración",
+    "manageGroups": "Administrar Grupos",
+    "changeSettings": "Cambiar Configuración"
   },
   "navigation": {
     "dashboard": "Panel",
@@ -51,7 +98,130 @@
     "percentage": "Porcentaje",
     "fixed": "Monto fijo",
     "location": "Ubicación",
-    "notes": "Notas"
+    "notes": "Notas",
+    "total": "Total",
+    "recent": "Gastos Recientes",
+    "noExpenses": "Aún no hay gastos",
+    "categories": "Categorías",
+    "viewAll": "Ver Todos los Gastos",
+    "people": "personas",
+    "actions": {
+      "create": "Nuevo Gasto",
+      "edit": "Editar Gasto",
+      "delete": "Eliminar Gasto",
+      "save": "Guardar Gasto",
+      "view": "Ver Detalles"
+    },
+    "filters": {
+      "search": "Buscar gastos...",
+      "category": "Categoría",
+      "date": "Fecha",
+      "amount": "Importe",
+      "sort": {
+        "date": "Ordenar por Fecha",
+        "amount": "Ordenar por Importe"
+      },
+      "status": {
+        "all": "Todos los Estados",
+        "paid": "Solo Pagados",
+        "pending": "Solo Pendientes"
+      }
+    },
+    "nav": {
+      "all": "Todos los Gastos",
+      "create": "Crear",
+      "monthly": "Mensuales",
+      "recurring": "Recurrentes",
+      "statistics": "Estadísticas"
+    },
+    "empty": {
+      "title": "No se encontraron gastos",
+      "description": "Crea tu primer gasto para comenzar a rastrear tus gastos",
+      "action": "Crear Gasto"
+    },
+    "status": {
+      "paid": "Pagado",
+      "pending": "Pendiente"
+    },
+    "type": {
+      "personal": "Personal",
+      "group": "Grupo"
+    },
+    "create": {
+      "title": "Crear Nuevo Gasto",
+      "success": "Gasto creado con éxito"
+    },
+    "edit": {
+      "title": "Editar Gasto",
+      "success": "Gasto actualizado con éxito"
+    },
+    "delete": {
+      "title": "Eliminar Gasto",
+      "confirmation": "¿Estás seguro de que quieres eliminar este gasto?",
+      "warning": "Esta acción no se puede deshacer.",
+      "success": "Gasto eliminado con éxito"
+    },
+    "notifications": {
+      "createSuccess": "Gasto creado con éxito",
+      "updateSuccess": "Gasto actualizado con éxito",
+      "deleteSuccess": "Gasto eliminado con éxito",
+      "createError": "Error al crear el gasto",
+      "updateError": "Error al actualizar el gasto",
+      "deleteError": "Error al eliminar el gasto"
+    },
+    "form": {
+      "title": {
+        "label": "Título",
+        "placeholder": "¿Para qué fue este gasto?",
+        "description": "Ingresa un nombre descriptivo para este gasto"
+      },
+      "amount": {
+        "label": "Importe",
+        "placeholder": "0,00"
+      },
+      "currency": {
+        "label": "Moneda",
+        "placeholder": "Seleccionar moneda"
+      },
+      "date": {
+        "label": "Fecha",
+        "placeholder": "Seleccionar fecha",
+        "today": "Hoy",
+        "yesterday": "Ayer",
+        "thisWeek": "Esta Semana",
+        "lastWeek": "Semana Pasada",
+        "thisMonth": "Este Mes",
+        "lastMonth": "Mes Pasado",
+        "thisYear": "Este Año",
+        "lastYear": "Año Pasado"
+      },
+      "category": {
+        "label": "Categoría",
+        "placeholder": "Seleccionar categoría"
+      },
+      "location": {
+        "label": "Ubicación",
+        "placeholder": "¿Dónde ocurrió este gasto?",
+        "description": "Opcional: Añade una ubicación para este gasto"
+      },
+      "notes": {
+        "label": "Notas",
+        "placeholder": "Añade cualquier detalle adicional sobre este gasto"
+      },
+      "isPaid": {
+        "label": "Marcar como Pagado",
+        "description": "Activa si este gasto ha sido pagado"
+      },
+      "isGroupExpense": {
+        "label": "Gasto Grupal",
+        "description": "¿Es este un gasto para dividir con otros?"
+      },
+      "actions": {
+        "submit": "Guardar Gasto",
+        "submitting": "Guardando...",
+        "cancel": "Cancelar"
+      }
+    }
   },
   "groups": {
     "title": "Grupos",
@@ -66,10 +236,23 @@
     "generateLink": "Generar Enlace",
     "copyLink": "Copiar Enlace",
     "qrCode": "Código QR",
+    "view": {
+      "title": "Detalles del Grupo",
+      "memberCount": "{count, plural, =1 {# miembro} other {# miembros}}",
+      "expenses": "Gastos",
+      "expensesCount": "{count, plural, =1 {# gasto} other {# gastos}}"
+    },
     "role": {
       "admin": "Administrador",
       "member": "Miembro",
-      "guest": "Invitado"
+      "guest": "Invitado",
+      "assistant": "Asistente IA"
+    },
+    "roles": {
+      "admin": "Administrador",
+      "member": "Miembro",
+      "guest": "Invitado",
+      "assistant": "Asistente IA"
     },
     "back": "Atrás",
     "settings": "Configuración",
@@ -96,6 +279,11 @@
     "backToGroups": "Volver a Grupos",
     "leaveConfirm": "¿Estás seguro que quieres salir de este grupo?",
     "deleteConfirm": "¿Estás seguro que quieres eliminar este grupo?",
+    "delete": {
+      "title": "Eliminar Grupo",
+      "description": "Esta acción es irreversible. Se eliminarán todos los gastos asociados a este grupo.",
+      "success": "Grupo eliminado exitosamente"
+    },
     "manage": "Administrar",
     "inviteByEmail": "Invitar por Correo",
     "inviteByLink": "Invitar por Enlace",
@@ -113,6 +301,8 @@
     "limitUses": "Limitar Número de Usos",
     "limitUsesDescription": "Limita cuántas veces se puede usar este enlace de invitación",
     "maxUses": "Usos Máximos",
+    "useExpiry": "Establecer Tiempo de Expiración",
+    "useExpiryDescription": "Hacer que el enlace de invitación expire después de cierto tiempo",
     "expires": "Expira Después de",
     "hours": "Horas",
     "days": "Días",
@@ -123,7 +313,25 @@
     "linkCopied": "Enlace copiado al portapapeles",
     "generateNew": "Generar Nuevo Enlace",
     "cancel": "Cancelar",
-    "search": "Buscar grupos..."
+    "search": "Buscar grupos...",
+    "total": "Total",
+    "viewAll": "Ver Todos los Grupos",
+    "empty": "No hay grupos",
+    "actions": {
+      "settings": "Configuración",
+      "invite": "Invitar",
+      "delete": "Eliminar Grupo",
+      "deleting": "Eliminando...",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "back": "Volver a Grupos",
+      "makeAdmin": "Convertir en Administrador",
+      "makeMember": "Convertir en Miembro",
+      "makeGuest": "Convertir en Invitado",
+      "makeAssistant": "Convertir en Asistente IA",
+      "remove": "Eliminar Miembro",
+      "removing": "Eliminando..."
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -140,25 +348,273 @@
       "system": "Sistema"
     },
     "dateFormat": "Formato de Fecha",
-    "timeFormat": "Formato de Hora"
+    "timeFormat": "Formato de Hora",
+    "description": "Administra tu cuenta y preferencias",
+    "preferences": "Preferencias",
+    "privacy": "Privacidad",
+    "security": "Seguridad",
+    "logout": "Cerrar Sesión",
+    "editProfile": "Editar Perfil",
+    "profileSettings": "Configuración de Perfil",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "emailReadOnly": "No puedes cambiar tu correo electrónico",
+    "namePlaceholder": "Ingresa tu nombre",
+    "languageHelp": "Idioma usado en la aplicación",
+    "currencyHelp": "Moneda predeterminada para tus gastos",
+    "saveChanges": "Guardar Cambios",
+    "saving": "Guardando...",
+    "profileUpdated": "Perfil actualizado con éxito",
+    "updateError": "Error al actualizar el perfil",
+    "accountInfo": "Información de la Cuenta",
+    "accountId": "ID de la Cuenta",
+    "createdAt": "Cuenta creada",
+    "lastUpdated": "Última actualización"
   },
   "chat": {
-    "title": "Chat",
-    "message": "Mensaje",
-    "send": "Enviar",
-    "typing": "escribiendo...",
-    "seen": "Visto",
-    "assistant": "Asistente IA"
+    "title": "Mensajes",
+    "description": "Conecta con amigos y grupos para hacer cuentas juntos",
+    "noConversations": "Aún no hay conversaciones",
+    "newMessage": "Nuevo Mensaje",
+    "newChat": "Nuevo Chat",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "messageInput": "Escribe un mensaje...",
+    "search": "Buscar conversaciones",
+    "groupChat": "miembros",
+    "privateChat": "Chat Privado",
+    "createGroup": "Crear Chat Grupal",
+    "addMembers": "Añadir Miembros",
+    "addAIAssistant": "Añadir Asistente IA",
+    "addingAIAssistant": "Añadiendo asistente IA...",
+    "aiAssistantAdded": "¡Asistente IA añadido al grupo!",
+    "aiAssistantAddError": "Error al añadir el asistente IA",
+    "aiAssistantGroupOnly": "El asistente IA solo puede añadirse a chats grupales",
+    "aiAssistantNoGroup": "No se encontró un grupo para esta conversación",
+    "leaveChat": "Salir del Chat",
+    "deleteChat": "Eliminar Chat",
+    "noMessages": "No hay mensajes todavía",
+    "errorLoading": "Error al cargar datos",
+    "tryAgain": "Intentar de nuevo",
+    "createChat": "Crear Conversación",
+    "startChat": "Iniciar Conversación",
+    "creating": "Creando...",
+    "createGroupChat": "Crear un Chat Grupal",
+    "groupName": "Nombre del Grupo",
+    "groupNamePlaceholder": "Ingresa el nombre del grupo",
+    "groupMembers": "Miembros del Grupo",
+    "selectedContact": "Contacto Seleccionado",
+    "searchContacts": "Buscar Contactos",
+    "searchContactsPlaceholder": "Buscar por nombre o correo",
+    "selectAtLeastOne": "Selecciona al menos un contacto",
+    "groupNameRequired": "El nombre del grupo es obligatorio",
+    "directChatLimit": "El chat directo solo puede tener un contacto",
+    "errorCreatingChat": "Error al crear la conversación",
+    "noUsersFound": "No se encontraron usuarios",
+    "empty": {
+      "title": "No se encontraron conversaciones",
+      "description": "Inicia una nueva conversación con tus amigos o miembros del grupo",
+      "action": "Iniciar Conversación"
+    },
+    "form": {
+      "titleLabel": "Título del Chat",
+      "titlePlaceholder": "Ingresa un título para esta conversación",
+      "participantsLabel": "Participantes",
+      "participantsPlaceholder": "Seleccionar participantes",
+      "messageLabel": "Primer Mensaje",
+      "messagePlaceholder": "Inicia la conversación con un mensaje"
+    }
   },
   "user": {
-    "guest": "invitado"
+    "guest": "invitado",
+    "profile": "Perfil",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "settings": "Configuración de Usuario",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "preferences": "Preferencias",
+    "avatar": "Foto de Perfil"
   },
   "greetings": {
     "morning": "Buenos días",
     "afternoon": "Buenas tardes",
-    "evening": "Buenas noches"
+    "evening": "Buenas noches",
+    "welcome": "Bienvenido a Splitia",
+    "welcomeBack": "Bienvenido de nuevo, {name}",
+    "today": "Hoy es {date}",
+    "getStarted": "Comencemos"
   },
   "errors": {
-    "fetchProfile": "Error al obtener tu perfil"
+    "fetchProfile": "Error al obtener tu perfil",
+    "general": "Algo salió mal",
+    "notFound": "Página no encontrada",
+    "unauthorized": "No estás autorizado para ver esta página",
+    "networkError": "Error de red. Por favor verifica tu conexión",
+    "sessionExpired": "Tu sesión ha expirado. Por favor inicia sesión de nuevo",
+    "invalidCredentials": "Correo electrónico o contraseña inválidos",
+    "requiredField": "Este campo es obligatorio",
+    "invalidEmail": "Por favor ingresa una dirección de correo electrónico válida",
+    "invalidPassword": "La contraseña debe tener al menos 8 caracteres",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "formSubmission": "Hubo un problema al enviar el formulario",
+    "tryAgain": "Por favor intenta de nuevo más tarde",
+    "dataLoad": "Error al cargar datos"
+  },
+  "profile": {
+    "setup": {
+      "title": "Completa Tu Perfil",
+      "subtitle": "Solo unos detalles más para comenzar",
+      "nameLabel": "Tu Nombre",
+      "namePlaceholder": "Ingresa tu nombre completo",
+      "nameDescription": "Así es como aparecerás ante otros usuarios",
+      "avatarLabel": "Foto de Perfil",
+      "avatarDescription": "Sube una foto de perfil (opcional)",
+      "uploadAvatar": "Subir imagen",
+      "currency": "Moneda Preferida",
+      "currencyDescription": "Moneda predeterminada para tus gastos",
+      "language": "Idioma Preferido",
+      "languageDescription": "Elige tu idioma preferido",
+      "submit": "Completar Perfil",
+      "submitting": "Guardando...",
+      "skip": "Omitir por ahora",
+      "successMessage": "¡Configuración de perfil completa!",
+      "errorMessage": "Hubo un problema al guardar tu perfil"
+    }
+  },
+  "Categories": {
+    "title": "Categorías",
+    "description": "Administra y organiza tus categorías de gastos",
+    "create": "Crear Categoría",
+    "edit": "Editar Categoría",
+    "delete": "Eliminar Categoría",
+    "empty": "No se encontraron categorías",
+    "emptyDescription": "Crea tu primera categoría para organizar tus gastos",
+    "nameLabel": "Nombre de Categoría",
+    "namePlaceholder": "Ingresa el nombre de la categoría",
+    "colorLabel": "Color de Categoría",
+    "iconLabel": "Icono de Categoría",
+    "actions": {
+      "save": "Guardar Categoría",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "edit": "Editar"
+    }
+  },
+  "Reports": {
+    "title": "Informes",
+    "description": "Ver informes detallados de gastos",
+    "timeRange": "Rango de Tiempo",
+    "today": "Hoy",
+    "thisWeek": "Esta Semana",
+    "thisMonth": "Este Mes",
+    "lastMonth": "Mes Pasado",
+    "custom": "Personalizado",
+    "categories": "Categorías",
+    "total": "Gasto Total",
+    "average": "Promedio por Día",
+    "byCategory": "Gasto por Categoría",
+    "topCategories": "Categorías Principales",
+    "spendingTrends": "Tendencias de Gasto",
+    "noData": "No hay datos para el período seleccionado",
+    "filters": {
+      "apply": "Aplicar Filtros",
+      "clear": "Limpiar Filtros",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha de Fin"
+    }
+  },
+  "Profile": {
+    "title": "Perfil de Usuario",
+    "description": "Administra tu perfil personal y configuración de cuenta",
+    "personalInfo": "Información Personal",
+    "accountSettings": "Configuración de Cuenta",
+    "name": "Nombre Completo",
+    "email": "Dirección de Correo Electrónico",
+    "phone": "Número de Teléfono",
+    "avatar": "Foto de Perfil",
+    "changeAvatar": "Cambiar Foto",
+    "removeAvatar": "Eliminar Foto",
+    "save": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "changesSaved": "Tus cambios han sido guardados",
+    "errorSaving": "Hubo un error al guardar tus cambios"
+  },
+  "date": {
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "thisWeek": "Esta Semana",
+    "lastWeek": "Semana Pasada",
+    "thisMonth": "Este Mes",
+    "lastMonth": "Mes Pasado",
+    "format": {
+      "short": "DD/MM/YYYY",
+      "long": "D [de] MMMM [de] YYYY",
+      "relative": "hace {timeAgo}"
+    },
+    "month": {
+      "january": "Enero",
+      "february": "Febrero",
+      "march": "Marzo",
+      "april": "Abril",
+      "may": "Mayo",
+      "june": "Junio",
+      "july": "Julio",
+      "august": "Agosto",
+      "september": "Septiembre",
+      "october": "Octubre",
+      "november": "Noviembre",
+      "december": "Diciembre"
+    },
+    "day": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    }
+  },
+  "budget": {
+    "title": "Presupuesto",
+    "description": "Planifica y rastrea tu presupuesto mensual",
+    "overview": "Resumen del Presupuesto",
+    "create": "Crear Presupuesto",
+    "edit": "Editar Presupuesto",
+    "month": "Mes",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "categories": "Categorías de Presupuesto",
+    "remaining": "Restante",
+    "spent": "Gastado",
+    "allocation": "Asignación",
+    "savings": "Ahorros",
+    "progress": "Progreso del Presupuesto",
+    "statistics": "Estadísticas del Presupuesto",
+    "addCategory": "Añadir Categoría",
+    "empty": {
+      "title": "No se encontró presupuesto",
+      "description": "Crea tu primer presupuesto para comenzar a rastrear tus gastos",
+      "action": "Crear Presupuesto"
+    },
+    "form": {
+      "monthLabel": "Mes",
+      "monthPlaceholder": "Seleccionar mes",
+      "incomeLabel": "Ingresos Mensuales",
+      "incomePlaceholder": "Ingresa tus ingresos mensuales",
+      "expensesLabel": "Gastos Planificados",
+      "savingsLabel": "Ahorros Planificados",
+      "savingsTarget": "Objetivo de Ahorro",
+      "categoryLabel": "Categoría",
+      "categoryPlaceholder": "Seleccionar o crear una categoría",
+      "amountLabel": "Importe",
+      "amountPlaceholder": "Importe presupuestado para esta categoría",
+      "actions": {
+        "submit": "Guardar Presupuesto",
+        "submitting": "Guardando...",
+        "cancel": "Cancelar"
+      }
+    }
   }
 } 

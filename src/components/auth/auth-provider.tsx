@@ -1,93 +1,99 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { SessionProvider, useSession } from 'next-auth/react';
+import { ReactNode, useEffect, createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthError } from '@supabase/supabase-js';
 
-type AuthContextType = {
-  signIn: (email: string, password: string) => Promise<{
-    error: AuthError | null;
-    success: boolean;
-  }>;
-  signUp: (email: string, password: string, redirectTo?: string) => Promise<{
-    error: AuthError | null;
-    success: boolean;
-  }>;
-  signOut: () => Promise<void>;
-  isLoading: boolean;
+type AuthProviderProps = {
+  children: ReactNode;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Custom auth context to manage both NextAuth and custom cookies
+type AuthContextType = {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  userId: string | null;
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoading, setIsLoading] = useState(false);
+export const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  isLoading: true,
+  userId: null,
+});
+
+// Hook to use auth context
+export const useAuth = () => useContext(AuthContext);
+
+// Internal component that checks authentication
+function AuthStateManager({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
-  // Sign in with email and password
-  async function signIn(email: string, password: string) {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+  // Check custom auth on mount
+  useEffect(() => {
+    async function checkCustomCookies() {
+      try {
+        // Check for the custom cookie (client-side)
+        const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+          const [key, value] = cookie.trim().split('=');
+          acc[key] = value;
+          return acc;
+        }, {} as Record<string, string>);
+        
+        const customUserId = cookies['user_id'];
+        
+        if (customUserId) {
+          setUserId(customUserId);
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('Error checking custom auth:', error);
+        return false;
+      }
+    }
+
+    async function validateAuth() {
+      // First check NextAuth session
+      if (session?.user) {
+        setUserId(session.user.id);
+        setIsLoading(false);
+        return;
+      }
       
-      return { error, success: !error };
-    } catch (err) {
-      console.error('Sign in error:', err);
-      return { 
-        error: new AuthError('An unexpected error occurred'),
-        success: false 
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  // Sign up with email and password
-  async function signUp(email: string, password: string, redirectTo?: string) {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectTo || `${window.location.origin}/auth/callback`,
-        },
-      });
+      // Then check custom cookies
+      const hasCustomAuth = await checkCustomCookies();
+      if (hasCustomAuth) {
+        setIsLoading(false);
+        return;
+      }
       
-      return { error, success: !error };
-    } catch (err) {
-      console.error('Sign up error:', err);
-      return { 
-        error: new AuthError('An unexpected error occurred'),
-        success: false 
-      };
-    } finally {
-      setIsLoading(false);
+      // If neither authentication method worked and we're done loading
+      if (status !== 'loading') {
+        setIsLoading(false);
+        
+        // Optional: redirect to login
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/sign-in') && 
+            !currentPath.includes('/sign-up') && 
+            !currentPath.includes('/forgot-password')) {
+          router.push('/sign-in');
+        }
+      }
     }
-  }
 
-  // Sign out
-  async function signOut() {
-    setIsLoading(true);
-    try {
-      await supabase.auth.signOut();
-      router.refresh();
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    validateAuth();
+  }, [session, status, router]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        signIn,
-        signUp,
-        signOut,
-        isLoading,
+    <AuthContext.Provider 
+      value={{ 
+        isAuthenticated: !!userId, 
+        isLoading, 
+        userId 
       }}
     >
       {children}
@@ -95,10 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+export function AuthProvider({ children }: AuthProviderProps) {
+  return (
+    <SessionProvider>
+      <AuthStateManager>{children}</AuthStateManager>
+    </SessionProvider>
+  );
 } 

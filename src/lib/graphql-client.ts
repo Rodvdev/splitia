@@ -1,5 +1,6 @@
 import { GraphQLClient } from 'graphql-request';
-import { createClient } from './supabase/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth';
 
 // Create a client for consuming the GraphQL API
 // In a browser environment, we need to construct a full URL
@@ -15,44 +16,22 @@ const getGraphQLEndpoint = () => {
 
 // Function to get authenticated GraphQL client
 export async function getAuthenticatedClient() {
-  const supabase = createClient();
-  const { data } = await supabase.auth.getSession();
+  let session;
   
-  // Log authentication status for debugging
-  if (!data.session) {
-    console.warn('No active session found when creating authenticated GraphQL client');
-    console.error('Authentication issues may occur - Please ensure user is logged in');
-    
-    // Try to refresh the session if no session is found
+  // In the browser, use fetch to get the session
+  if (typeof window !== 'undefined') {
     try {
-      console.log('Attempting to refresh the session...');
-      const { data: refreshData, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        console.error('Session refresh failed:', error.message);
-        throw new Error('Authentication failed: ' + error.message);
-      }
-      
-      if (refreshData.session) {
-        console.log('Session refreshed successfully');
-        
-        // Create client with authentication headers from refreshed session
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${refreshData.session.access_token}`
-        };
-        
-        return new GraphQLClient(getGraphQLEndpoint(), {
-          credentials: 'include',
-          headers,
-        });
-      } else {
-        console.error('No session after refresh attempt');
-        throw new Error('Authentication required');
-      }
-    } catch (refreshError) {
-      console.error('Failed to refresh session:', refreshError);
-      throw new Error('Authentication failed');
+      const response = await fetch('/api/auth/session');
+      session = await response.json();
+    } catch (error) {
+      console.error('Error fetching session:', error);
+    }
+  } else {
+    // On the server, use getServerSession
+    try {
+      session = await getServerSession(authOptions);
+    } catch (error) {
+      console.error('Error getting server session:', error);
     }
   }
   
@@ -61,20 +40,28 @@ export async function getAuthenticatedClient() {
     'Content-Type': 'application/json',
   };
   
-  if (data.session) {
-    console.log('Adding auth token to GraphQL request', {
-      userId: data.session.user.id,
-      email: data.session.user.email,
+  if (session?.user) {
+    console.log('Adding user context to GraphQL request', {
+      userId: session.user.id,
+      email: session.user.email,
     });
     
     // Use the correct header format for JWT token authorization
-    headers['Authorization'] = `Bearer ${data.session.access_token}`;
+    if (session.accessToken) {
+      headers['Authorization'] = `Bearer ${session.accessToken}`;
+    } else {
+      console.warn('No accessToken found in session, authentication might fail');
+    }
+  } else {
+    console.warn('No active session found when creating GraphQL client');
   }
   
-  // Create and return the GraphQL client with proper auth headers
+  // Create and return the GraphQL client with proper auth headers and cookies
   return new GraphQLClient(getGraphQLEndpoint(), {
-    credentials: 'include',
+    credentials: 'include',  // This is critical for including cookies
     headers,
+    cache: 'no-store',
+    mode: 'cors',
   });
 }
 
@@ -458,62 +445,16 @@ export async function fetchUserGroups() {
     }
   `;
 
-  let retryCount = 0;
-  const maxRetries = 2;
-  
-  while (retryCount <= maxRetries) {
-    try {
-      // Get the current session first to verify we have an active session
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.error('No active session found when attempting to fetch user groups');
-        
-        // Try to refresh the session
-        const { data: refreshData, error } = await supabase.auth.refreshSession();
-        if (error || !refreshData.session) {
-          throw new Error('Authentication required to access user groups');
-        }
-        
-        console.log('Session refreshed before fetching groups');
-      }
-      
-      // Use authenticated client to ensure session is included
-      const client = await getAuthenticatedClient();
-      const response = await client.request(query);
-      console.log('Successfully fetched user groups');
-      return response;
-    } catch (error) {
-      console.error(`Error fetching user groups (Attempt ${retryCount + 1}):`, error);
-      
-      // If we have retries left, refresh session and retry
-      if (retryCount < maxRetries) {
-        retryCount++;
-        console.log(`Retrying fetchUserGroups, attempt ${retryCount + 1} of ${maxRetries + 1}`);
-        
-        // Try to refresh the session before retrying
-        try {
-          const supabase = createClient();
-          const { data: refreshData } = await supabase.auth.refreshSession();
-          if (refreshData.session) {
-            console.log('Session refreshed before retry');
-          }
-        } catch (refreshError) {
-          console.error('Failed to refresh session before retry:', refreshError);
-        }
-        
-        // Wait a moment before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        continue;
-      }
-      
-      // Return empty array but don't swallow the error
-      throw error;
-    }
+  try {
+    // Use authenticated client to ensure session is included
+    const client = await getAuthenticatedClient();
+    const response = await client.request(query);
+    console.log('Successfully fetched user groups');
+    return response;
+  } catch (error) {
+    console.error('Error fetching user groups:', error);
+    throw new Error('Failed to fetch user groups: ' + (error as Error).message);
   }
-  
-  throw new Error('Failed to fetch user groups after maximum retries');
 }
 
 // Helper function to fetch a single group
@@ -593,84 +534,25 @@ export async function createGroup(data: {
     }
   `;
 
-  // Try to create the group with retries
-  let retryCount = 0;
-  const maxRetries = 2;
-  
-  while (retryCount <= maxRetries) {
-    try {
-      console.log(`Attempting to create group${retryCount > 0 ? ` (Attempt ${retryCount + 1})` : ''}`);
-      
-      // Force a session refresh before trying
-      if (retryCount > 0) {
-        try {
-          const supabase = createClient();
-          const { data: refreshData } = await supabase.auth.refreshSession();
-          if (refreshData.session) {
-            console.log('Session refreshed before retry');
-          }
-        } catch (refreshError) {
-          console.error('Failed to refresh session:', refreshError);
-        }
-      }
-      
-      // Use authenticated client
-      const client = await getAuthenticatedClient();
-      const result = await client.request(mutation, { data });
-      console.log('Group created successfully');
-      return result;
-    } catch (error: unknown) {
-      console.error(`Error creating group (Attempt ${retryCount + 1}):`, error);
-      
-      // Define type for GraphQL errors
-      type GraphQLError = {
-        response?: {
-          errors?: Array<{
-            message?: string;
-            extensions?: {
-              code?: string;
-            };
-          }>;
-        };
-        message?: string;
-      };
-      
-      // Cast to a more specific type
-      const graphqlError = error as GraphQLError;
-      
-      // Check if this is an authentication error
-      if (graphqlError.response?.errors?.some(e => 
-        e.extensions?.code === 'UNAUTHENTICATED' || 
-        e.message?.includes('Not authenticated')
-      )) {
-        console.error('Authentication error detected');
-        
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log(`Retrying operation, attempt ${retryCount + 1} of ${maxRetries + 1}`);
-          
-          // Wait a moment before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
-        }
-        
-        throw new Error('Authentication failed. Please sign in again and try once more.');
-      }
-      
-      // For non-auth errors or if we've exhausted retries, just throw the original error
-      throw error;
-    }
+  try {
+    console.log('Attempting to create group');
+    
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    const result = await client.request(mutation, { data });
+    console.log('Group created successfully');
+    return result;
+  } catch (error) {
+    console.error('Error creating group:', error);
+    throw error;
   }
-  
-  // This should never be reached but TypeScript wants a return statement
-  throw new Error('Failed to create group after maximum retries');
 }
 
 // Helper function to invite members to a group
 export async function inviteToGroup(data: {
   groupId: string;
   email: string;
-  role: 'ADMIN' | 'MEMBER' | 'GUEST';
+  role: 'ADMIN' | 'MEMBER' | 'GUEST' | 'ASSISTANT';
 }) {
   const mutation = `
     mutation InviteToGroup($data: GroupInviteInput!) {
@@ -735,38 +617,6 @@ export async function generateGroupInviteLink(data: {
     return await client.request(mutation, { data: formattedData });
   } catch (error) {
     console.error('Error generating group invite link:', error);
-    
-    // Define type for GraphQL errors
-    type GraphQLError = {
-      response?: {
-        errors?: Array<{
-          message?: string;
-          extensions?: {
-            code?: string;
-          };
-        }>;
-        status?: number;
-        headers?: Record<string, unknown>;
-      };
-      request?: {
-        query?: string;
-        variables?: Record<string, unknown>;
-      };
-      message?: string;
-    };
-    
-    // Cast to a more specific type
-    const graphqlError = error as GraphQLError;
-    
-    // Log more detailed error information
-    if (graphqlError.response) {
-      console.error('GraphQL Response Error:', {
-        status: graphqlError.response.status,
-        errors: graphqlError.response.errors,
-        request: graphqlError.request
-      });
-    }
-    
     throw error;
   }
 }
@@ -775,7 +625,7 @@ export async function generateGroupInviteLink(data: {
 export async function changeGroupMemberRole(data: {
   groupId: string;
   memberId: string;
-  role: 'ADMIN' | 'MEMBER' | 'GUEST';
+  role: 'ADMIN' | 'MEMBER' | 'GUEST' | 'ASSISTANT';
 }) {
   const mutation = `
     mutation ChangeGroupMemberRole($data: GroupMemberRoleInput!) {

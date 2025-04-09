@@ -4,7 +4,8 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useAuth } from '@/components/auth/auth-provider';
+import { signInUser } from '@/lib/auth/server-actions';
+import { signIn } from 'next-auth/react';
 
 // Separate component to handle search params (must be wrapped in Suspense)
 function SignInForm() {
@@ -12,32 +13,45 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo') || '/dashboard';
-  const { signIn, isLoading } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
+    setIsLoading(true);
     setError('');
     
     try {
-      const { error, success } = await signIn(email, password);
-      
-      if (error) {
-        setError(error.message);
-        return;
+      // First try to sign in with NextAuth (client-side)
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      // If NextAuth sign-in fails
+      if (result?.error) {
+        // Fall back to server-side auth as a backup
+        const { error: serverError } = await signInUser(email, password);
+        
+        if (serverError) {
+          setError(serverError.message);
+          setIsLoading(false);
+          return;
+        }
       }
       
-      if (success) {
-        // Redirect to dashboard or original destination
-        router.push(redirectTo);
-        router.refresh();
-      }
+      // Redirect to dashboard or original destination
+      router.push(redirectTo);
+      router.refresh();
     } catch (err) {
       console.error('Sign in error:', err);
       setError(t('auth.signInError'));
+    } finally {
+      setIsLoading(false);
     }
   }
 

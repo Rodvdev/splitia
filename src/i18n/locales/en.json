@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Splitia",
-    "tagline": "Simple expense splitting for groups"
+    "tagline": "Split expenses with friends & family"
   },
   "common": {
     "save": "Save",
@@ -13,7 +13,10 @@
     "error": "An error occurred",
     "success": "Success!",
     "currency": "Currency",
-    "language": "Language"
+    "language": "Language",
+    "create": "Create",
+    "date": "Date",
+    "user": "User"
   },
   "auth": {
     "signIn": "Sign In",
@@ -23,12 +26,56 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset Password",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
+    "name": "Name",
+    "namePlaceholder": "Name",
+    "emailPlaceholder": "email@example.com",
+    "currencyLabel": "Currency",
+    "currencyPEN": "Peruvian Sol (S/)",
+    "currencyUSD": "US Dollar ($)",
+    "currencyEUR": "Euro (€)",
+    "currencyMXN": "Mexican Peso ($)",
+    "currencyCOP": "Colombian Peso ($)",
+    "currencyARS": "Argentine Peso ($)",
+    "languageLabel": "Language",
+    "languageES": "Spanish",
+    "languageEN": "English",
+    "languagePT": "Portuguese",
+    "passwordPlaceholder": "••••••••",
+    "confirmPasswordPlaceholder": "••••••••",
+    "currency": "Currency",
+    "language": "Language",
+    "passwordMismatch": "Passwords do not match",
+    "accountCreated": "Account created successfully! Your user ID is:",
+    "haveAccount": "Already have an account?",
     "signInError": "Failed to sign in. Please check your credentials.",
-    "signUpError": "Failed to sign up. Please try again.",
+    "signUpError": "An error occurred while creating your account. Please try again.",
     "passwordsNoMatch": "Passwords do not match.",
-    "checkEmail": "Please check your email to confirm your account."
+    "checkEmail": "Please check your email to confirm your account.",
+    "createAccount": "Create a new account",
+    "verificationSent": "We've sent you a verification link",
+    "verificationInstructions": "Click the link in the email to verify your account and sign in",
+    "noEmailReceived": "Didn't receive an email?",
+    "checkSpam": "Check your spam folder or try again",
+    "backToSignIn": "Back to Sign In"
+  },
+  "dashboard": {
+    "recentActivity": "Recent Activity",
+    "viewAll": "View All",
+    "empty": "No data available",
+    "totalExpenses": "Total Expenses",
+    "description": "Overview of your expenses and groups",
+    "title": "Dashboard",
+    "tagline": "Manage your expenses and groups",
+    "expenses": "Expenses",
+    "groups": "Groups",
+    "budget": "Budget",
+    "chat": "Chat",
+    "settings": "Settings",
+    "manageGroups": "Manage Groups",
+    "changeSettings": "Change Settings"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -51,7 +98,130 @@
     "percentage": "Percentage",
     "fixed": "Fixed amount",
     "location": "Location",
-    "notes": "Notes"
+    "notes": "Notes",
+    "total": "Total",
+    "recent": "Recent Expenses",
+    "noExpenses": "No expenses yet",
+    "categories": "Categories",
+    "viewAll": "View All Expenses",
+    "people": "people",
+    "actions": {
+      "create": "New Expense",
+      "edit": "Edit Expense",
+      "delete": "Delete Expense",
+      "save": "Save Expense",
+      "view": "View Details"
+    },
+    "filters": {
+      "search": "Search expenses...",
+      "category": "Category",
+      "date": "Date",
+      "amount": "Amount",
+      "sort": {
+        "date": "Sort by Date",
+        "amount": "Sort by Amount"
+      },
+      "status": {
+        "all": "All Statuses",
+        "paid": "Paid Only",
+        "pending": "Pending Only"
+      }
+    },
+    "nav": {
+      "all": "All Expenses",
+      "create": "Create",
+      "monthly": "Monthly",
+      "recurring": "Recurring",
+      "statistics": "Statistics"
+    },
+    "empty": {
+      "title": "No expenses found",
+      "description": "Create your first expense to start tracking your spending",
+      "action": "Create Expense"
+    },
+    "status": {
+      "paid": "Paid",
+      "pending": "Pending"
+    },
+    "type": {
+      "personal": "Personal",
+      "group": "Group"
+    },
+    "create": {
+      "title": "Create New Expense",
+      "success": "Expense created successfully"
+    },
+    "edit": {
+      "title": "Edit Expense",
+      "success": "Expense updated successfully"
+    },
+    "delete": {
+      "title": "Delete Expense",
+      "confirmation": "Are you sure you want to delete this expense?",
+      "warning": "This action cannot be undone.",
+      "success": "Expense deleted successfully"
+    },
+    "notifications": {
+      "createSuccess": "Expense created successfully",
+      "updateSuccess": "Expense updated successfully",
+      "deleteSuccess": "Expense deleted successfully",
+      "createError": "Failed to create expense",
+      "updateError": "Failed to update expense",
+      "deleteError": "Failed to delete expense"
+    },
+    "form": {
+      "title": {
+        "label": "Title",
+        "placeholder": "What was this expense for?",
+        "description": "Enter a descriptive name for this expense"
+      },
+      "amount": {
+        "label": "Amount",
+        "placeholder": "0.00"
+      },
+      "currency": {
+        "label": "Currency",
+        "placeholder": "Select currency"
+      },
+      "date": {
+        "label": "Date",
+        "placeholder": "Select date",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "thisWeek": "This Week",
+        "lastWeek": "Last Week",
+        "thisMonth": "This Month",
+        "lastMonth": "Last Month",
+        "thisYear": "This Year",
+        "lastYear": "Last Year"
+      },
+      "category": {
+        "label": "Category",
+        "placeholder": "Select category"
+      },
+      "location": {
+        "label": "Location",
+        "placeholder": "Where did this expense occur?",
+        "description": "Optional: Add a location for this expense"
+      },
+      "notes": {
+        "label": "Notes",
+        "placeholder": "Add any additional details about this expense"
+      },
+      "isPaid": {
+        "label": "Mark as Paid",
+        "description": "Toggle if this expense has been paid"
+      },
+      "isGroupExpense": {
+        "label": "Group Expense",
+        "description": "Is this an expense to be split with others?"
+      },
+      "actions": {
+        "submit": "Save Expense",
+        "submitting": "Saving...",
+        "cancel": "Cancel"
+      }
+    }
   },
   "groups": {
     "title": "Groups",
@@ -66,10 +236,23 @@
     "generateLink": "Generate Link",
     "copyLink": "Copy Link",
     "qrCode": "QR Code",
+    "view": {
+      "title": "Group Details",
+      "memberCount": "{count, plural, =1 {# member} other {# members}}",
+      "expenses": "Expenses",
+      "expensesCount": "{count, plural, =1 {# expense} other {# expenses}}"
+    },
     "role": {
       "admin": "Admin",
       "member": "Member",
-      "guest": "Guest"
+      "guest": "Guest",
+      "assistant": "AI Assistant"
+    },
+    "roles": {
+      "admin": "Admin",
+      "member": "Member",
+      "guest": "Guest",
+      "assistant": "AI Assistant"
     },
     "back": "Back",
     "settings": "Settings",
@@ -96,6 +279,11 @@
     "backToGroups": "Back to Groups",
     "leaveConfirm": "Are you sure you want to leave this group?",
     "deleteConfirm": "Are you sure you want to delete this group?",
+    "delete": {
+      "title": "Delete Group",
+      "description": "This action is irreversible. All expenses associated with this group will be deleted.",
+      "success": "Group successfully deleted"
+    },
     "manage": "Manage",
     "inviteByEmail": "Invite by Email",
     "inviteByLink": "Invite by Link",
@@ -125,7 +313,25 @@
     "linkCopied": "Link copied to clipboard",
     "generateNew": "Generate New Link",
     "cancel": "Cancel",
-    "search": "Search groups..."
+    "search": "Search groups...",
+    "total": "Total Groups",
+    "viewAll": "View All Groups",
+    "empty": "No groups found",
+    "actions": {
+      "settings": "Settings",
+      "invite": "Invite",
+      "delete": "Delete Group",
+      "deleting": "Deleting...",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "back": "Back to Groups",
+      "makeAdmin": "Make Admin",
+      "makeMember": "Make Member",
+      "makeGuest": "Make Guest",
+      "makeAssistant": "Make AI Assistant",
+      "remove": "Remove Member",
+      "removing": "Removing..."
+    }
   },
   "settings": {
     "title": "Settings",
@@ -142,7 +348,28 @@
       "system": "System"
     },
     "dateFormat": "Date Format",
-    "timeFormat": "Time Format"
+    "timeFormat": "Time Format",
+    "description": "Manage your account and preferences",
+    "preferences": "Preferences",
+    "privacy": "Privacy",
+    "security": "Security",
+    "logout": "Log Out",
+    "editProfile": "Edit Profile",
+    "profileSettings": "Profile Settings",
+    "name": "Name",
+    "email": "Email",
+    "emailReadOnly": "You cannot change your email",
+    "namePlaceholder": "Enter your name",
+    "languageHelp": "Language used in the application",
+    "currencyHelp": "Default currency for your expenses",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "profileUpdated": "Profile updated successfully",
+    "updateError": "Error updating profile",
+    "accountInfo": "Account Information",
+    "accountId": "Account ID",
+    "createdAt": "Account created",
+    "lastUpdated": "Last updated"
   },
   "chat": {
     "title": "Chat",
@@ -150,17 +377,248 @@
     "send": "Send",
     "typing": "typing...",
     "seen": "Seen",
-    "assistant": "AI Assistant"
+    "assistant": "AI Assistant",
+    "description": "Message with group members and friends",
+    "noMessages": "No messages yet",
+    "noConversations": "No conversations yet",
+    "newMessage": "New Message",
+    "newChat": "New Chat",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "messageInput": "Type a message...",
+    "search": "Search conversations",
+    "groupChat": "Group Chat",
+    "privateChat": "Private Chat",
+    "createGroup": "Create Group Chat",
+    "addMembers": "Add Members",
+    "addAIAssistant": "Add AI Assistant",
+    "addingAIAssistant": "Adding AI assistant...",
+    "aiAssistantAdded": "AI assistant added to group!",
+    "aiAssistantAddError": "Error adding AI assistant",
+    "aiAssistantGroupOnly": "AI assistant can only be added to group chats",
+    "aiAssistantNoGroup": "No group found for this conversation",
+    "leaveChat": "Leave Chat",
+    "deleteChat": "Delete Chat",
+    "empty": {
+      "title": "No conversations found",
+      "description": "Start a new conversation with your friends or group members",
+      "action": "Start Conversation"
+    },
+    "form": {
+      "titleLabel": "Chat Title",
+      "titlePlaceholder": "Enter a title for this conversation",
+      "participantsLabel": "Participants",
+      "participantsPlaceholder": "Select participants",
+      "messageLabel": "First Message",
+      "messagePlaceholder": "Start the conversation with a message"
+    }
   },
   "user": {
-    "guest": "guest"
+    "guest": "guest",
+    "profile": "Profile",
+    "name": "Name",
+    "email": "Email",
+    "settings": "User Settings",
+    "language": "Language",
+    "currency": "Currency",
+    "preferences": "Preferences",
+    "avatar": "Profile Picture"
   },
   "greetings": {
     "morning": "Good morning",
     "afternoon": "Good afternoon",
-    "evening": "Good evening"
+    "evening": "Good evening",
+    "welcome": "Welcome to Splitia",
+    "welcomeBack": "Welcome back, {name}",
+    "today": "Today is {date}",
+    "getStarted": "Let's get started"
   },
   "errors": {
-    "fetchProfile": "Error fetching your profile"
+    "fetchProfile": "Error fetching your profile",
+    "general": "Something went wrong",
+    "notFound": "Page not found",
+    "unauthorized": "You are not authorized to view this page",
+    "networkError": "Network error. Please check your connection",
+    "sessionExpired": "Your session has expired. Please sign in again",
+    "invalidCredentials": "Invalid email or password",
+    "requiredField": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidPassword": "Password must be at least 8 characters",
+    "passwordMismatch": "Passwords do not match",
+    "formSubmission": "There was a problem submitting the form",
+    "tryAgain": "Please try again later",
+    "dataLoad": "Failed to load data"
+  },
+  "profile": {
+    "setup": {
+      "title": "Complete Your Profile",
+      "subtitle": "Just a few more details to get you started",
+      "nameLabel": "Your Name",
+      "namePlaceholder": "Enter your full name",
+      "nameDescription": "This is how you'll appear to other users",
+      "avatarLabel": "Profile Picture",
+      "avatarDescription": "Upload a profile picture (optional)",
+      "uploadAvatar": "Upload image",
+      "currency": "Preferred Currency",
+      "currencyDescription": "Default currency for your expenses",
+      "language": "Preferred Language",
+      "languageDescription": "Choose your preferred language",
+      "submit": "Complete Profile",
+      "submitting": "Saving...",
+      "skip": "Skip for now",
+      "successMessage": "Profile setup complete!",
+      "errorMessage": "There was a problem saving your profile"
+    }
+  },
+  "Categories": {
+    "title": "Categories",
+    "description": "Manage and organize your expense categories",
+    "create": "Create Category",
+    "edit": "Edit Category",
+    "delete": "Delete Category",
+    "empty": "No categories found",
+    "emptyDescription": "Create your first category to organize your expenses",
+    "nameLabel": "Category Name",
+    "namePlaceholder": "Enter category name",
+    "colorLabel": "Category Color",
+    "iconLabel": "Category Icon",
+    "actions": {
+      "save": "Save Category",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit"
+    }
+  },
+  "Reports": {
+    "title": "Reports",
+    "description": "View detailed expense and spending reports",
+    "timeRange": "Time Range",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "custom": "Custom",
+    "categories": "Categories",
+    "total": "Total Spending",
+    "average": "Average per Day",
+    "byCategory": "Spending by Category",
+    "topCategories": "Top Categories",
+    "spendingTrends": "Spending Trends",
+    "noData": "No data for the selected period",
+    "filters": {
+      "apply": "Apply Filters",
+      "clear": "Clear Filters",
+      "startDate": "Start Date",
+      "endDate": "End Date"
+    }
+  },
+  "Profile": {
+    "title": "User Profile",
+    "description": "Manage your personal profile and account settings",
+    "personalInfo": "Personal Information",
+    "accountSettings": "Account Settings",
+    "name": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "avatar": "Profile Picture",
+    "changeAvatar": "Change Picture",
+    "removeAvatar": "Remove Picture",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "changesSaved": "Your changes have been saved",
+    "errorSaving": "There was an error saving your changes"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "format": {
+      "short": "MM/DD/YYYY",
+      "long": "MMMM D, YYYY",
+      "relative": "{timeAgo} ago"
+    },
+    "month": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "day": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
+  },
+  "budget": {
+    "title": "Budget",
+    "description": "Plan and track your monthly budget",
+    "overview": "Budget Overview",
+    "create": "Create Budget",
+    "edit": "Edit Budget",
+    "month": "Month",
+    "income": "Income",
+    "expenses": "Expenses",
+    "categories": "Budget Categories",
+    "remaining": "Remaining",
+    "spent": "Spent",
+    "allocation": "Allocation",
+    "savings": "Savings",
+    "progress": "Budget Progress",
+    "statistics": "Budget Statistics",
+    "addCategory": "Add Category",
+    "empty": {
+      "title": "No budget found",
+      "description": "Create your first budget to start tracking your spending",
+      "action": "Create Budget"
+    },
+    "form": {
+      "monthLabel": "Month",
+      "monthPlaceholder": "Select month",
+      "incomeLabel": "Monthly Income",
+      "incomePlaceholder": "Enter your monthly income",
+      "expensesLabel": "Planned Expenses",
+      "savingsLabel": "Planned Savings",
+      "savingsTarget": "Savings Target",
+      "categoryLabel": "Category",
+      "categoryPlaceholder": "Select or create a category",
+      "amountLabel": "Amount",
+      "amountPlaceholder": "Budget amount for this category",
+      "actions": {
+        "submit": "Save Budget",
+        "submitting": "Saving...",
+        "cancel": "Cancel"
+      }
+    }
+  },
+  "roles": {
+    "admin": "Admin",
+    "member": "Member",
+    "guest": "Guest",
+    "assistant": "AI Assistant"
+  },
+  "actions": {
+    "makeAdmin": "Make Admin",
+    "makeMember": "Make Member",
+    "makeGuest": "Make Guest",
+    "makeAssistant": "Make AI Assistant",
+    "remove": "Remove Member",
+    "removing": "Removing...",
+    "cancel": "Cancel",
+    "openMenu": "Open menu"
   }
 } 

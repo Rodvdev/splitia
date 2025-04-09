@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { 
@@ -14,6 +14,7 @@ import {
   LogOut,
   Trash,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,17 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Interface for chat data
+// GraphQL hooks
+import { 
+  useConversations, 
+  useConversation, 
+  sendMessage as sendMessageApi, 
+  Conversation,
+  Message as ApiMessage
+} from '@/lib/chat-graphql';
+import { useSession } from 'next-auth/react';
+
+// Interfaces for our app's data structure
 interface ChatMessage {
   id: string;
   content: string;
@@ -58,139 +69,109 @@ interface ChatConversation {
   }[];
 }
 
+interface AIMessageAction {
+  id: string;
+  label: string;
+  action: string;
+  color?: 'primary' | 'secondary' | 'destructive';
+}
+
+interface AIMessageWithButtons extends ChatMessage {
+  buttons?: AIMessageAction[];
+}
+
 export default function ChatPage() {
   const t = useTranslations('chat');
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [conversations, setConversations] = useState<ChatConversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [messageInput, setMessageInput] = useState('');
+  const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Mock data for conversations and messages
-  useEffect(() => {
-    // Simulate API call delay
-    setTimeout(() => {
-      const mockConversations: ChatConversation[] = [
-        {
-          id: '1',
-          name: 'Vacation Group',
-          isGroup: true,
-          lastMessage: {
-            content: 'When are we meeting for dinner?',
-            timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
-          },
-          unread: 3,
-          members: [
-            { id: '1', name: 'John Doe' },
-            { id: '2', name: 'Alice Smith' },
-            { id: '3', name: 'Bob Johnson' },
-            { id: '4', name: 'Current User' }
-          ]
-        },
-        {
-          id: '2',
-          name: 'Alice Smith',
-          isGroup: false,
-          lastMessage: {
-            content: 'Thanks for the info!',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-          },
-          unread: 0,
-        },
-        {
-          id: '3',
-          name: 'Apartment Expenses',
-          isGroup: true,
-          lastMessage: {
-            content: 'I paid the electricity bill',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-          },
-          unread: 1,
-        },
-        {
-          id: '4',
-          name: 'Bob Johnson',
-          isGroup: false,
-          lastMessage: {
-            content: 'Are we still on for tomorrow?',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
-          },
-          unread: 0,
-        },
-      ];
-      
-      setConversations(mockConversations);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
-
-  // Load messages when selecting a conversation
-  useEffect(() => {
-    if (!selectedConversation) return;
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [messageInput, setMessageInput] = useState('');
+  
+  // Fetch conversations using GraphQL
+  const { conversations, loading: loadingConversations, error: conversationsError, refetch: refetchConversations } = useConversations();
+  
+  // Fetch selected conversation
+  const { 
+    conversation: selectedConversationData, 
+    loading: loadingConversation, 
+    error: conversationError,
+    refetch: refetchConversation
+  } = useConversation(selectedConversationId);
+  
+  // Format GraphQL conversations to our app's structure
+  const formattedConversations: ChatConversation[] = React.useMemo(() => {
+    if (!conversations || !session?.user?.id) return [];
     
-    setIsLoading(true);
+    return conversations.map((conv: Conversation) => {
+      // Get conversation name based on type
+      let name = '';
+      let avatar = '';
+      
+      if (conv.isGroupChat && conv.group) {
+        name = conv.group.name;
+        avatar = conv.group.image || '';
+      } else {
+        // For direct messages, use the other participant's name
+        const otherParticipant = conv.participants.find(p => p.id !== session.user?.id);
+        if (otherParticipant) {
+          name = otherParticipant.name;
+          avatar = otherParticipant.image || '';
+        }
+      }
+      
+      // Sort messages by date (newest first) and get the first one as last message
+      const sortedMessages = conv.messages ? 
+        [...conv.messages].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ) : [];
+      
+      const lastMessage = sortedMessages.length > 0 ? sortedMessages[0] : null;
+      
+      const isMessageSeen = lastMessage ? 
+        lastMessage.seenBy.some(user => user.id === session.user?.id) : 
+        true;
+      
+      return {
+        id: conv.id,
+        name,
+        avatar,
+        isGroup: conv.isGroupChat,
+        lastMessage: lastMessage ? {
+          content: lastMessage.content,
+          timestamp: lastMessage.createdAt
+        } : undefined,
+        unread: !isMessageSeen && lastMessage?.sender.id !== session.user?.id ? 1 : 0,
+        members: conv.participants.map(p => ({
+          id: p.id,
+          name: p.name,
+          avatar: p.image
+        }))
+      };
+    });
+  }, [conversations, session?.user?.id]);
+
+  // Format conversation messages to our app's structure
+  const formattedMessages: ChatMessage[] = React.useMemo(() => {
+    if (!selectedConversationData || !session?.user?.id) return [];
     
-    // Simulate API call delay
-    setTimeout(() => {
-      const mockMessages: ChatMessage[] = [
-        {
-          id: '1',
-          content: 'Hey everyone, what are our plans for the weekend?',
-          senderId: '1',
-          senderName: 'John Doe',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
-          isCurrentUser: false,
-        },
-        {
-          id: '2',
-          content: 'I was thinking we could go hiking on Saturday',
-          senderId: '2',
-          senderName: 'Alice Smith',
-          timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 minutes ago
-          isCurrentUser: false,
-        },
-        {
-          id: '3',
-          content: 'That sounds great! What time should we meet?',
-          senderId: '3',
-          senderName: 'Bob Johnson',
-          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-          isCurrentUser: false,
-        },
-        {
-          id: '4',
-          content: 'I can drive if we want to carpool',
-          senderId: '4',
-          senderName: 'Current User',
-          timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 minutes ago
-          isCurrentUser: true,
-        },
-        {
-          id: '5',
-          content: 'When are we meeting for dinner?',
-          senderId: '1',
-          senderName: 'John Doe',
-          timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
-          isCurrentUser: false,
-        },
-      ];
-      
-      setMessages(mockMessages);
-      setIsLoading(false);
-      
-      // Mark conversation as read
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.id === selectedConversation ? { ...conv, unread: 0 } : conv
-        )
-      );
-    }, 500);
-  }, [selectedConversation]);
+    // Sort messages by date (oldest first for display)
+    const sortedMessages = [...selectedConversationData.messages]
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    
+    return sortedMessages.map((msg: ApiMessage) => ({
+      id: msg.id,
+      content: msg.content,
+      senderId: msg.sender.id,
+      senderName: msg.sender.name,
+      senderAvatar: msg.sender.image,
+      timestamp: msg.createdAt,
+      isCurrentUser: msg.sender.id === session.user?.id
+    }));
+  }, [selectedConversationData, session?.user?.id]);
 
   // Filter conversations based on search query
-  const filteredConversations = conversations.filter(conversation =>
+  const filteredConversations = formattedConversations.filter(conversation =>
     conversation.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -215,41 +196,90 @@ export default function ChatPage() {
     return date.toLocaleDateString();
   };
 
+  // Function to display messages with buttons
+  function MessageItem({ message }: { message: AIMessageWithButtons }) {
+    // Handle button click
+    const handleButtonClick = (action: string) => {
+      console.log(`Action clicked: ${action}`);
+      // Implement the action handling logic here
+      // For example, add an expense, confirm a payment, etc.
+    };
+
+    return (
+      <div className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
+        <div className="flex items-start max-w-[80%]">
+          {!message.isCurrentUser && (
+            <Avatar className="mr-2 mt-0.5">
+              {message.senderAvatar ? (
+                <AvatarImage src={message.senderAvatar} alt={message.senderName} />
+              ) : (
+                <AvatarFallback>{getAvatarFallback(message.senderName)}</AvatarFallback>
+              )}
+            </Avatar>
+          )}
+          <div>
+            {!message.isCurrentUser && (
+              <div className="text-sm text-muted-foreground mb-1">{message.senderName}</div>
+            )}
+            <div className={`p-3 rounded-lg ${
+              message.isCurrentUser 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted'
+            }`}>
+              <div className="whitespace-pre-wrap break-words">{message.content}</div>
+              
+              {message.buttons && message.buttons.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {message.buttons.map((btn) => (
+                    <Button
+                      key={btn.id}
+                      variant={btn.color as "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" || "secondary"}
+                      size="sm"
+                      onClick={() => handleButtonClick(btn.action)}
+                    >
+                      {btn.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {formatTimestamp(message.timestamp)}
+            </div>
+          </div>
+          {message.isCurrentUser && (
+            <Avatar className="ml-2 mt-0.5">
+              {message.senderAvatar ? (
+                <AvatarImage src={message.senderAvatar} alt={message.senderName} />
+              ) : (
+                <AvatarFallback>{getAvatarFallback(message.senderName)}</AvatarFallback>
+              )}
+            </Avatar>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Handle sending a new message
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!messageInput.trim() || !selectedConversation) return;
+    if (!messageInput.trim() || !selectedConversationId || !session?.user?.id) return;
     
-    // Add message to the list
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      content: messageInput,
-      senderId: '4', // Current user ID
-      senderName: 'Current User',
-      timestamp: new Date().toISOString(),
-      isCurrentUser: true,
-    };
-    
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Update conversation last message
-    setConversations(prev => 
-      prev.map(conv => 
-        conv.id === selectedConversation 
-          ? { 
-              ...conv, 
-              lastMessage: {
-                content: messageInput,
-                timestamp: new Date().toISOString(),
-              } 
-            } 
-          : conv
-      )
-    );
-    
-    // Clear input
-    setMessageInput('');
+    try {
+      // Send the message via API
+      await sendMessageApi(selectedConversationId, messageInput);
+      
+      // Clear the input
+      setMessageInput('');
+      
+      // Refresh the conversation and conversations list
+      if (refetchConversation) refetchConversation();
+      if (refetchConversations) refetchConversations();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   // Create a new chat
@@ -265,6 +295,107 @@ export default function ChatPage() {
       .join('')
       .toUpperCase()
       .substring(0, 2);
+  };
+
+  // Mark conversation as seen when selected
+  React.useEffect(() => {
+    if (selectedConversationId && selectedConversationData?.messages && selectedConversationData.messages.length > 0) {
+      // Find the most recent message by date
+      const newestMessage = [...selectedConversationData.messages]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      
+      // Only mark as seen if it's not from the current user and not already seen
+      if (
+        newestMessage && 
+        newestMessage.sender.id !== session?.user?.id &&
+        !newestMessage.seenBy.some(user => user.id === session?.user?.id)
+      ) {
+        try {
+          // This would be an API call to mark the message as seen
+          // markMessageAsSeen(newestMessage.id);
+        } catch (error) {
+          console.error('Error marking message as seen:', error);
+        }
+      }
+    }
+  }, [selectedConversationId, selectedConversationData, session?.user?.id]);
+
+  // Handle adding an AI assistant
+  const handleAddAIAssistant = async () => {
+    if (!selectedConversationId) return;
+    
+    try {
+      // Show loading state
+      toast.info(t('addingAIAssistant') || 'Adding AI assistant...');
+      
+      // Get the group ID from the selected conversation
+      const selectedConversation = filteredConversations.find(c => c.id === selectedConversationId);
+      
+      if (!selectedConversation?.isGroup) {
+        toast.error(t('aiAssistantGroupOnly') || 'AI assistant can only be added to group chats');
+        return;
+      }
+      
+      // Find the group ID from the conversation
+      const conversationDetails = await fetch(`/api/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            query GetConversation($id: ID!) {
+              conversation(id: $id) {
+                id
+                group {
+                  id
+                }
+              }
+            }
+          `,
+          variables: { id: selectedConversationId },
+        }),
+      }).then(res => res.json());
+      
+      const groupId = conversationDetails?.data?.conversation?.group?.id;
+      
+      if (!groupId) {
+        toast.error(t('aiAssistantNoGroup') || 'No group found for this conversation');
+        return;
+      }
+      
+      console.log('Adding AI Assistant to group:', groupId);
+      
+      // Call the API to add the assistant
+      const response = await fetch('/api/ai-assistant/add-to-group', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ groupId }),
+      });
+      
+      const result = await response.json();
+      console.log('API response:', result);
+      
+      if (!response.ok) {
+        throw new Error(result.error || result.details || 'Failed to add AI assistant');
+      }
+      
+      // Show success message
+      toast.success(t('aiAssistantAdded') || 'AI assistant added to group!');
+      
+      // Refresh the conversation to show the new member
+      await refetchConversation();
+      
+      // Also refresh conversations list to update participant count
+      await refetchConversations();
+    } catch (error) {
+      console.error('Error adding AI assistant:', error);
+      // Show more detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`${t('aiAssistantAddError') || 'Error adding AI assistant'}: ${errorMessage}`);
+    }
   };
 
   return (
@@ -290,7 +421,7 @@ export default function ChatPage() {
         </div>
         
         <ScrollArea className="flex-1">
-          {isLoading && !selectedConversation ? (
+          {loadingConversations ? (
             // Loading skeletons for conversations
             <div className="p-3 space-y-3">
               {[1, 2, 3, 4].map((i) => (
@@ -304,15 +435,59 @@ export default function ChatPage() {
                 </div>
               ))}
             </div>
-          ) : filteredConversations.length > 0 ? (
+          ) : conversationsError ? (
+            // Error loading conversations
+            <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
+              <div>
+                <p className="text-red-500 mb-2">{t('errorLoading')}</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-2 mb-4"
+                  onClick={() => refetchConversations()}
+                >
+                  {t('tryAgain')}
+                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleCreateChat} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('newChat')}
+                  </Button>
+                  <Button onClick={() => router.push('/dashboard/groups/create')} variant="outline" size="sm">
+                    <Users className="h-4 w-4 mr-2" />
+                    {t('createGroup')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : filteredConversations.length === 0 ? (
+            // No conversations found
+            <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
+              <div>
+                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="mb-2">{t('noConversations')}</p>
+                <p className="text-sm mb-4 max-w-[220px] mx-auto">{t('description')}</p>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleCreateChat} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('newChat')}
+                  </Button>
+                  <Button onClick={() => router.push('/dashboard/groups/create')} variant="outline" size="sm">
+                    <Users className="h-4 w-4 mr-2" />
+                    {t('createGroup')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Conversation list
             <div className="p-3 space-y-1">
               {filteredConversations.map((conversation) => (
                 <div
                   key={conversation.id}
                   className={`flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-accent ${
-                    selectedConversation === conversation.id ? 'bg-accent' : ''
+                    selectedConversationId === conversation.id ? 'bg-accent' : ''
                   }`}
-                  onClick={() => setSelectedConversation(conversation.id)}
+                  onClick={() => setSelectedConversationId(conversation.id)}
                 >
                   <Avatar>
                     {conversation.avatar ? (
@@ -351,53 +526,39 @@ export default function ChatPage() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
-              <div>
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>{t('noConversations')}</p>
-                <Button 
-                  variant="link" 
-                  className="mt-2 text-sm"
-                  onClick={handleCreateChat}
-                >
-                  {t('newChat')}
-                </Button>
-              </div>
-            </div>
           )}
         </ScrollArea>
       </div>
       
       {/* Chat Area */}
       <div className="hidden md:flex flex-1 flex-col overflow-hidden">
-        {selectedConversation ? (
+        {selectedConversationId ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  {conversations.find(c => c.id === selectedConversation)?.avatar ? (
+                  {filteredConversations.find(c => c.id === selectedConversationId)?.avatar ? (
                     <AvatarImage 
-                      src={conversations.find(c => c.id === selectedConversation)?.avatar || ''} 
-                      alt={conversations.find(c => c.id === selectedConversation)?.name || ''} 
+                      src={filteredConversations.find(c => c.id === selectedConversationId)?.avatar || ''} 
+                      alt={filteredConversations.find(c => c.id === selectedConversationId)?.name || ''} 
                     />
                   ) : null}
                   <AvatarFallback>
-                    {conversations.find(c => c.id === selectedConversation)?.isGroup ? (
+                    {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup ? (
                       <Users className="h-4 w-4" />
                     ) : (
-                      getAvatarFallback(conversations.find(c => c.id === selectedConversation)?.name || '')
+                      getAvatarFallback(filteredConversations.find(c => c.id === selectedConversationId)?.name || '')
                     )}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h2 className="font-semibold">
-                    {conversations.find(c => c.id === selectedConversation)?.name}
+                    {filteredConversations.find(c => c.id === selectedConversationId)?.name}
                   </h2>
-                  {conversations.find(c => c.id === selectedConversation)?.isGroup && (
+                  {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
                     <p className="text-xs text-muted-foreground">
-                      {conversations.find(c => c.id === selectedConversation)?.members?.length || 0} {t('groupChat')}
+                      {filteredConversations.find(c => c.id === selectedConversationId)?.members?.length || 0} {t('groupChat')}
                     </p>
                   )}
                 </div>
@@ -410,11 +571,28 @@ export default function ChatPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {conversations.find(c => c.id === selectedConversation)?.isGroup && (
-                    <DropdownMenuItem className="cursor-pointer">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      {t('addMembers')}
-                    </DropdownMenuItem>
+                  {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
+                    <>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        {t('addMembers')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={handleAddAIAssistant}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <path d="M7 7h.01" />
+                          <path d="M12 7h.01" />
+                          <path d="M17 7h.01" />
+                          <path d="m7 12 1 1 1.5-1.5" />
+                          <path d="M12 12h.01" />
+                          <path d="M17 12h.01" />
+                          <path d="M7 17h.01" />
+                          <path d="M12 17h.01" />
+                          <path d="M17 17h.01" />
+                        </svg>
+                        {t('addAIAssistant')}
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuItem className="cursor-pointer text-destructive">
                     <LogOut className="h-4 w-4 mr-2" />
@@ -431,7 +609,7 @@ export default function ChatPage() {
             
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
-              {isLoading ? (
+              {loadingConversation ? (
                 // Loading skeletons for messages
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -444,37 +622,23 @@ export default function ChatPage() {
                     </div>
                   ))}
                 </div>
-              ) : messages.length > 0 ? (
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div 
-                      key={message.id} 
-                      className={`flex items-start gap-3 ${message.isCurrentUser ? 'justify-end' : ''}`}
+              ) : conversationError ? (
+                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                  <div>
+                    <p className="text-red-500">{t('errorLoading')}</p>
+                    <Button 
+                      variant="link" 
+                      className="mt-2 text-sm"
+                      onClick={() => refetchConversation()}
                     >
-                      {!message.isCurrentUser && (
-                        <Avatar className="h-8 w-8">
-                          {message.senderAvatar ? (
-                            <AvatarImage src={message.senderAvatar} alt={message.senderName} />
-                          ) : null}
-                          <AvatarFallback>
-                            {getAvatarFallback(message.senderName)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div 
-                        className={`max-w-[70%] rounded-lg p-3 ${
-                          message.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                        }`}
-                      >
-                        {!message.isCurrentUser && conversations.find(c => c.id === selectedConversation)?.isGroup && (
-                          <p className="text-xs font-medium mb-1">{message.senderName}</p>
-                        )}
-                        <p>{message.content}</p>
-                        <p className="text-xs opacity-70 mt-1 text-right">
-                          {formatTimestamp(message.timestamp)}
-                        </p>
-                      </div>
-                    </div>
+                      {t('tryAgain')}
+                    </Button>
+                  </div>
+                </div>
+              ) : formattedMessages.length > 0 ? (
+                <div className="space-y-4">
+                  {formattedMessages.map((message) => (
+                    <MessageItem key={message.id} message={message as AIMessageWithButtons} />
                   ))}
                 </div>
               ) : (
@@ -518,7 +682,7 @@ export default function ChatPage() {
       
       {/* Mobile: Show only conversation list if no selection, otherwise show chat */}
       <div className="md:hidden flex-1 flex flex-col overflow-hidden">
-        {selectedConversation ? (
+        {selectedConversationId ? (
           <>
             {/* Chat Header with back button */}
             <div className="p-4 border-b flex justify-between items-center">
@@ -526,34 +690,34 @@ export default function ChatPage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => setSelectedConversation(null)}
+                  onClick={() => setSelectedConversationId(null)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
                     <path d="m15 18-6-6 6-6"/>
                   </svg>
                 </Button>
                 <Avatar>
-                  {conversations.find(c => c.id === selectedConversation)?.avatar ? (
+                  {filteredConversations.find(c => c.id === selectedConversationId)?.avatar ? (
                     <AvatarImage 
-                      src={conversations.find(c => c.id === selectedConversation)?.avatar || ''} 
-                      alt={conversations.find(c => c.id === selectedConversation)?.name || ''} 
+                      src={filteredConversations.find(c => c.id === selectedConversationId)?.avatar || ''} 
+                      alt={filteredConversations.find(c => c.id === selectedConversationId)?.name || ''} 
                     />
                   ) : null}
                   <AvatarFallback>
-                    {conversations.find(c => c.id === selectedConversation)?.isGroup ? (
+                    {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup ? (
                       <Users className="h-4 w-4" />
                     ) : (
-                      getAvatarFallback(conversations.find(c => c.id === selectedConversation)?.name || '')
+                      getAvatarFallback(filteredConversations.find(c => c.id === selectedConversationId)?.name || '')
                     )}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h2 className="font-semibold">
-                    {conversations.find(c => c.id === selectedConversation)?.name}
+                    {filteredConversations.find(c => c.id === selectedConversationId)?.name}
                   </h2>
-                  {conversations.find(c => c.id === selectedConversation)?.isGroup && (
+                  {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
                     <p className="text-xs text-muted-foreground">
-                      {conversations.find(c => c.id === selectedConversation)?.members?.length || 0} {t('groupChat')}
+                      {filteredConversations.find(c => c.id === selectedConversationId)?.members?.length || 0} {t('groupChat')}
                     </p>
                   )}
                 </div>
@@ -566,11 +730,28 @@ export default function ChatPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {conversations.find(c => c.id === selectedConversation)?.isGroup && (
-                    <DropdownMenuItem className="cursor-pointer">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      {t('addMembers')}
-                    </DropdownMenuItem>
+                  {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
+                    <>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        {t('addMembers')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={handleAddAIAssistant}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <path d="M7 7h.01" />
+                          <path d="M12 7h.01" />
+                          <path d="M17 7h.01" />
+                          <path d="m7 12 1 1 1.5-1.5" />
+                          <path d="M12 12h.01" />
+                          <path d="M17 12h.01" />
+                          <path d="M7 17h.01" />
+                          <path d="M12 17h.01" />
+                          <path d="M17 17h.01" />
+                        </svg>
+                        {t('addAIAssistant')}
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuItem className="cursor-pointer text-destructive">
                     <LogOut className="h-4 w-4 mr-2" />
@@ -587,7 +768,7 @@ export default function ChatPage() {
             
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
-              {isLoading ? (
+              {loadingConversation ? (
                 // Loading skeletons for messages
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -600,37 +781,23 @@ export default function ChatPage() {
                     </div>
                   ))}
                 </div>
-              ) : messages.length > 0 ? (
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div 
-                      key={message.id} 
-                      className={`flex items-start gap-3 ${message.isCurrentUser ? 'justify-end' : ''}`}
+              ) : conversationError ? (
+                <div className="flex items-center justify-center h-full text-center text-red-500">
+                  <div>
+                    <p>{t('errorLoading')}</p>
+                    <Button 
+                      variant="link" 
+                      className="mt-2 text-sm"
+                      onClick={() => refetchConversation()}
                     >
-                      {!message.isCurrentUser && (
-                        <Avatar className="h-8 w-8">
-                          {message.senderAvatar ? (
-                            <AvatarImage src={message.senderAvatar} alt={message.senderName} />
-                          ) : null}
-                          <AvatarFallback>
-                            {getAvatarFallback(message.senderName)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div 
-                        className={`max-w-[70%] rounded-lg p-3 ${
-                          message.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                        }`}
-                      >
-                        {!message.isCurrentUser && conversations.find(c => c.id === selectedConversation)?.isGroup && (
-                          <p className="text-xs font-medium mb-1">{message.senderName}</p>
-                        )}
-                        <p>{message.content}</p>
-                        <p className="text-xs opacity-70 mt-1 text-right">
-                          {formatTimestamp(message.timestamp)}
-                        </p>
-                      </div>
-                    </div>
+                      {t('tryAgain')}
+                    </Button>
+                  </div>
+                </div>
+              ) : formattedMessages.length > 0 ? (
+                <div className="space-y-4">
+                  {formattedMessages.map((message) => (
+                    <MessageItem key={message.id} message={message as AIMessageWithButtons} />
                   ))}
                 </div>
               ) : (

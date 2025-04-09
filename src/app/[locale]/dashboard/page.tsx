@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { 
   Plus, 
@@ -22,6 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 import { fetchExpenses, fetchUserGroups } from '@/lib/graphql-client';
 import { formatCurrency } from '@/lib/format';
+import { getSession } from 'next-auth/react';
+import { useProfile } from '@/hooks/use-profile';
 
 // Type definitions
 interface Expense {
@@ -54,27 +55,24 @@ interface Group {
 }
 
 export default function DashboardPage() {
-  const t = useTranslations();
   const tExpenses = useTranslations('expenses');
   const tGroups = useTranslations('groups');
   const tSettings = useTranslations('settings');
   const tDashboard = useTranslations('dashboard');
   const tDate = useTranslations('date');
   const tApp = useTranslations('app');
-  const tUser = useTranslations('user');
-  const tGreetings = useTranslations('greetings');
   const tErrors = useTranslations('errors');
   const tNavigation = useTranslations('navigation');
   const router = useRouter();
-  const [userName, setUserName] = useState<string>('');
-  const [userCurrency, setUserCurrency] = useState<string>('');
-  const [userLanguage, setUserLanguage] = useState<string>('');
+  const { profile } = useProfile();
+  const [userCurrency, setUserCurrency] = useState<string>('USD');
+  const [userLanguage, setUserLanguage] = useState<string>('en');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
-  const supabase = createClient();
+
   
   // Fetch user profile
   useEffect(() => {
@@ -83,7 +81,7 @@ export default function DashboardPage() {
         setIsLoading(true);
         
         // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getSession();
         
         if (!session) {
           router.push('/sign-in');
@@ -101,7 +99,6 @@ export default function DashboardPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.user) {
-            setUserName(data.user.name || '');
             setUserCurrency(data.user.currency || 'PEN');
             setUserLanguage(data.user.language || 'es');
           }
@@ -115,7 +112,7 @@ export default function DashboardPage() {
     };
     
     fetchUserProfile();
-  }, [router, supabase, t, tErrors]);
+  }, [router, tErrors]);
   
   // Fetch expenses and groups
   useEffect(() => {
@@ -162,26 +159,6 @@ export default function DashboardPage() {
     router.push('/dashboard/groups');
   };
   
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    
-    if (userLanguage === 'en') {
-      if (hour < 12) return tGreetings('morning');
-      if (hour < 19) return tGreetings('afternoon');
-      return tGreetings('evening');
-    } else if (userLanguage === 'pt') {
-      if (hour < 12) return 'Bom dia';
-      if (hour < 19) return 'Boa tarde';
-      return 'Boa noite';
-    } else {
-      // Español por defecto
-      if (hour < 12) return 'Buenos días';
-      if (hour < 19) return 'Buenas tardes';
-      return 'Buenas noches';
-    }
-  };
-
-  // Get language name from code
   const getLanguageName = (code: string) => {
     switch (code) {
       case 'en': return 'English';
@@ -230,15 +207,20 @@ export default function DashboardPage() {
       .substring(0, 2);
   };
   
+  // Currency formatting with locale
+  const formatUserCurrency = (amount: number, currencyCode: string) => {
+    return formatCurrency(amount, currencyCode, {
+      locale: userLanguage === 'en' ? 'en-US' : 
+             userLanguage === 'es' ? 'es-ES' : 
+             userLanguage === 'pt' ? 'pt-BR' : 'en-US'
+    });
+  };
+  
   return (
     <div className="container mx-auto p-6">
       <header className="mb-10">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl text-muted-foreground">
-            {!isLoading && `${getGreeting()}, ${userName || tUser('guest')}`}
-            {isLoading && <div className="h-6 w-48 bg-muted animate-pulse rounded"></div>}
-          </h2>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold text-foreground mt-4">
             {tNavigation('dashboard')}
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -268,7 +250,7 @@ export default function DashboardPage() {
                 {isLoadingExpenses ? (
                   <Skeleton className="h-8 w-36" />
                 ) : (
-                  formatCurrency(getTotalExpenses(), userCurrency)
+                  formatUserCurrency(getTotalExpenses(), userCurrency)
                 )}
               </span>
             </div>
@@ -372,7 +354,7 @@ export default function DashboardPage() {
                 <span className="font-medium">
                   {isLoading ? 
                     <Skeleton className="h-5 w-20" /> : 
-                    getLanguageName(userLanguage)}
+                    getLanguageName(profile?.language || userLanguage)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -382,19 +364,19 @@ export default function DashboardPage() {
                 <span className="font-medium">
                   {isLoading ? 
                     <Skeleton className="h-5 w-16" /> : 
-                    userCurrency}
+                    profile?.currency || userCurrency}
                 </span>
               </div>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-2">
             <Button 
               variant="outline" 
               size="sm" 
               className="w-full"
-              onClick={() => router.push('/profile')}
+              onClick={() => router.push('/dashboard/settings')}
             >
-              {tSettings('profile')}
+              {tSettings('editProfile')}
             </Button>
           </CardFooter>
         </Card>
@@ -451,7 +433,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="font-semibold">
-                    {formatCurrency(expense.amount, expense.currency)}
+                    {formatUserCurrency(expense.amount, expense.currency)}
                   </div>
                 </div>
               </Card>

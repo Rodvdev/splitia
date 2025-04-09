@@ -1,9 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Receipt,
@@ -16,7 +15,9 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/components/auth/auth-provider';
+import { useAuth } from '@/hooks/use-auth';
+import { useProfile } from '@/hooks/use-profile';
+import UserProfileDisplay from '@/components/user/UserProfileDisplay';
 
 export default function DashboardLayout({
   children,
@@ -25,8 +26,29 @@ export default function DashboardLayout({
 }) {
   const t = useTranslations();
   const pathname = usePathname();
+  const router = useRouter();
   const { signOut, isLoading: isSigningOut } = useAuth();
+  const { profile } = useProfile();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [userLocale, setUserLocale] = useState<string>('');
+  
+  // Set user's preferred locale from profile
+  useEffect(() => {
+    if (profile?.language) {
+      setUserLocale(profile.language);
+    }
+  }, [profile]);
+  
+  // Build localized path
+  const getLocalizedPath = (path: string) => {
+    if (!userLocale) return path;
+    
+    if (path === '/dashboard') {
+      return `/${userLocale}/dashboard`;
+    } else {
+      return `/${userLocale}${path}`;
+    }
+  };
 
   // Navigation items with icons
   const navItems = [
@@ -70,11 +92,17 @@ export default function DashboardLayout({
     setIsMobileNavOpen(false);
   };
 
+  const handleNavigation = (href: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(getLocalizedPath(href));
+    closeMobileNav();
+  };
+
   const renderNavItems = () => (
     <ul className="space-y-2">
       {navItems.map((item) => (
         <li key={item.href}>
-          <Link
+          <a
             href={item.href}
             className={cn(
               "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -83,11 +111,11 @@ export default function DashboardLayout({
                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : ""
             )}
-            onClick={closeMobileNav}
+            onClick={(e) => handleNavigation(item.href, e)}
           >
             {item.icon}
             <span className="ml-3">{item.label}</span>
-          </Link>
+          </a>
         </li>
       ))}
     </ul>
@@ -101,6 +129,9 @@ export default function DashboardLayout({
           <h1 className="text-2xl font-bold text-sidebar-foreground">
             {t('app.name')}
           </h1>
+        </div>
+        <div className="px-6 mb-6">
+          <UserProfileDisplay />
         </div>
         <nav className="flex-1 overflow-y-auto p-4">
           {renderNavItems()}
@@ -143,6 +174,9 @@ export default function DashboardLayout({
             <X className="h-5 w-5" />
           </button>
         </div>
+        <div className="px-6 mb-6">
+          <UserProfileDisplay />
+        </div>
         <nav className="flex-1 overflow-y-auto p-4">
           {renderNavItems()}
         </nav>
@@ -165,12 +199,15 @@ export default function DashboardLayout({
         {/* Mobile header */}
         <header className="md:hidden border-b p-4 flex items-center justify-between">
           <h1 className="text-xl font-bold">{t('app.name')}</h1>
-          <button 
-            className="p-2 rounded-lg hover:bg-accent" 
-            onClick={toggleMobileNav}
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <UserProfileDisplay showDetails={false} />
+            <button 
+              className="p-2 rounded-lg hover:bg-accent" 
+              onClick={toggleMobileNav}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
         </header>
 
         {/* Main content */}

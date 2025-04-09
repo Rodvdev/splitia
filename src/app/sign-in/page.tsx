@@ -4,7 +4,8 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { authActions } from '@/lib/auth/auth-actions';
+import { signInUser } from '@/lib/auth/server-actions';
+import { signIn } from 'next-auth/react'; // Add import for client-side signIn
 
 // Separate component to handle search params (must be wrapped in Suspense)
 function SignInForm() {
@@ -24,11 +25,23 @@ function SignInForm() {
     setError('');
     
     try {
-      const { error } = await authActions.signIn(email, password);
-      
-      if (error) {
-        setError(error.message);
-        return;
+      // First try to sign in with NextAuth (client-side)
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      // If NextAuth sign-in fails
+      if (result?.error) {
+        // Fall back to server-side auth as a backup
+        const { error: serverError } = await signInUser(email, password);
+        
+        if (serverError) {
+          setError(serverError.message);
+          setIsLoading(false);
+          return;
+        }
       }
       
       // Redirect to dashboard or original destination
