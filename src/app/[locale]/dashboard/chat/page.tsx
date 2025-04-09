@@ -617,7 +617,11 @@ export default function ChatPage() {
                         {conversation.isGroup && (
                           <>
                             <DropdownMenuItem
-                              onClick={() => setShowAddMemberDialog(true)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedConversationId(conversation.id);
+                                setShowAddMemberDialog(true);
+                              }}
                               className="cursor-pointer"
                             >
                               <UserPlus className="h-4 w-4 mr-2" />
@@ -691,7 +695,10 @@ export default function ChatPage() {
                 <DropdownMenuContent align="end">
                   {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
                     <>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => setShowAddMemberDialog(true)}
+                      >
                         <UserPlus className="h-4 w-4 mr-2" />
                         {t('addMembers')}
                       </DropdownMenuItem>
@@ -857,7 +864,10 @@ export default function ChatPage() {
                 <DropdownMenuContent align="end">
                   {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
                     <>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => setShowAddMemberDialog(true)}
+                      >
                         <UserPlus className="h-4 w-4 mr-2" />
                         {t('addMembers')}
                       </DropdownMenuItem>
