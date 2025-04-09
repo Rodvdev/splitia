@@ -28,11 +28,13 @@ function JoinGroupContent() {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [email, setEmail] = useState('');
   const [inviteData, setInviteData] = useState<{
-    groupName?: string;
     maxUses?: number;
     usedCount?: number;
     expired?: boolean;
     error?: string;
+    group?: {
+      name?: string;
+    };
   }>({});
   const [groupDetails, setGroupDetails] = useState<{
     id?: string;
@@ -241,7 +243,9 @@ function JoinGroupContent() {
         } else {
           const data = result.data.verifyInviteToken;
           setInviteData({
-            groupName: data.group.name,
+            group: {
+              name: data.group.name,
+            },
             maxUses: data.maxUses,
             usedCount: data.usedCount,
             expired: data.expiresAt && new Date(data.expiresAt) < new Date(),
@@ -371,8 +375,8 @@ function JoinGroupContent() {
             </div>
           )}
           <CardDescription>
-            {inviteData.groupName 
-              ? t('joinGroupNamed', { name: inviteData.groupName })
+            {inviteData.group?.name 
+              ? t('joinGroupNamed', { name: inviteData.group.name })
               : t('joinGroupGeneric')}
           </CardDescription>
         </CardHeader>
