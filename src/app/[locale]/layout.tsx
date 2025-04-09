@@ -16,17 +16,18 @@ export default async function LocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
-  const locale = params.locale as keyof typeof messages;
+  const { locale } = await params;
+  const localeKey = locale as keyof typeof messages;
 
   return (
     <NextIntlClientProvider
-      locale={locale}
-      messages={messages[locale]}
+      locale={localeKey}
+      messages={messages[localeKey]}
       timeZone="UTC"
     >
-      <LocaleClientLayout params={params}>
+      <LocaleClientLayout params={{ locale }}>
         {children}
       </LocaleClientLayout>
     </NextIntlClientProvider>
