@@ -55,16 +55,17 @@ export const typeDefs = gql`
     role: GroupRole!
   }
 
-  type GroupInviteLink {
+  type GroupInvitation {
     id: ID!
     token: String!
     url: String
     maxUses: Int
     usedCount: Int
     expiresAt: DateTime
+    group: Group
   }
 
-  input GroupInviteLinkInput {
+  input GroupInvitationInput {
     maxUses: Int
     expiresAt: String
     requireEmail: Boolean
@@ -179,7 +180,7 @@ export const typeDefs = gql`
     conversations: [Conversation!]!
     conversation(id: ID!): Conversation
     messages(conversationId: ID!, limit: Int, offset: Int): [Message!]!
-    verifyInviteToken(token: String!): GroupInviteLink
+    verifyInviteToken(token: String!): GroupInvitation
     checkUserExists(email: String!): UserExistsResult!
     getGroupDetailsFromToken(token: String!): Group
   }
@@ -199,7 +200,7 @@ export const typeDefs = gql`
     createGroupChat(data: GroupChatInput!): Conversation!
     markMessageAsSeen(messageId: ID!): Boolean!
     deleteConversation(id: ID!): Boolean!
-    createGroupInviteLink(groupId: ID!, data: GroupInviteLinkInput!): GroupInviteLink!
+    createGroupInvitation(groupId: ID!, data: GroupInvitationInput!): GroupInvitation!
     joinGroupByToken(token: String!, email: String): JoinGroupResult!
   }
 

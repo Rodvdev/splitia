@@ -5,7 +5,7 @@ import { hashPassword, comparePasswords } from '@/lib/auth/password';
 import { cookies } from 'next/headers';
 // Remove the import of client-side functions
 // import { signIn, signOut } from 'next-auth/react';
-import type { User } from '.prisma/client';
+import type { User } from '@prisma/client';
 
 // Type definitions
 type CustomAuthError = {

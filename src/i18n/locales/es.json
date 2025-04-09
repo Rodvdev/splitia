@@ -227,6 +227,8 @@
   },
   "groups": {
     "title": "Grupos",
+    "continue": "Continuar",
+    "checking": "Verificando...",
     "create": "Crear Grupo",
     "join": "Unirse al Grupo",
     "joinGroup": "Unirse al Grupo",

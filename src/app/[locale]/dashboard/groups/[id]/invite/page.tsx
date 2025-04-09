@@ -170,8 +170,8 @@ export default function InviteToGroupPage() {
         },
         body: JSON.stringify({
           query: `
-            mutation CreateGroupInviteLink($groupId: ID!, $data: GroupInviteLinkInput!) {
-              createGroupInviteLink(groupId: $groupId, data: $data) {
+            mutation CreateGroupInvitation($groupId: ID!, $data: GroupInvitationInput!) {
+              createGroupInvitation(groupId: $groupId, data: $data) {
                 token
                 url
               }
@@ -187,8 +187,8 @@ export default function InviteToGroupPage() {
         throw new Error(result.errors[0].message);
       }
       
-      const linkUrl = result.data?.createGroupInviteLink?.url || 
-        `${window.location.origin}/join?token=${result.data?.createGroupInviteLink?.token}`;
+      const linkUrl = result.data?.createGroupInvitation?.url || 
+        `${window.location.origin}/join?token=${result.data?.createGroupInvitation?.token}`;
       
       setInviteLink(linkUrl);
       toast.success(t('linkGenerated'));

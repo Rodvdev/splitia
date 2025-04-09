@@ -577,14 +577,14 @@ export async function inviteToGroup(data: {
 }
 
 // Helper function to generate an invite link for a group
-export async function generateGroupInviteLink(data: {
+export async function generateGroupInvitation(data: {
   groupId: string;
   maxUses?: number;
   expiresAt?: Date;
 }) {
   const mutation = `
-    mutation GenerateGroupInviteLink($data: GroupInviteLinkInput!) {
-      generateGroupInviteLink(data: $data) {
+    mutation GenerateGroupInvitation($data: GroupInvitationInput!) {
+      generateGroupInvitation(data: $data) {
         id
         token
         url
@@ -611,7 +611,7 @@ export async function generateGroupInviteLink(data: {
   }
 
   try {
-    console.log('Sending GroupInviteLink mutation with data:', JSON.stringify(formattedData));
+    console.log('Sending GroupInvitation mutation with data:', JSON.stringify(formattedData));
     // Use authenticated client
     const client = await getAuthenticatedClient();
     return await client.request(mutation, { data: formattedData });
@@ -679,10 +679,10 @@ export async function removeGroupMember(data: {
 }
 
 // Helper function to generate a basic invite link for a group (without expiry or usage limits)
-export async function generateBasicGroupInviteLink(groupId: string) {
+export async function generateBasicGroupInvitation(groupId: string) {
   const mutation = `
-    mutation GenerateBasicGroupInviteLink($data: GroupInviteLinkInput!) {
-      generateGroupInviteLink(data: $data) {
+    mutation GenerateBasicGroupInvitation($data: GroupInvitationInput!) {
+      generateGroupInvitation(data: $data) {
         id
         token
         url

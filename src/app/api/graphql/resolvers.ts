@@ -194,7 +194,7 @@ interface GroupChatInput {
 }
 
 // Interfaz para los enlaces de invitación a grupos
-interface GroupInviteLinkInput {
+interface GroupInvitationInput {
   maxUses?: number;
   expiresAt?: string;
   requireEmail?: boolean;
@@ -680,7 +680,7 @@ export const resolvers = {
           usedCount: invitation.useCount,
           expiresAt: invitation.expiresAt,
           url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://splitia.vercel.app'}/join?token=${token}`,
-          groupName: invitation.group?.name,
+          group: invitation.group,
         };
       } catch (error) {
         console.error('Error verifying invite token:', error);
@@ -1909,8 +1909,8 @@ export const resolvers = {
     },
 
     // Create a group invitation link
-    createGroupInviteLink: async (_parent: unknown,
-      { groupId, data }: { groupId: string; data: GroupInviteLinkInput },
+    createGroupInvitation: async (_parent: unknown,
+      { groupId, data }: { groupId: string; data: GroupInvitationInput },
       context: Context) => {
       const session = await getServerSession(context);
       

@@ -226,7 +226,9 @@ function JoinGroupContent() {
                   usedCount
                   expiresAt
                   url
-                  groupName
+                  group {
+                    name
+                  }
                 }
               }
             `,

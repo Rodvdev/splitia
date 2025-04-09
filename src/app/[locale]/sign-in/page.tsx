@@ -12,9 +12,12 @@ function SignInForm() {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams?.get('redirectTo') || '/dashboard';
+  const callbackUrl = searchParams?.get('callbackUrl');
+  const redirectTo = callbackUrl || searchParams?.get('redirectTo') || '/dashboard';
   
-  const [email, setEmail] = useState('');
+  // Pre-fill email if provided in query params
+  const emailParam = searchParams?.get('email') || '';
+  const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,6 +33,7 @@ function SignInForm() {
         redirect: false,
         email,
         password,
+        callbackUrl: redirectTo,
       });
 
       // If NextAuth sign-in fails
