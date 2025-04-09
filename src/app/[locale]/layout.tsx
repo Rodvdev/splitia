@@ -8,14 +8,11 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params: paramsPromise,
+  params,
 }: {
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  // Await the params object
-  const params = await paramsPromise;
-  
   // Extract locale from params
   const locale = params.locale;
   

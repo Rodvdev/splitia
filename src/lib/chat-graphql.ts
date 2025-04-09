@@ -162,6 +162,12 @@ const DELETE_CONVERSATION_MUTATION = `
   }
 `;
 
+const ADD_GROUP_MEMBER_MUTATION = `
+  mutation AddGroupMember($groupId: ID!, $data: GroupMemberInput!) {
+    addGroupMember(groupId: $groupId, data: $data)
+  }
+`;
+
 // GraphQL Error interface
 interface GraphQLError {
   message: string;
@@ -359,6 +365,23 @@ export async function deleteConversation(id: string) {
     return data.deleteConversation;
   } catch (error) {
     console.error('Error deleting conversation:', error);
+    throw error;
+  }
+}
+
+// Función para añadir un miembro a un grupo de chat
+export async function addGroupMember(groupId: string, email: string, role: string = 'MEMBER') {
+  try {
+    const data = await fetchGraphQL(ADD_GROUP_MEMBER_MUTATION, { 
+      groupId, 
+      data: { 
+        email, 
+        role 
+      } 
+    });
+    return data.addGroupMember;
+  } catch (error) {
+    console.error('Error adding member to group:', error);
     throw error;
   }
 }
