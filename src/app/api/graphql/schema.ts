@@ -55,6 +55,27 @@ export const typeDefs = gql`
     role: GroupRole!
   }
 
+  type GroupInviteLink {
+    id: ID!
+    token: String!
+    url: String
+    maxUses: Int
+    usedCount: Int
+    expiresAt: DateTime
+  }
+
+  input GroupInviteLinkInput {
+    maxUses: Int
+    expiresAt: String
+    requireEmail: Boolean
+  }
+
+  type JoinGroupResult {
+    success: Boolean!
+    message: String
+    group: Group
+  }
+
   type Expense {
     id: ID!
     createdAt: DateTime!
@@ -158,6 +179,7 @@ export const typeDefs = gql`
     conversations: [Conversation!]!
     conversation(id: ID!): Conversation
     messages(conversationId: ID!, limit: Int, offset: Int): [Message!]!
+    verifyInviteToken(token: String!): GroupInviteLink
   }
 
   type Mutation {
@@ -175,6 +197,8 @@ export const typeDefs = gql`
     createGroupChat(data: GroupChatInput!): Conversation!
     markMessageAsSeen(messageId: ID!): Boolean!
     deleteConversation(id: ID!): Boolean!
+    createGroupInviteLink(groupId: ID!, data: GroupInviteLinkInput!): GroupInviteLink!
+    joinGroupByToken(token: String!, email: String): JoinGroupResult!
   }
 
   input GroupChatInput {

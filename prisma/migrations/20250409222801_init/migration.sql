@@ -1,11 +1,11 @@
 -- CreateEnum
-CREATE TYPE "GroupRole" AS ENUM ('ADMIN', 'MEMBER', 'GUEST');
+CREATE TYPE "GroupRole" AS ENUM ('ADMIN', 'MEMBER', 'GUEST', 'ASSISTANT');
 
 -- CreateEnum
 CREATE TYPE "ShareType" AS ENUM ('EQUAL', 'PERCENTAGE', 'FIXED');
 
 -- CreateEnum
-CREATE TYPE "AIActionType" AS ENUM ('CREATE_EXPENSE', 'UPDATE_EXPENSE', 'DELETE_EXPENSE', 'CREATE_GROUP', 'ADD_USER_TO_GROUP', 'SUGGEST_SETTLEMENT');
+CREATE TYPE "AIActionType" AS ENUM ('CREATE_EXPENSE', 'UPDATE_EXPENSE', 'DELETE_EXPENSE', 'CREATE_GROUP', 'ADD_USER_TO_GROUP', 'SUGGEST_SETTLEMENT', 'CREATE_GROUP_CHAT', 'SEND_MESSAGE', 'CREATE_CONVERSATION');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -14,6 +14,7 @@ CREATE TABLE "User" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
     "externalId" TEXT,
     "image" TEXT,
     "currency" TEXT NOT NULL DEFAULT 'PEN',
@@ -30,6 +31,7 @@ CREATE TABLE "Group" (
     "name" TEXT NOT NULL,
     "description" TEXT,
     "image" TEXT,
+    "conversationId" TEXT,
     "createdById" TEXT NOT NULL,
 
     CONSTRAINT "Group_pkey" PRIMARY KEY ("id")
@@ -112,6 +114,7 @@ CREATE TABLE "Conversation" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isGroupChat" BOOLEAN NOT NULL DEFAULT false,
+    "name" TEXT,
     "groupId" TEXT,
 
     CONSTRAINT "Conversation_pkey" PRIMARY KEY ("id")
@@ -201,6 +204,9 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "User_externalId_key" ON "User"("externalId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Group_conversationId_key" ON "Group"("conversationId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "GroupUser_userId_groupId_key" ON "GroupUser"("userId", "groupId");
 
 -- CreateIndex
@@ -226,6 +232,9 @@ CREATE UNIQUE INDEX "UserPreference_userId_key" ON "UserPreference"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "GroupInvitation_token_key" ON "GroupInvitation"("token");
+
+-- AddForeignKey
+ALTER TABLE "Group" ADD CONSTRAINT "Group_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Group" ADD CONSTRAINT "Group_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -259,9 +268,6 @@ ALTER TABLE "Budget" ADD CONSTRAINT "Budget_categoryId_fkey" FOREIGN KEY ("categ
 
 -- AddForeignKey
 ALTER TABLE "CustomCategory" ADD CONSTRAINT "CustomCategory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Conversation" ADD CONSTRAINT "Conversation_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ConversationParticipant" ADD CONSTRAINT "ConversationParticipant_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -297,6 +297,7 @@
     "sendInvite": "Enviar Invitación",
     "inviteSent": "Invitación enviada con éxito",
     "inviteError": "Error al enviar la invitación",
+    "invalidEmail": "Por favor ingresa una dirección de correo electrónico válida",
     "limitUses": "Limitar Número de Usos",
     "limitUsesDescription": "Limita cuántas veces se puede usar este enlace de invitación",
     "maxUses": "Usos Máximos",
@@ -306,6 +307,8 @@
     "hours": "Horas",
     "days": "Días",
     "expiresDescription": "El enlace caducará después de este período de tiempo",
+    "requireEmail": "Requerir Registro por Email",
+    "requireEmailDescription": "Los invitados deberán ingresar su correo electrónico para unirse y crear una cuenta",
     "generating": "Generando...",
     "linkGenerated": "Enlace de invitación generado",
     "linkError": "Error al generar el enlace de invitación",
@@ -330,7 +333,16 @@
       "makeAssistant": "Convertir en Asistente IA",
       "remove": "Eliminar Miembro",
       "removing": "Eliminando..."
-    }
+    },
+    "share": "Compartir",
+    "shareInviteLink": "Compartir Enlace de Invitación",
+    "shareDescription": "Comparte este enlace con cualquier persona que quieras invitar a tu grupo",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "inviteText": "¡Únete a mi grupo en Splitia!",
+    "inviteEmailSubject": "Invitación para unirse a mi grupo",
+    "inviteWhatsAppText": "Únete a mi grupo usando este enlace:",
+    "inviteTelegramText": "Únete a mi grupo usando este enlace:"
   },
   "settings": {
     "title": "Configuración",
