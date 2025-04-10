@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { 
@@ -101,17 +101,38 @@ interface AIMessageWithButtons extends ChatMessage {
   buttons?: AIMessageAction[];
 }
 
-export default function ChatClientPage() {
+interface ChatClientPageProps {
+  initialConversationId?: string;
+}
+
+export default function ChatClientPage({ initialConversationId }: ChatClientPageProps) {
   const t = useTranslations('chat');
   const router = useRouter();
   const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(initialConversationId || null);
   const [messageInput, setMessageInput] = useState('');
   const [memberEmail, setMemberEmail] = useState('');
   const [memberRole, setMemberRole] = useState('MEMBER');
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Detect if we're on mobile
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      
+      handleResize(); // Set initial value
+      window.addEventListener('resize', handleResize);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, []);
   
   // Fetch conversations using GraphQL
   const { conversations, loading: loadingConversations, error: conversationsError, refetch: refetchConversations } = useConversations();
@@ -474,10 +495,26 @@ export default function ChatClientPage() {
     }
   };
 
+  // Handle clicking on a conversation in mobile view
+  const handleConversationClick = (conversationId: string) => {
+    setSelectedConversationId(conversationId);
+    if (isMobile) {
+      router.push(`/dashboard/chat/${conversationId}`);
+    }
+  };
+
+  // Handle back button in mobile view
+  const handleBackToList = () => {
+    setSelectedConversationId(null);
+    if (isMobile) {
+      router.push('/dashboard/chat');
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] overflow-hidden">
       {/* Conversations Sidebar */}
-      <div className="w-full md:w-80 border-r flex flex-col">
+      <div className={`w-full md:w-80 border-r flex flex-col ${selectedConversationId && isMobile ? 'hidden' : ''}`}>
         {/* Sidebar header and search */}
         <div className="p-4 border-b flex flex-col gap-4">
           <div className="flex justify-between items-center">
@@ -568,7 +605,7 @@ export default function ChatClientPage() {
                 >
                   <div 
                     className="flex items-center gap-3 flex-1"
-                    onClick={() => setSelectedConversationId(conversation.id)}
+                    onClick={() => handleConversationClick(conversation.id)}
                   >
                     <Avatar>
                       {conversation.avatar ? (
@@ -654,12 +691,23 @@ export default function ChatClientPage() {
       </div>
       
       {/* Chat Area */}
-      <div className="hidden md:flex flex-1 flex-col overflow-hidden">
+      <div className={`${isMobile && !selectedConversationId ? 'hidden' : ''} ${!isMobile ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden`}>
         {selectedConversationId ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b flex justify-between items-center">
               <div className="flex items-center gap-3">
+                {isMobile && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleBackToList}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
+                      <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                  </Button>
+                )}
                 <Avatar>
                   {filteredConversations.find(c => c.id === selectedConversationId)?.avatar ? (
                     <AvatarImage 
@@ -810,159 +858,7 @@ export default function ChatClientPage() {
       </div>
       
       {/* Mobile: Show only conversation list if no selection, otherwise show chat */}
-      <div className="md:hidden flex-1 flex flex-col overflow-hidden">
-        {selectedConversationId ? (
-          <>
-            {/* Chat Header with back button */}
-            <div className="p-4 border-b flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setSelectedConversationId(null)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
-                    <path d="m15 18-6-6 6-6"/>
-                  </svg>
-                </Button>
-                <Avatar>
-                  {filteredConversations.find(c => c.id === selectedConversationId)?.avatar ? (
-                    <AvatarImage 
-                      src={filteredConversations.find(c => c.id === selectedConversationId)?.avatar || ''} 
-                      alt={filteredConversations.find(c => c.id === selectedConversationId)?.name || ''} 
-                    />
-                  ) : null}
-                  <AvatarFallback>
-                    {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup ? (
-                      <Users className="h-4 w-4" />
-                    ) : (
-                      getAvatarFallback(filteredConversations.find(c => c.id === selectedConversationId)?.name || '')
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h2 className="font-semibold">
-                    {filteredConversations.find(c => c.id === selectedConversationId)?.name}
-                  </h2>
-                  {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
-                    <p className="text-xs text-muted-foreground">
-                      {filteredConversations.find(c => c.id === selectedConversationId)?.members?.length || 0} {t('groupChat')}
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {filteredConversations.find(c => c.id === selectedConversationId)?.isGroup && (
-                    <>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => setShowAddMemberDialog(true)}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        {t('addMembers')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer" onClick={handleAddAIAssistant}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <path d="M7 7h.01" />
-                          <path d="M12 7h.01" />
-                          <path d="M17 7h.01" />
-                          <path d="m7 12 1 1 1.5-1.5" />
-                          <path d="M12 12h.01" />
-                          <path d="M17 12h.01" />
-                          <path d="M7 17h.01" />
-                          <path d="M12 17h.01" />
-                          <path d="M17 17h.01" />
-                        </svg>
-                        {t('addAIAssistant')}
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      if (window.confirm(t('confirmDeleteConversation'))) {
-                        handleDeleteConversation(filteredConversations.find(c => c.id === selectedConversationId)?.id || '');
-                      }
-                    }}
-                    className="text-destructive"
-                  >
-                    <Trash className="h-4 w-4 mr-2" />
-                    {t('deleteConversation')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              {loadingConversation ? (
-                // Loading skeletons for messages
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className={`flex items-start gap-3 ${i % 2 === 0 ? 'justify-end' : ''}`}>
-                      {i % 2 !== 0 && <Skeleton className="h-8 w-8 rounded-full" />}
-                      <div className={`max-w-[70%] ${i % 2 === 0 ? 'bg-primary/10' : 'bg-muted'} rounded-lg p-3`}>
-                        <Skeleton className="h-4 w-40" />
-                        <Skeleton className="h-3 w-20 mt-2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : conversationError ? (
-                <div className="flex items-center justify-center h-full text-center text-red-500">
-                  <div>
-                    <p>{t('errorLoading')}</p>
-                    <Button 
-                      variant="link" 
-                      className="mt-2 text-sm"
-                      onClick={() => refetchConversation()}
-                    >
-                      {t('tryAgain')}
-                    </Button>
-                  </div>
-                </div>
-              ) : formattedMessages.length > 0 ? (
-                <div className="space-y-4">
-                  {formattedMessages.map((message) => (
-                    <MessageItem key={message.id} message={message as AIMessageWithButtons} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                  <div>
-                    <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>{t('noMessages')}</p>
-                  </div>
-                </div>
-              )}
-            </ScrollArea>
-            
-            {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2">
-              <Input
-                placeholder={t('messageInput')}
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" size="icon" disabled={!messageInput.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
-          </>
-        ) : (
-          // Default view - just the conversations list (handled above)
-          null
-        )}
-      </div>
+      {/* This section is now handled by the conditional rendering above */}
       
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
