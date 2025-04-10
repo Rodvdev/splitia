@@ -1,5 +1,8 @@
-import { GroupRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { prisma } from './prisma';
+
+// Define transaction types
+type PrismaTransaction = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;
 
 /**
  * Creates a new group with an associated conversation
@@ -12,7 +15,7 @@ export async function createGroupWithConversation(
     image?: string;
   }
 ) {
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: PrismaTransaction) => {
     // Create the conversation first
     const conversation = await tx.conversation.create({
       data: {
@@ -32,7 +35,7 @@ export async function createGroupWithConversation(
         members: {
           create: {
             userId: userId,
-            role: 'ADMIN' as GroupRole
+            role: 'ADMIN'
           }
         }
       },
@@ -70,7 +73,7 @@ export async function createGroupChatWithGroup(
     participantIds: string[];
   }
 ) {
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: PrismaTransaction) => {
     // Create the conversation
     const conversation = await tx.conversation.create({
       data: {
@@ -93,10 +96,10 @@ export async function createGroupChatWithGroup(
         createdById: userId,
         members: {
           create: [
-            { userId, role: 'ADMIN' as GroupRole },
+            { userId, role: 'ADMIN' },
             ...conversationData.participantIds.map(id => ({ 
               userId: id, 
-              role: 'MEMBER' as GroupRole 
+              role: 'MEMBER' 
             }))
           ]
         }
@@ -126,9 +129,9 @@ export async function createGroupChatWithGroup(
 export async function addUserToGroupAndConversation(
   groupId: string,
   userId: string,
-  role: GroupRole = 'MEMBER' as GroupRole
+  role: 'ADMIN' | 'MEMBER' | 'GUEST' | 'ASSISTANT' = 'MEMBER'
 ) {
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: PrismaTransaction) => {
     // Get the group with its conversation
     const group = await tx.group.findUnique({
       where: { id: groupId },

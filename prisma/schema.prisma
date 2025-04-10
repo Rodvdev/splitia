@@ -222,6 +222,7 @@ model UserPreference {
   theme       String   @default("light") // UI theme
   dateFormat  String   @default("MM/DD/YYYY") // Date format preference
   timeFormat  String   @default("12h") // 12h or 24h
+  notifications Boolean @default(true) // Whether the user wants to receive notifications
   // Relations
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String   @unique
