@@ -705,4 +705,77 @@ export async function generateBasicGroupInvitation(groupId: string) {
     console.error('Error generating basic group invite link:', error);
     throw error;
   }
+}
+
+// Fetch group balances
+export async function fetchGroupBalances(groupId: string) {
+  const query = `
+    query GetGroupBalances($groupId: ID!) {
+      groupBalances(groupId: $groupId) {
+        totalOwed
+        totalOwing
+        netBalance
+        currency
+        balances {
+          userId
+          name
+          email
+          image
+          amount
+          currency
+        }
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client to ensure session token is sent
+    const client = await getAuthenticatedClient();
+    return await client.request(query, { groupId });
+  } catch (error) {
+    console.error('Error fetching group balances:', error);
+    throw error;
+  }
+}
+
+// Record a payment between group members
+export async function recordPayment({ 
+  groupId, 
+  userId,
+  amount, 
+  currency,
+  method 
+}: { 
+  groupId: string; 
+  userId: string;
+  amount: number; 
+  currency: string;
+  method: string;
+}) {
+  const mutation = `
+    mutation RecordPayment($groupId: ID!, $userId: ID!, $amount: Float!, $currency: String!, $method: String!) {
+      recordPayment(
+        groupId: $groupId, 
+        userId: $userId, 
+        amount: $amount, 
+        currency: $currency, 
+        method: $method
+      )
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { 
+      groupId, 
+      userId,
+      amount, 
+      currency,
+      method
+    });
+  } catch (error) {
+    console.error('Error recording payment:', error);
+    throw error;
+  }
 } 

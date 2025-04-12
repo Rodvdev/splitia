@@ -772,6 +772,161 @@ export const resolvers = {
         });
       }
     },
+
+    // Get group balances
+    groupBalances: async (_parent: unknown, { groupId }: { groupId: string }, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Verify the user is a member of the group
+      const membership = await prisma.groupUser.findFirst({
+        where: {
+          userId,
+          groupId,
+        },
+      });
+
+      if (!membership) {
+        throw new GraphQLError('Group not found or access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      try {
+        // Get all group members
+        const group = await prisma.group.findUnique({
+          where: { id: groupId },
+          include: {
+            members: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        if (!group) {
+          throw new GraphQLError('Group not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Get all expenses for the group
+        const expenses = await prisma.expense.findMany({
+          where: { groupId },
+          include: {
+            paidBy: true,
+            shares: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        // Default currency (use the first expense's currency or a default)
+        const currency = expenses.length > 0 ? expenses[0].currency : 'PEN';
+
+        // Calculate balances
+        const balanceMap = new Map<string, { 
+          amount: number, 
+          name: string, 
+          email: string,
+          image: string | null 
+        }>();
+
+        // Filter out ASSISTANT members and initialize balances for regular members
+        group.members.forEach(member => {
+          // Skip AI Assistants and the current user
+          if (member.role !== 'ASSISTANT' && member.userId !== userId) {
+            balanceMap.set(member.userId, { 
+              amount: 0, 
+              name: member.user.name || '', 
+              email: member.user.email,
+              image: member.user.image
+            });
+          }
+        });
+
+        // Process all expenses
+        expenses.forEach(expense => {
+          const paidById = expense.paidBy.id;
+          
+          // Calculate each member's share
+          expense.shares.forEach(share => {
+            const memberId = share.user.id;
+            const shareAmount = share.amount;
+
+            // Skip if it's the current user's share or an ASSISTANT role
+            if ((memberId === userId && paidById === userId) || 
+                group.members.some(m => m.userId === memberId && m.role === 'ASSISTANT')) {
+              return; // Skip current user's share or AI Assistant
+            }
+
+            // If current user paid
+            if (paidById === userId && memberId !== userId) {
+              const memberBalance = balanceMap.get(memberId);
+              if (memberBalance) {
+                // Other member owes current user this share amount
+                memberBalance.amount += shareAmount;
+              }
+            } 
+            // If current user is paying a share
+            else if (memberId === userId && paidById !== userId) {
+              const payerBalance = balanceMap.get(paidById);
+              if (payerBalance) {
+                // Current user owes payer this share amount
+                payerBalance.amount -= shareAmount;
+              }
+            }
+          });
+        });
+
+        // Convert the map to an array of balances
+        const balances = Array.from(balanceMap.entries()).map(([userId, data]) => ({
+          userId,
+          name: data.name,
+          email: data.email,
+          image: data.image,
+          amount: data.amount,
+          currency,
+        }));
+
+        // Calculate summary values
+        const totalOwed = balances
+          .filter(b => b.amount > 0)
+          .reduce((sum, b) => sum + b.amount, 0);
+        
+        const totalOwing = balances
+          .filter(b => b.amount < 0)
+          .reduce((sum, b) => sum + b.amount, 0);
+
+        return {
+          totalOwed,
+          totalOwing: Math.abs(totalOwing), // Make it positive for the client
+          netBalance: totalOwed + totalOwing,
+          currency,
+          balances,
+        };
+      } catch (error) {
+        console.error('Error calculating group balances:', error);
+        throw new GraphQLError('Failed to calculate group balances', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
   },
 
   Mutation: {
@@ -848,7 +1003,11 @@ export const resolvers = {
           // If it's a group expense but no shares provided, 
           // create equal shares for all group members
           const groupMembers = await tx.groupUser.findMany({
-            where: { groupId: data.groupId },
+            where: { 
+              groupId: data.groupId,
+              // Exclude members with ASSISTANT role from automatic expense shares
+              role: { not: 'ASSISTANT' }
+            },
             select: { userId: true },
           });
 
@@ -892,7 +1051,7 @@ export const resolvers = {
             },
           },
         });
-      });
+      }, { timeout: 10000 });
     },
 
     // Update an existing expense
@@ -1009,7 +1168,7 @@ export const resolvers = {
             },
           },
         });
-      });
+      }, { timeout: 10000 });
     },
 
     // Delete an expense
@@ -2045,6 +2204,132 @@ export const resolvers = {
         return false;
       }
     },
+
+    // Record a payment between group members
+    recordPayment: async (
+      _parent: unknown,
+      { 
+        groupId, 
+        userId: otherUserId, 
+        amount, 
+        currency, 
+        method 
+      }: { 
+        groupId: string; 
+        userId: string; 
+        amount: number; 
+        currency: string; 
+        method: string;
+      },
+      context: Context
+    ) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const currentUserId = context.user?.id || session.user.id;
+      if (!currentUserId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      try {
+        // Verify both users are members of the group
+        const memberships = await prisma.groupUser.findMany({
+          where: {
+            groupId,
+            userId: {
+              in: [currentUserId, otherUserId]
+            }
+          }
+        });
+
+        if (memberships.length !== 2) {
+          throw new GraphQLError('One or both users are not members of this group', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+        
+        // Verify that none of the users is an AI Assistant
+        const assistantMembership = memberships.find(m => m.role === 'ASSISTANT');
+        if (assistantMembership) {
+          throw new GraphQLError('Cannot record payments for AI Assistant users', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+
+        // Get the group to create a payment record
+        const group = await prisma.group.findUnique({
+          where: { id: groupId },
+          select: { 
+            name: true,
+            conversationId: true
+          }
+        });
+
+        if (!group) {
+          throw new GraphQLError('Group not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Get the other user's info to include in the notification
+        const otherUser = await prisma.user.findUnique({
+          where: { id: otherUserId },
+          select: { name: true, email: true }
+        });
+
+        if (!otherUser) {
+          throw new GraphQLError('User not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Create a "settlement" expense to record the payment
+        await prisma.expense.create({
+          data: {
+            amount,
+            description: `Payment to settle balance - ${method}`,
+            date: new Date(),
+            currency,
+            paidById: currentUserId,
+            groupId,
+            // Create a share for the recipient
+            shares: {
+              create: {
+                amount,
+                type: 'FIXED',
+                userId: otherUserId
+              }
+            }
+          }
+        });
+
+        // Add a notification in the group chat if it exists
+        if (group.conversationId) {
+          await prisma.message.create({
+            data: {
+              content: `${session.user.email || 'A user'} paid ${formatCurrency(amount, currency)} to ${otherUser.name || otherUser.email} via ${method}.`,
+              conversationId: group.conversationId,
+              senderId: currentUserId,
+              isAI: true
+            }
+          });
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Error recording payment:', error);
+        throw new GraphQLError('Failed to record payment', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
   },
 
   // Type resolvers for nested fields
@@ -2176,4 +2461,12 @@ export const resolvers = {
       return seen.map((s: MessageSeen) => s.user);
     },
   },
-}; 
+};
+
+// Helper function to format currency
+function formatCurrency(amount: number, currency: string): string {
+  return new Intl.NumberFormat('es-PE', {
+    style: 'currency',
+    currency: currency || 'PEN'
+  }).format(amount);
+} 

@@ -77,6 +77,23 @@ export const typeDefs = gql`
     group: Group
   }
 
+  type GroupBalance {
+    userId: ID!
+    name: String!
+    email: String
+    image: String
+    amount: Float!
+    currency: String!
+  }
+
+  type GroupBalanceSummary {
+    totalOwed: Float!
+    totalOwing: Float!
+    netBalance: Float!
+    currency: String!
+    balances: [GroupBalance!]!
+  }
+
   type Expense {
     id: ID!
     createdAt: DateTime!
@@ -177,6 +194,7 @@ export const typeDefs = gql`
     categories: [CustomCategory!]!
     userGroups: [Group!]!
     group(id: ID!): Group
+    groupBalances(groupId: ID!): GroupBalanceSummary!
     conversations: [Conversation!]!
     conversation(id: ID!): Conversation
     messages(conversationId: ID!, limit: Int, offset: Int): [Message!]!
@@ -202,6 +220,7 @@ export const typeDefs = gql`
     deleteConversation(id: ID!): Boolean!
     createGroupInvitation(groupId: ID!, data: GroupInvitationInput!): GroupInvitation!
     joinGroupByToken(token: String!, email: String): JoinGroupResult!
+    recordPayment(groupId: ID!, userId: ID!, amount: Float!, currency: String!, method: String!): Boolean!
   }
 
   input GroupChatInput {

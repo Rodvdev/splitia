@@ -10,6 +10,7 @@ import {
   UserPlus,
   Settings,
   Trash2,
+  Receipt,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -36,10 +37,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { fetchGroup, deleteGroup, changeGroupMemberRole, removeGroupMember } from '@/lib/graphql-client';
 import { toast } from 'sonner';
 import { GroupMembers } from './_components/GroupMembers';
+import { GroupExpenses } from './_components/GroupExpenses';
+import { GroupBalances } from './_components/GroupBalances';
 
 interface GroupMember {
   id: string;
@@ -97,12 +101,14 @@ export default function GroupPage() {
   useEffect(() => {
     const getCurrentUser = async () => {
       try {
-        // TODO: Replace with appropriate authentication method
-        // This is a temporary placeholder - replace with your actual auth implementation
-        // You might want to use a JWT token, session cookie, or other auth mechanism
-        const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
-        if (userId) {
-          setCurrentUserId(userId);
+        // Obtenemos el usuario actual desde la sesión
+        const response = await fetch('/api/auth/session');
+        const session = await response.json();
+        
+        if (session?.user?.id) {
+          setCurrentUserId(session.user.id);
+        } else {
+          console.warn('No user ID found in session');
         }
       } catch (error) {
         console.error('Failed to get current user:', error);
@@ -321,6 +327,84 @@ export default function GroupPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Group Action Buttons */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Button 
+          variant="outline" 
+          className="flex flex-col h-auto py-4 gap-2"
+          onClick={handleInvite}
+        >
+          <UserPlus className="h-5 w-5" />
+          <span className="text-xs font-medium">{t('actions.inviteMembers')}</span>
+        </Button>
+
+        <Button 
+          variant="outline" 
+          className="flex flex-col h-auto py-4 gap-2"
+          onClick={() => router.push(`/dashboard/expenses/create?groupId=${group.id}`)}
+        >
+          <Receipt className="h-5 w-5" />
+          <span className="text-xs font-medium">{t('actions.addExpense')}</span>
+        </Button>
+
+        <Button 
+          variant="outline" 
+          className="flex flex-col h-auto py-4 gap-2"
+          onClick={handleSettings}
+        >
+          <Settings className="h-5 w-5" />
+          <span className="text-xs font-medium">{t('actions.groupSettings')}</span>
+        </Button>
+
+        <Button 
+          variant="outline" 
+          className="flex flex-col h-auto py-4 gap-2 border-dashed"
+          onClick={() => router.push(`/dashboard/groups/${group.id}/settle-up`)}
+        >
+          <ArrowLeft className="h-5 w-5 rotate-45" />
+          <span className="text-xs font-medium">{t('actions.settleUp')}</span>
+        </Button>
+      </div>
+
+      {/* Main content tabs */}
+      <Tabs defaultValue="balances" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="balances">
+            {t('tabs.balances')}
+          </TabsTrigger>
+          <TabsTrigger value="expenses">
+            {t('tabs.expenses')}
+          </TabsTrigger>
+          <TabsTrigger value="members">
+            {t('tabs.members')}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Balance tab */}
+        <TabsContent value="balances" className="mt-6">
+          <GroupBalances 
+            groupId={group.id} 
+            currentUserId={currentUserId || ''}
+          />
+        </TabsContent>
+
+        {/* Expenses tab */}
+        <TabsContent value="expenses" className="mt-6">
+          <GroupExpenses groupId={group.id} />
+        </TabsContent>
+
+        {/* Members tab */}
+        <TabsContent value="members" className="mt-6">
+          <GroupMembers
+            members={group.members}
+            currentUserRole={group.members.find(m => m.id === currentUserId)?.role || ''}
+            currentUserId={currentUserId || ''}
+            onChangeRole={handleChangeRole}
+            onRemoveMember={handleRemoveMember}
+          />
+        </TabsContent>
+      </Tabs>
       
       {/* Delete group option */}
       <div className="flex justify-end">
@@ -351,15 +435,6 @@ export default function GroupPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      
-      {/* Members section */}
-      <GroupMembers
-        members={group.members}
-        currentUserRole={group.members.find(m => m.id === currentUserId)?.role || ''}
-        currentUserId={currentUserId || ''}
-        onChangeRole={handleChangeRole}
-        onRemoveMember={handleRemoveMember}
-      />
     </div>
   );
 } 

@@ -356,7 +356,12 @@
       "makeGuest": "Make Guest",
       "makeAssistant": "Make AI Assistant",
       "remove": "Remove Member",
-      "removing": "Removing..."
+      "removing": "Removing...",
+      "inviteMembers": "Invite Members",
+      "addExpense": "Add Expense",
+      "groupSettings": "Settings",
+      "settleUp": "Settle Up",
+      "openMenu": "Open Menu"
     },
     "share": "Share",
     "shareInviteLink": "Share Invite Link",
@@ -369,7 +374,53 @@
     "inviteTelegramText": "Join my group using this link:",
     "groupMembers": "Group members",
     "andMoreMembers": "And {count} more members",
-    "errorCheckingEmail": "Error checking email"
+    "errorCheckingEmail": "Error checking email",
+    "tabs": {
+      "balances": "Balances",
+      "expenses": "Expenses",
+      "members": "Members"
+    },
+    "balances": {
+      "title": "Group Balances",
+      "description": "See how much group members owe you and how much you owe them",
+      "theyOweYou": "They owe you",
+      "youOweThem": "You owe them",
+      "netBalance": "Net balance",
+      "owesYou": "Owes you {amount}",
+      "youOwe": "You owe {amount}",
+      "noBalances": "No balances to show",
+      "noBalancesTheyOweYou": "Nobody owes you money currently",
+      "noBalancesYouOweThem": "You don't owe money to anyone currently",
+      "tabs": {
+        "all": "All",
+        "theyOweYou": "They owe you",
+        "youOweThem": "You owe them"
+      },
+      "actions": {
+        "pay": "Pay",
+        "request": "Request"
+      }
+    },
+    "payment": {
+      "payTitle": "Make payment",
+      "requestTitle": "Request payment",
+      "amount": "Amount",
+      "method": "Payment method",
+      "methods": {
+        "bank": "Bank",
+        "cash": "Cash",
+        "yape": "Yape"
+      },
+      "actions": {
+        "pay": "Pay now",
+        "request": "Request"
+      },
+      "success": "Transaction completed successfully",
+      "error": "Error processing transaction"
+    },
+    "removeConfirmTitle": "Remove Member",
+    "removeConfirmDescription": "Are you sure you want to remove this member from the group?",
+    "you": "You"
   },
   "settings": {
     "title": "Settings",

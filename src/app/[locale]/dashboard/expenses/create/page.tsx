@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,23 @@ interface ExpenseFormData {
 export default function CreateExpensePage() {
   const t = useTranslations('expenses');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialData, setInitialData] = useState<Partial<ExpenseFormData> | undefined>(undefined);
+  
+  // Get groupId from URL params and set initial form data
+  useEffect(() => {
+    if (searchParams) {
+      const groupId = searchParams.get('groupId');
+      
+      if (groupId) {
+        setInitialData({
+          isGroupExpense: true,
+          groupId
+        });
+      }
+    }
+  }, [searchParams]);
   
   // Handle form submission with GraphQL
   const handleSubmit = async (data: ExpenseFormData) => {
@@ -55,8 +71,12 @@ export default function CreateExpensePage() {
       // Show success message
       toast.success(t('notifications.createSuccess'));
       
-      // Redirect back to expenses list
-      router.push('/dashboard/expenses');
+      // Redirect back to expenses list or the group page if creating from there
+      if (data.isGroupExpense && data.groupId && data.groupId !== 'new') {
+        router.push(`/dashboard/groups/${data.groupId}`);
+      } else {
+        router.push('/dashboard/expenses');
+      }
     } catch (error) {
       console.error('Error creating expense:', error);
       toast.error(t('notifications.createError'));
@@ -66,7 +86,7 @@ export default function CreateExpensePage() {
   };
   
   const handleCancel = () => {
-    router.push('/dashboard/expenses');
+    router.back();
   };
   
   return (
@@ -85,6 +105,7 @@ export default function CreateExpensePage() {
       
       <div className="bg-card border rounded-lg p-6">
         <ExpenseForm
+          initialData={initialData}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={isSubmitting}

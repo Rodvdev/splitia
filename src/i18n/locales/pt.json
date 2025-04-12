@@ -108,7 +108,9 @@
       "edit": "Editar Despesa",
       "delete": "Excluir Despesa",
       "save": "Salvar Despesa",
-      "view": "Ver Detalhes"
+      "view": "Ver Detalhes",
+      "back": "Voltar",
+      "cancel": "Cancelar"
     },
     "filters": {
       "search": "Buscar despesas...",
@@ -219,6 +221,9 @@
         "submitting": "Salvando...",
         "cancel": "Cancelar"
       }
+    },
+    "details": {
+      "title": "Detalhes da Despesa"
     }
   },
   "groups": {
@@ -256,14 +261,32 @@
     "generateLink": "Gerar Link",
     "copyLink": "Copiar Link",
     "qrCode": "Código QR",
+    "expenses": "Despesas",
+    "view": {
+      "title": "Detalhes do Grupo",
+      "memberCount": "{count, plural, =1 {# membro} other {# membros}}",
+      "expenses": "Despesas",
+      "expensesCount": "{count, plural, =1 {# despesa} other {# despesas}}"
+    },
     "role": {
       "admin": "Administrador",
       "member": "Membro",
-      "guest": "Convidado"
+      "guest": "Convidado",
+      "assistant": "Assistente IA"
+    },
+    "roles": {
+      "admin": "Administrador",
+      "member": "Membro",
+      "guest": "Convidado",
+      "assistant": "Assistente IA"
     },
     "back": "Voltar",
     "settings": "Configurações",
-    "delete": "Excluir Grupo",
+    "delete": {
+      "title": "Excluir Grupo",
+      "description": "Esta ação é irreversível. Todos os gastos associados a este grupo serão excluídos.",
+      "success": "Grupo excluído com sucesso"
+    },
     "done": "Concluído",
     "nameLabel": "Nome do Grupo",
     "namePlaceholder": "Digite um nome para o seu grupo",
@@ -286,6 +309,8 @@
     "backToGroups": "Voltar para Grupos",
     "leaveConfirm": "Tem certeza que deseja sair deste grupo?",
     "deleteConfirm": "Tem certeza que deseja excluir este grupo?",
+    "removeConfirmTitle": "Remover Membro",
+    "removeConfirmDescription": "Tem certeza que deseja remover este membro do grupo?",
     "manage": "Gerenciar",
     "inviteByEmail": "Convidar por E-mail",
     "inviteByLink": "Convidar por Link",
@@ -330,7 +355,71 @@
     "search": "Pesquisar grupos...",
     "total": "Total de Grupos",
     "viewAll": "Ver Todos os Grupos",
-    "empty": "Não há grupos"
+    "empty": "Não há grupos",
+    "tabs": {
+      "balances": "Saldos",
+      "expenses": "Despesas",
+      "members": "Membros"
+    },
+    "balances": {
+      "title": "Saldos do Grupo",
+      "description": "Veja quanto os membros do grupo te devem e quanto você deve a eles",
+      "theyOweYou": "Te devem",
+      "youOweThem": "Você deve",
+      "netBalance": "Saldo líquido",
+      "owesYou": "Te deve {amount}",
+      "youOwe": "Você deve {amount}",
+      "noBalances": "Nenhum saldo para mostrar",
+      "noBalancesTheyOweYou": "Ninguém te deve dinheiro atualmente",
+      "noBalancesYouOweThem": "Você não deve dinheiro a ninguém atualmente",
+      "tabs": {
+        "all": "Todos",
+        "theyOweYou": "Te devem",
+        "youOweThem": "Você deve"
+      },
+      "actions": {
+        "pay": "Pagar",
+        "request": "Solicitar"
+      }
+    },
+    "payment": {
+      "payTitle": "Realizar pagamento",
+      "requestTitle": "Solicitar pagamento",
+      "amount": "Valor",
+      "method": "Método de pagamento",
+      "methods": {
+        "bank": "Banco",
+        "cash": "Dinheiro",
+        "yape": "Yape"
+      },
+      "actions": {
+        "pay": "Pagar agora",
+        "request": "Solicitar"
+      },
+      "success": "Transação concluída com sucesso",
+      "error": "Erro ao processar a transação"
+    },
+    "actions": {
+      "settings": "Configurações",
+      "invite": "Convidar",
+      "delete": "Excluir Grupo",
+      "deleting": "Excluindo...",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "back": "Voltar para Grupos",
+      "makeAdmin": "Tornar Administrador",
+      "makeMember": "Tornar Membro",
+      "makeGuest": "Tornar Convidado",
+      "makeAssistant": "Tornar Assistente IA",
+      "remove": "Remover Membro",
+      "removing": "Removendo...",
+      "inviteMembers": "Convidar Membros",
+      "addExpense": "Adicionar Despesa",
+      "groupSettings": "Configurações",
+      "settleUp": "Acertar Contas",
+      "openMenu": "Abrir Menu"
+    },
+    "you": "Você"
   },
   "settings": {
     "title": "Configurações",
@@ -625,5 +714,8 @@
         "cancel": "Cancelar"
       }
     }
-  }
+  },
+  "removeConfirmTitle": "Remover Membro",
+  "removeConfirmDescription": "Tem certeza que deseja remover este membro do grupo?",
+  "you": "Você"
 } 

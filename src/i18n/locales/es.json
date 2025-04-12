@@ -112,7 +112,9 @@
       "edit": "Editar Gasto",
       "delete": "Eliminar Gasto",
       "save": "Guardar Gasto",
-      "view": "Ver Detalles"
+      "view": "Ver Detalles",
+      "back": "Volver",
+      "cancel": "Cancelar"
     },
     "filters": {
       "search": "Buscar gastos...",
@@ -223,7 +225,13 @@
         "submitting": "Guardando...",
         "cancel": "Cancelar"
       }
-    }
+    },
+    "details": {
+      "title": "Detalles del Gasto"
+    },
+    "expensesDescription": "Todos los gastos asociados con este grupo",
+    "addExpense": "Añadir Gasto",
+    "groupNotFound": "Grupo no encontrado"
   },
   "groups": {
     "title": "Grupos",
@@ -262,6 +270,8 @@
     "generateLink": "Generar Enlace",
     "copyLink": "Copiar Enlace",
     "qrCode": "Código QR",
+    "you": "Tú",
+    "expenses": "Gastos",
     "view": {
       "title": "Detalles del Grupo",
       "memberCount": "{count, plural, =1 {# miembro} other {# miembros}}",
@@ -304,6 +314,8 @@
     "backToGroups": "Volver a Grupos",
     "leaveConfirm": "¿Estás seguro que quieres salir de este grupo?",
     "deleteConfirm": "¿Estás seguro que quieres eliminar este grupo?",
+    "removeConfirmTitle": "Eliminar Miembro",
+    "removeConfirmDescription": "¿Estás seguro que quieres eliminar a este miembro del grupo?",
     "delete": {
       "title": "Eliminar Grupo",
       "description": "Esta acción es irreversible. Se eliminarán todos los gastos asociados a este grupo.",
@@ -357,7 +369,12 @@
       "makeGuest": "Convertir en Invitado",
       "makeAssistant": "Convertir en Asistente IA",
       "remove": "Eliminar Miembro",
-      "removing": "Eliminando..."
+      "removing": "Eliminando...",
+      "inviteMembers": "Invitar Miembros",
+      "addExpense": "Añadir Gasto",
+      "groupSettings": "Configuración",
+      "settleUp": "Saldar Deudas",
+      "openMenu": "Abrir Menú"
     },
     "share": "Compartir",
     "shareInviteLink": "Compartir Enlace de Invitación",
@@ -370,7 +387,50 @@
     "inviteTelegramText": "Únete a mi grupo usando este enlace:",
     "groupMembers": "Miembros del grupo",
     "andMoreMembers": "Y {count} miembros más",
-    "errorCheckingEmail": "Error al verificar el correo electrónico"
+    "errorCheckingEmail": "Error al verificar el correo electrónico",
+    "tabs": {
+      "balances": "Balances",
+      "expenses": "Gastos",
+      "members": "Miembros"
+    },
+    "balances": {
+      "title": "Balances del Grupo",
+      "description": "Visualiza cuánto te deben los miembros del grupo y cuánto les debes",
+      "theyOweYou": "Te deben",
+      "youOweThem": "Tú debes",
+      "netBalance": "Balance neto",
+      "owesYou": "Te debe {amount}",
+      "youOwe": "Debes {amount}",
+      "noBalances": "No hay balances para mostrar",
+      "noBalancesTheyOweYou": "Nadie te debe dinero actualmente",
+      "noBalancesYouOweThem": "No debes dinero a nadie actualmente",
+      "tabs": {
+        "all": "Todos",
+        "theyOweYou": "Te deben",
+        "youOweThem": "Tú debes"
+      },
+      "actions": {
+        "pay": "Pagar",
+        "request": "Cobrar"
+      }
+    },
+    "payment": {
+      "payTitle": "Realizar pago",
+      "requestTitle": "Solicitar pago",
+      "amount": "Cantidad",
+      "method": "Método de pago",
+      "methods": {
+        "bank": "Banco",
+        "cash": "Efectivo",
+        "yape": "Yape"
+      },
+      "actions": {
+        "pay": "Pagar ahora",
+        "request": "Solicitar"
+      },
+      "success": "Transacción completada con éxito",
+      "error": "Error al procesar la transacción"
+    }
   },
   "settings": {
     "title": "Configuración",
