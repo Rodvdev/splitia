@@ -1038,14 +1038,12 @@ export const resolvers = {
         });
       }
       
-      // Build the where clause for settlements
-      type SettlementWhereClause = {
+      // Create a type-safe where clause for Prisma
+      const searchParams: {
         groupId: string;
         OR: Array<{initiatedById: string} | {settledWithUserId: string}>;
-        settlementStatus?: SettlementStatus;
-      };
-      
-      const where: SettlementWhereClause = {
+        settlementStatus?: { equals: SettlementStatus };
+      } = {
         groupId: args.groupId,
         OR: [
           { initiatedById: userId },
@@ -1053,27 +1051,22 @@ export const resolvers = {
         ]
       };
       
-      // Add additional filters if provided
+      // Update OR filter if userId provided
       if (args.userId) {
-        where.OR = [
+        searchParams.OR = [
           { initiatedById: args.userId },
           { settledWithUserId: args.userId }
         ];
       }
       
+      // Add status filter if provided
       if (args.status) {
-        where.settlementStatus = args.status;
+        searchParams.settlementStatus = { equals: args.status };
       }
-      
-      // Type-safe way to add the settlement status filter
-      const finalWhere = {
-        ...where,
-        ...(args.status ? { settlementStatus: { equals: args.status } } : {})
-      };
       
       // Query settlements
       return prisma.settlement.findMany({
-        where: finalWhere,
+        where: searchParams,
         include: {
           initiatedBy: true,
           settledWithUser: true,
