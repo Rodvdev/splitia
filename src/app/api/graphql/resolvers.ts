@@ -2752,6 +2752,68 @@ export const resolvers = {
         }
       });
     },
+
+    async createGroupWithConversation(
+      _parent: unknown,
+      { input }: { input: GroupInput },
+      context: Context
+    ) {
+      try {
+        const session = await getServerSession(context);
+        if (!session?.user?.id) {
+          throw new GraphQLError('Authentication required');
+        }
+
+        // Create conversation first (simpler operation)
+        const conversation = await prisma.conversation.create({
+          data: {
+            isGroupChat: true,
+            name: input.name,
+            participants: {
+              create: {
+                userId: session.user.id
+              }
+            }
+          }
+        });
+
+        // Create group with conversation reference
+        const group = await prisma.group.create({
+          data: {
+            name: input.name,
+            description: input.description,
+            image: input.image,
+            conversationId: conversation.id,
+            createdById: session.user.id,
+            members: {
+              create: {
+                userId: session.user.id,
+                role: GroupRole.ADMIN
+              }
+            }
+          },
+          include: {
+            members: {
+              include: {
+                user: true
+              }
+            },
+            conversation: true
+          }
+        });
+
+        // Update conversation with group reference
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { groupId: group.id }
+        });
+
+        return group;
+      } catch (error) {
+        console.error('Error creating group:', error);
+        throw new GraphQLError('Failed to create group');
+      }
+    },
   },
 
   // Type resolvers for nested fields

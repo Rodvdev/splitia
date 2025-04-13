@@ -554,18 +554,24 @@ export async function createGroup(data: {
         name
         description
         image
+        members {
+          id
+          name
+          email
+          image
+          role
+        }
+        conversation {
+          id
+          isGroupChat
+        }
       }
     }
   `;
 
   try {
-    console.log('Attempting to create group');
-    
-    // Use authenticated client
     const client = await getAuthenticatedClient();
-    const result = await client.request(mutation, { data });
-    console.log('Group created successfully');
-    return result;
+    return await client.request(mutation, { data });
   } catch (error) {
     console.error('Error creating group:', error);
     throw error;

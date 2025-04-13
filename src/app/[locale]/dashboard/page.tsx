@@ -276,6 +276,32 @@ export default function DashboardPage() {
     }
   }, [currentGroupIndex, expenses, groups]);
 
+  // Seleccionar el grupo con actividad más reciente por defecto
+  useEffect(() => {
+    if (!expenses.length || !groups.length) {
+      setCurrentGroupIndex(-1); // Seleccionar "TODOS" si no hay grupos o gastos
+      return;
+    }
+
+    // Encontrar el grupo con la actividad más reciente
+    const groupsWithLatestActivity = expenses
+      .filter(expense => expense.group) // Solo considerar gastos que pertenecen a un grupo
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Ordenar por fecha más reciente
+      .map(expense => expense.group?.id); // Obtener los IDs de grupos en orden de actividad
+
+    if (groupsWithLatestActivity.length > 0) {
+      // Encontrar el índice del grupo más reciente en el array de grupos
+      const mostRecentGroupIndex = groups.findIndex(group => group.id === groupsWithLatestActivity[0]);
+      if (mostRecentGroupIndex !== -1) {
+        setCurrentGroupIndex(mostRecentGroupIndex);
+      } else {
+        setCurrentGroupIndex(-1); // Si no se encuentra el grupo, seleccionar "TODOS"
+      }
+    } else {
+      setCurrentGroupIndex(-1); // Si no hay actividad en grupos, seleccionar "TODOS"
+    }
+  }, [expenses, groups]);
+
   // Obtener todos los miembros únicos de todos los grupos
   useEffect(() => {
     const uniqueMembers = new Map<string, Member>();
