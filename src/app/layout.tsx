@@ -39,15 +39,14 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-type LayoutProps = {
-  children: React.ReactNode;
-  params?: { locale?: string };
-};
-
+// Use the Next.js provided type instead of defining our own
 export default function RootLayout({
   children,
   params = {}
-}: LayoutProps) {
+}: {
+  children: React.ReactNode;
+  params?: { locale?: string };
+}) {
   // Set default locale if not provided
   const locale = (params.locale || 'en') as keyof typeof messages;
   
