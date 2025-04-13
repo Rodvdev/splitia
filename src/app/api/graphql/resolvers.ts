@@ -2580,7 +2580,9 @@ export const resolvers = {
         const updatedSettlement = await prisma.settlement.update({
           where: { id: args.id },
           data: { 
-            settlementStatus: args.status as SettlementStatus
+            settlementStatus: {
+              set: args.status as SettlementStatus
+            }
           },
           include: {
             initiatedBy: true,
