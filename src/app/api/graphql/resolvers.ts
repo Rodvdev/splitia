@@ -2580,9 +2580,12 @@ export const resolvers = {
         const updatedSettlement = await prisma.settlement.update({
           where: { id: args.id },
           data: { 
-            settlementStatus: {
-              set: args.status as SettlementStatus | undefined
-            }
+            // Convert enum to string literals that match Prisma's expected values
+            settlementStatus: args.status === SettlementStatus.PENDING ? 'PENDING' :
+                             args.status === SettlementStatus.PENDING_CONFIRMATION ? 'PENDING_CONFIRMATION' :
+                             args.status === SettlementStatus.CONFIRMED ? 'CONFIRMED' :
+                             args.status === SettlementStatus.COMPLETED ? 'COMPLETED' :
+                             args.status === SettlementStatus.CANCELLED ? 'CANCELLED' : 'PENDING'
           },
           include: {
             initiatedBy: true,
@@ -2653,7 +2656,7 @@ export const resolvers = {
       return prisma.settlement.update({
         where: { id: settlementId },
         data: { 
-          settlementStatus: 'CONFIRMED' as const 
+          settlementStatus: 'CONFIRMED'
         },
         include: {
           initiatedBy: true,
