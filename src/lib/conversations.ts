@@ -15,6 +15,19 @@ type TransactionClient = Omit<
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >;
 
+// At the top of the file, add these types
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
+interface GroupMember {
+  user: User;
+  role: string;
+}
+
 /**
  * Creates a new group with an associated conversation
  */
@@ -81,7 +94,17 @@ export async function createGroupWithConversation(
         }
       });
 
-      return group;
+      // Transform the group data to match the GraphQL schema
+      return {
+        ...group,
+        members: group.members.map((member: GroupMember) => ({
+          id: member.user.id,
+          name: member.user.name || '',  // Ensure name is never null
+          email: member.user.email,
+          image: member.user.image,
+          role: member.role
+        }))
+      };
     });
   } catch (error) {
     console.error('Error in createGroupWithConversation:', error);
