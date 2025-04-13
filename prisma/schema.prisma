@@ -294,6 +294,8 @@ enum SettlementStatus {
   PENDING
   PENDING_CONFIRMATION
   CONFIRMED
+  COMPLETED
+  CANCELLED
 }
 
 enum SettlementType {
