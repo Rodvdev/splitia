@@ -2490,9 +2490,15 @@ export const resolvers = {
           data: {
             amount: args.amount,
             description: args.description,
-            settledWithUserId: args.toUserId,
-            initiatedById: userId,
-            groupId: args.groupId,
+            settledWithUser: {
+              connect: { id: args.toUserId }
+            },
+            initiatedBy: {
+              connect: { id: userId }
+            },
+            group: {
+              connect: { id: args.groupId }
+            },
             settlementStatus: SettlementStatus.PENDING,
             settlementType: args.type || SettlementType.MANUAL,
             date: new Date(),
