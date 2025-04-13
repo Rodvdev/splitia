@@ -26,8 +26,7 @@ export async function createAIAssistant() {
       where: { email: AI_ASSISTANT_EMAIL },
       update: {},
       create: {
-        name: 'Splitia Assistant',
-        lastName: 'AI',
+        name: 'Splitia Assistant AI',
         email: AI_ASSISTANT_EMAIL,
         password,
         image: '/images/ai-avatar.png',
