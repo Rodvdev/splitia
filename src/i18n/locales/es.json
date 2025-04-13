@@ -69,7 +69,7 @@
     "empty": "No hay datos disponibles",
     "totalExpenses": "Gastos Totales",
     "description": "Resumen de tus gastos y grupos",
-    "title": "Panel",
+    "title": "SPLIT",
     "tagline": "Administra tus gastos y grupos",
     "expenses": "Gastos",
     "groups": "Grupos",
@@ -80,12 +80,13 @@
     "changeSettings": "Cambiar Configuración"
   },
   "navigation": {
-    "dashboard": "Panel",
+    "dashboard": "Comienza a dividir",
     "expenses": "Gastos",
     "groups": "Grupos",
     "budget": "Presupuesto",
     "settings": "Configuración",
-    "chat": "Chat"
+    "chat": "Chat",
+    "profile": "Perfil"
   },
   "expenses": {
     "title": "Gastos",

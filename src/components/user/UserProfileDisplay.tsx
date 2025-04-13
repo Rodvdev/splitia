@@ -9,6 +9,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
+import { Settings, LogOut, User } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { useAuth as useAuthContext } from '@/components/auth/auth-provider';
 
 interface UserProfileDisplayProps {
   showDetails?: boolean;
@@ -20,6 +29,7 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
   const tErrors = useTranslations('errors');
   const router = useRouter();
   const { user: authUser } = useAuth();
+  const { isSigningOut, signOut } = useAuthContext();
   
   const [userName, setUserName] = useState<string>('');
   const [userImage, setUserImage] = useState<string | null>(null);
@@ -109,12 +119,46 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
         {isLoading ? (
           <Skeleton className="h-9 w-9 rounded-full" />
         ) : (
-          <Avatar className="h-9 w-9 cursor-pointer" onClick={() => router.push('/dashboard/profile')}>
-            {userImage ? (
-              <AvatarImage src={userImage} alt={userName} />
-            ) : null}
-            <AvatarFallback>{getInitials(userName || 'User')}</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-9 w-9 cursor-pointer">
+                {userImage ? (
+                  <AvatarImage src={userImage} alt={userName} />
+                ) : null}
+                <AvatarFallback>{getInitials(userName || 'User')}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-white">
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  <p className="font-medium">{userName || t('user.guest')}</p>
+                  {userCurrency && (
+                    <Badge variant="outline" className="text-xs w-fit">
+                      {userCurrency}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                <span>{t('navigation.profile')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>{t('navigation.settings')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                variant="destructive" 
+                onClick={() => signOut()}
+                disabled={isSigningOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{isSigningOut ? t('common.loading') : t('auth.signOut')}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     );
@@ -133,12 +177,46 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
         </>
       ) : (
         <>
-          <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push('/dashboard/profile')}>
-            {userImage ? (
-              <AvatarImage src={userImage} alt={userName} />
-            ) : null}
-            <AvatarFallback>{getInitials(userName || 'User')}</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-12 w-12 cursor-pointer">
+                {userImage ? (
+                  <AvatarImage src={userImage} alt={userName} />
+                ) : null}
+                <AvatarFallback>{getInitials(userName || 'User')}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-white">
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  <p className="font-medium">{userName || t('user.guest')}</p>
+                  {userCurrency && (
+                    <Badge variant="outline" className="text-xs w-fit">
+                      {userCurrency}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                <span>{t('navigation.profile')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>{t('navigation.settings')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                variant="destructive" 
+                onClick={() => signOut()}
+                disabled={isSigningOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{isSigningOut ? t('common.loading') : t('auth.signOut')}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div>
             <div className="flex items-center gap-2">
               <p className="font-medium">{userName || t('user.guest')}</p>

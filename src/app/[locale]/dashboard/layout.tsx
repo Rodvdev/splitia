@@ -8,14 +8,11 @@ import {
   Receipt,
   Users,
   Wallet,
-  Settings,
   MessageSquare,
-  LogOut,
   Menu,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/components/auth/auth-provider';
 import { useProfile } from '@/hooks/use-profile';
 import UserProfileDisplay from '@/components/user/UserProfileDisplay';
 
@@ -28,7 +25,6 @@ export default function DashboardLayout({
   const t = useTranslations();
   const pathname = usePathname();
   const router = useRouter();
-  const { isSigningOut, signOut } = useAuth();
   const { profile } = useProfile();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [userLocale, setUserLocale] = useState<string>('');
@@ -77,11 +73,6 @@ export default function DashboardLayout({
       href: '/dashboard/chat',
       label: t('navigation.chat'),
       icon: <MessageSquare className="h-5 w-5" />,
-    },
-    {
-      href: '/dashboard/settings',
-      label: t('navigation.settings'),
-      icon: <Settings className="h-5 w-5" />,
     },
   ];
 
@@ -137,18 +128,6 @@ export default function DashboardLayout({
         <nav className="flex-1 overflow-y-auto p-4">
           {renderNavItems()}
         </nav>
-        <div className="border-t p-4">
-          <button 
-            className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={() => signOut()}
-            disabled={isSigningOut}
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="ml-3">
-              {isSigningOut ? t('common.loading') : t('auth.signOut')}
-            </span>
-          </button>
-        </div>
       </aside>
 
       {/* Mobile Sidebar - Overlay */}
@@ -161,7 +140,7 @@ export default function DashboardLayout({
 
       {/* Mobile Sidebar - Content */}
       <aside className={cn(
-        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-sidebar text-sidebar-foreground transition-transform duration-300 ease-in-out",
+        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-white text-sidebar-foreground transition-transform duration-300 ease-in-out shadow-lg",
         isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 flex justify-between items-center">
@@ -181,18 +160,6 @@ export default function DashboardLayout({
         <nav className="flex-1 overflow-y-auto p-4">
           {renderNavItems()}
         </nav>
-        <div className="border-t p-4">
-          <button 
-            className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={() => signOut()}
-            disabled={isSigningOut}
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="ml-3">
-              {isSigningOut ? t('common.loading') : t('auth.signOut')}
-            </span>
-          </button>
-        </div>
       </aside>
 
       {/* Main content wrapper */}

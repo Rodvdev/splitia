@@ -85,7 +85,8 @@
     "groups": "Groups",
     "budget": "Budget",
     "settings": "Settings",
-    "chat": "Chat"
+    "chat": "Chat",
+    "profile": "Profile"
   },
   "expenses": {
     "title": "Expenses",
