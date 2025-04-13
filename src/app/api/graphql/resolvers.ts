@@ -594,8 +594,7 @@ export const resolvers = {
       });
 
       // Use explicit type assertion to resolve the issue
-      return participations.map((p: { conversation: ConversationType }) => p.conversation);
-      return participations.map((p: { conversation: ConversationType }) => p.conversation);
+      return participations.map((p: { conversation: unknown }) => p.conversation as unknown as ConversationType);
     },
 
     // Get a specific conversation by ID
