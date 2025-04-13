@@ -2500,7 +2500,7 @@ export const resolvers = {
               connect: { id: args.groupId }
             },
             settlementStatus: SettlementStatus.PENDING,
-            settlementType: args.type ? args.type : SettlementType.MANUAL,
+            settlementType: args.type ?? SettlementType.MANUAL,
             date: new Date(),
           },
           include: {
