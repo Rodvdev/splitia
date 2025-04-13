@@ -3,6 +3,12 @@ import { GraphQLError } from 'graphql';
 import { createGroupWithConversation, addUserToGroupAndConversation, createGroupChatWithGroup } from '@/lib/conversations';
 import { PrismaClient } from '@prisma/client';
 
+// Common type for transaction callback parameters
+type TransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
+
 // Helper function to get the session
 async function getServerSession(context?: Context) {
   if (context?.user) {
@@ -1224,7 +1230,7 @@ export const resolvers = {
       }
 
       // Update expense and shares in a transaction
-      return prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) => {
+      return prisma.$transaction(async (tx: TransactionClient) => {
         // Update the expense
         await tx.expense.update({
           where: { id: data.id },
@@ -1492,7 +1498,7 @@ export const resolvers = {
       }
 
       // Use our utility function to add the user to both the group and conversation
-      await addUserToGroupAndConversation(groupId, userToAdd.id, data.role as 'ADMIN' | 'MEMBER' | 'GUEST');
+      await addUserToGroupAndConversation(groupId, userToAdd.id, data.role as GroupRole);
 
       // Add a notification message
       const group = await prisma.group.findUnique({
@@ -1583,7 +1589,7 @@ export const resolvers = {
       });
 
       // Remove the user from the group and from the group's conversation in a transaction
-      await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) => {
+      await prisma.$transaction(async (tx: TransactionClient) => {
         // Remove the user from the group
         await tx.groupUser.delete({
           where: {
@@ -1718,7 +1724,7 @@ export const resolvers = {
       }
 
       // Delete the group in a transaction, cascading to memberships
-      await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) => {
+      await prisma.$transaction(async (tx: TransactionClient) => {
         // Delete all group memberships
         await tx.groupUser.deleteMany({
           where: { groupId: id },
@@ -2119,7 +2125,7 @@ export const resolvers = {
         }
 
         // Add the user to the group with MEMBER role
-        await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) => {
+        await prisma.$transaction(async (tx: TransactionClient) => {
           // Add user to the group
           await tx.groupUser.create({
             data: {
