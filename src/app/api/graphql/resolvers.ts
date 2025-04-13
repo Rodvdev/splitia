@@ -2580,7 +2580,7 @@ export const resolvers = {
         const updatedSettlement = await prisma.settlement.update({
           where: { id: args.id },
           data: { 
-            settlementStatus: args.status as 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
+            settlementStatus: args.status as SettlementStatus
           },
           include: {
             initiatedBy: true,
