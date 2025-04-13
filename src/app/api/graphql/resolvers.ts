@@ -595,6 +595,7 @@ export const resolvers = {
 
       // Use explicit type assertion to resolve the issue
       return participations.map((p: { conversation: ConversationType }) => p.conversation);
+      return participations.map((p: { conversation: ConversationType }) => p.conversation);
     },
 
     // Get a specific conversation by ID
@@ -1157,9 +1158,7 @@ export const resolvers = {
         
         return expense;
       }
-      
-      // Handle normal expense creation (existing logic)
-      // [Keep the existing expense creation logic here]
+
     },
 
     // Update an existing expense
