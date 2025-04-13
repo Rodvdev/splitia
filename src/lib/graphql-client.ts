@@ -548,8 +548,8 @@ export async function createGroup(data: {
   image?: string;
 }) {
   const mutation = `
-    mutation CreateGroupWithConversation($data: GroupInput!) {
-      createGroupWithConversation(data: $data) {
+    mutation CreateGroup($input: GroupInput!) {
+      createGroupWithConversation(input: $input) {
         id
         name
         description
@@ -571,7 +571,7 @@ export async function createGroup(data: {
 
   try {
     const client = await getAuthenticatedClient();
-    return await client.request(mutation, { data });
+    return await client.request(mutation, { input: data });
   } catch (error) {
     console.error('Error creating group:', error);
     throw error;
