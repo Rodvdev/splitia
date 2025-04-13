@@ -3,7 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getUserId } from '@/lib/auth/get-user-id';
 
 type ProfileUpdateData = {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
   currency?: string;
   language?: string;
   image?: string;
@@ -13,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { name, currency, language, image } = body;
+    const { firstName, lastName, phoneNumber, currency, language, image } = body;
 
     // Get the user ID
     const userId = await getUserId();
@@ -25,7 +27,9 @@ export async function POST(request: NextRequest) {
 
     // Build update data object
     const updateData: ProfileUpdateData = {};
-    if (name) updateData.name = name;
+    if (firstName) updateData.firstName = firstName;
+    if (lastName) updateData.lastName = lastName;
+    if (phoneNumber) updateData.phoneNumber = phoneNumber;
     if (currency) updateData.currency = currency;
     if (language) updateData.language = language;
     if (image) updateData.image = image;

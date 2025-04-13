@@ -11,7 +11,9 @@ export default function SignUpPage() {
   const t = useTranslations();
   const router = useRouter();
   
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -50,7 +52,7 @@ export default function SignUpPage() {
     
     try {
       // Use the server action to create a user
-      const { user, error: serverError } = await createUser(email, password, name, currency, language);
+      const { user, error: serverError } = await createUser(email, password, firstName, lastName, phoneNumber, currency, language);
       
       if (serverError) {
         setError(serverError.message);
@@ -108,21 +110,58 @@ export default function SignUpPage() {
 
         <form onSubmit={handleSignUp} className="mt-8 space-y-6">
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label 
+                  htmlFor="firstName" 
+                  className="block text-sm font-medium mb-1"
+                >
+                  {t('auth.firstName')}
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                  placeholder={t('auth.firstNamePlaceholder')}
+                />
+              </div>
+              
+              <div>
+                <label 
+                  htmlFor="lastName" 
+                  className="block text-sm font-medium mb-1"
+                >
+                  {t('auth.lastName')}
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                  placeholder={t('auth.lastNamePlaceholder')}
+                />
+              </div>
+            </div>
+
             <div>
               <label 
-                htmlFor="name" 
+                htmlFor="phoneNumber" 
                 className="block text-sm font-medium mb-1"
               >
-                {t('auth.name')}
+                {t('auth.phoneNumber')}
               </label>
               <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                id="phoneNumber"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
-                placeholder={t('auth.namePlaceholder')}
+                placeholder={t('auth.phoneNumberPlaceholder')}
               />
             </div>
             

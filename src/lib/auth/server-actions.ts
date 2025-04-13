@@ -45,7 +45,9 @@ type CookieOptions = {
 export async function createUser(
   email: string, 
   password: string, 
-  name: string,
+  firstName: string,
+  lastName: string,
+  phoneNumber: string,
   currency: string = 'PEN',
   language: string = 'es'
 ): Promise<AuthResult> {
@@ -69,7 +71,10 @@ export async function createUser(
     const user = await prisma.user.create({
       data: {
         email,
-        name: name || email.split('@')[0],
+        firstName,
+        lastName,
+        phoneNumber,
+        name: `${firstName} ${lastName}`,
         password: hashedPassword,
         updatedAt: new Date(),
         currency,
