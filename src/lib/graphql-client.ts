@@ -548,7 +548,7 @@ export async function createGroup(data: {
   image?: string;
 }) {
   const mutation = `
-    mutation CreateGroup($input: GroupInput!) {
+    mutation CreateGroupWithConversation($input: GroupInput!) {
       createGroupWithConversation(input: $input) {
         id
         name
