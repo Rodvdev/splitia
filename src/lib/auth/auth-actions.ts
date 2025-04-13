@@ -27,8 +27,8 @@ export const authActions = {
     }
   },
   
-  // Sign up with name, email and password
-  async signUpWithName(email: string, password: string, name: string) {
+  // Sign up with name, lastName, email and password
+  async signUpWithName(email: string, password: string, name: string, lastName: string) {
     try {
       // Hash the password
       const hashedPassword = await hashPassword(password);
@@ -39,6 +39,7 @@ export const authActions = {
           email,
           password: hashedPassword,
           name,
+          lastName,
         },
       });
 

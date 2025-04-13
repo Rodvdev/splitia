@@ -27,6 +27,7 @@ export async function createAIAssistant() {
       update: {},
       create: {
         name: 'Splitia Assistant',
+        lastName: 'AI',
         email: AI_ASSISTANT_EMAIL,
         password,
         image: '/images/ai-avatar.png',

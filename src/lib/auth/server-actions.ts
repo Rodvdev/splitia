@@ -47,7 +47,6 @@ export async function createUser(
   password: string, 
   name: string,
   lastName: string,
-  phoneNumber: string,
   currency: string = 'PEN',
   language: string = 'es'
 ): Promise<AuthResult> {
@@ -73,7 +72,6 @@ export async function createUser(
         email,
         name,
         lastName,
-        phoneNumber,
         password: hashedPassword,
         updatedAt: new Date(),
         currency,
