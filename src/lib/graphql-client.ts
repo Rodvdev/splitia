@@ -25,6 +25,7 @@ export async function getAuthenticatedClient() {
       session = await response.json();
     } catch (error) {
       console.error('Error fetching session:', error);
+      throw new Error('Failed to authenticate: Could not fetch session');
     }
   } else {
     // On the server, use getServerSession
@@ -32,6 +33,7 @@ export async function getAuthenticatedClient() {
       session = await getServerSession(authOptions);
     } catch (error) {
       console.error('Error getting server session:', error);
+      throw new Error('Failed to authenticate: Could not get server session');
     }
   }
   
@@ -40,20 +42,18 @@ export async function getAuthenticatedClient() {
     'Content-Type': 'application/json',
   };
   
-  if (session?.user) {
-    console.log('Adding user context to GraphQL request', {
-      userId: session.user.id,
-      email: session.user.email,
-    });
-    
-    // Use the correct header format for JWT token authorization
-    if (session.accessToken) {
-      headers['Authorization'] = `Bearer ${session.accessToken}`;
-    } else {
-      console.warn('No accessToken found in session, authentication might fail');
-    }
+  if (!session?.user?.id) {
+    throw new Error('Failed to authenticate: No active session found');
+  }
+
+  // Add user context to headers
+  headers['X-User-Id'] = session.user.id;
+  
+  // Use the correct header format for JWT token authorization
+  if (session.accessToken) {
+    headers['Authorization'] = `Bearer ${session.accessToken}`;
   } else {
-    console.warn('No active session found when creating GraphQL client');
+    throw new Error('Failed to authenticate: No access token found');
   }
   
   // Create and return the GraphQL client with proper auth headers and cookies
@@ -61,7 +61,6 @@ export async function getAuthenticatedClient() {
     credentials: 'include',  // This is critical for including cookies
     headers,
     cache: 'no-store',
-    mode: 'cors',
   });
 }
 
@@ -142,7 +141,14 @@ export async function fetchExpenses(variables: {
     return await client.request(query, variables);
   } catch (error) {
     console.error('Error fetching expenses:', error);
-    throw error;
+    
+    // Check if it's an authentication error
+    if (error instanceof Error && error.message.includes('Failed to authenticate')) {
+      throw new Error('Please sign in to view expenses');
+    }
+    
+    // Handle other types of errors
+    throw new Error('Failed to fetch expenses. Please try again later.');
   }
 }
 
