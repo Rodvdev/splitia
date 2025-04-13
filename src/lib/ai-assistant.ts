@@ -2,6 +2,15 @@ import { prisma } from './prisma';
 import { addUserToGroupAndConversation } from './conversations';
 import { hash } from 'bcrypt';
 
+// Define GroupRole enum to match the Prisma schema
+enum GroupRole {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+  GUEST = 'GUEST',
+  ASSISTANT = 'ASSISTANT'
+}
+
+
 const AI_ASSISTANT_EMAIL = 'ai-assistant@splitia.app';
 
 /**
@@ -69,7 +78,7 @@ export async function addAIAssistantToGroup(groupId: string) {
   }
   
   // Add the AI Assistant to the group
-  const result = await addUserToGroupAndConversation(groupId, aiAssistant.id, 'ASSISTANT');
+  const result = await addUserToGroupAndConversation(groupId, aiAssistant.id, 'ASSISTANT' as GroupRole);
   
   // Send a welcome message from the AI Assistant
   const group = await prisma.group.findUnique({
