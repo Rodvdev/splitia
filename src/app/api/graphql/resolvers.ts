@@ -1039,11 +1039,8 @@ export const resolvers = {
       }
       
       // Create a type-safe where clause for Prisma
-      const searchParams: {
-        groupId: string;
-        OR: Array<{initiatedById: string} | {settledWithUserId: string}>;
-        settlementStatus?: { equals: SettlementStatus };
-      } = {
+      // Using Record to create a more flexible type without resorting to 'any'
+      const searchParams: Record<string, unknown> = {
         groupId: args.groupId,
         OR: [
           { initiatedById: userId },
@@ -1059,9 +1056,9 @@ export const resolvers = {
         ];
       }
       
-      // Add status filter if provided
+      // Add status filter if provided using Prisma's direct enum assignment
       if (args.status) {
-        searchParams.settlementStatus = { equals: args.status };
+        searchParams.settlementStatus = args.status;
       }
       
       // Query settlements
