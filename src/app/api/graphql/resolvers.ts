@@ -2490,15 +2490,16 @@ export const resolvers = {
           data: {
             amount: args.amount,
             description: args.description,
-            toUserId: args.toUserId,
-            fromUserId: userId,
+            settledWithUserId: args.toUserId,
+            initiatedById: userId,
             groupId: args.groupId,
-            status: SettlementStatus.PENDING,
-            type: args.type || SettlementType.MANUAL,
+            settlementStatus: SettlementStatus.PENDING,
+            settlementType: args.type || SettlementType.MANUAL,
+            date: new Date(),
           },
           include: {
-            toUser: true,
-            fromUser: true,
+            initiatedBy: true,
+            settledWithUser: true,
             group: true,
           },
         });
@@ -2557,14 +2558,14 @@ export const resolvers = {
         }
 
         // Only the recipient (toUser) can mark a settlement as COMPLETED
-        if (args.status === SettlementStatus.COMPLETED && settlement.toUserId !== userId) {
+        if (args.status === SettlementStatus.COMPLETED && settlement.settledWithUserId !== userId) {
           throw new GraphQLError('Only the recipient can mark a settlement as completed', {
             extensions: { code: 'FORBIDDEN' },
           });
         }
 
         // Only the sender (fromUser) can mark a settlement as CANCELLED
-        if (args.status === SettlementStatus.CANCELLED && settlement.fromUserId !== userId) {
+        if (args.status === SettlementStatus.CANCELLED && settlement.initiatedById !== userId) {
           throw new GraphQLError('Only the sender can cancel a settlement', {
             extensions: { code: 'FORBIDDEN' },
           });
@@ -2573,10 +2574,10 @@ export const resolvers = {
         // Update the settlement status
         const updatedSettlement = await prisma.settlement.update({
           where: { id: args.id },
-          data: { status: args.status },
+          data: { settlementStatus: args.status },
           include: {
-            toUser: true,
-            fromUser: true,
+            initiatedBy: true,
+            settledWithUser: true,
             group: true,
           },
         });
