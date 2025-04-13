@@ -41,13 +41,16 @@ enum GroupRole {
 enum SettlementStatus {
   PENDING = 'PENDING',
   PENDING_CONFIRMATION = 'PENDING_CONFIRMATION',
-  CONFIRMED = 'CONFIRMED'
+  CONFIRMED = 'CONFIRMED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
 }
 
 // Define SettlementType enum to match the Prisma schema
 enum SettlementType {
   PAYMENT = 'PAYMENT',
-  RECEIPT = 'RECEIPT'
+  RECEIPT = 'RECEIPT',
+  MANUAL = 'MANUAL'
 }
 
 // Basic type definitions for resolvers
@@ -97,13 +100,10 @@ interface ExpenseInput {
 
 interface SettlementInput {
   amount: number;
-  currency: string;
   description?: string;
-  date: string;
   groupId: string;
-  settledWithUserId: string;
-  settlementType: SettlementType;
-  settlementStatus: SettlementStatus;
+  toUserId: string;
+  type?: SettlementType;
 }
 
 interface SettlementData {
@@ -255,7 +255,7 @@ async function checkDatabaseConnection(prisma: PrismaClient) {
     // Simple query to check if database is accessible
     await prisma.$queryRaw`SELECT 1`;
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Database connection error:', error);
     return false;
   }
@@ -594,7 +594,7 @@ export const resolvers = {
       });
 
       // Use explicit type assertion to resolve the issue
-      return participations.map((p) => p.conversation);
+      return participations.map((p: { conversation: ConversationType }) => p.conversation);
     },
 
     // Get a specific conversation by ID
@@ -909,7 +909,15 @@ export const resolvers = {
         }>();
 
         // Filter out ASSISTANT members and initialize balances for regular members
-        group.members.forEach(member => {
+        group.members.forEach((member: { 
+          role: string; 
+          userId: string; 
+          user: { 
+            name: string | null; 
+            email: string; 
+            image: string | null; 
+          }; 
+        }) => {
           // Skip AI Assistants and the current user
           if (member.role !== 'ASSISTANT' && member.userId !== userId) {
             balanceMap.set(member.userId, { 
@@ -922,34 +930,38 @@ export const resolvers = {
         });
 
         // Process all expenses
-        expenses.forEach(expense => {
+        expenses.forEach((expense: ExpenseType) => {
+          if (!expense.paidBy || !expense.shares) return;
+          
           const paidById = expense.paidBy.id;
           
           // Calculate each member's share
           expense.shares.forEach(share => {
-            const memberId = share.user.id;
-            const shareAmount = share.amount;
+            if (share.user) {
+              const memberId = share.user.id;
+              const shareAmount = share.amount;
 
-            // Skip if it's the current user's share or an ASSISTANT role
-            if ((memberId === userId && paidById === userId) || 
-                group.members.some(m => m.userId === memberId && m.role === 'ASSISTANT')) {
-              return; // Skip current user's share or AI Assistant
-            }
-
-            // If current user paid
-            if (paidById === userId && memberId !== userId) {
-              const memberBalance = balanceMap.get(memberId);
-              if (memberBalance) {
-                // Other member owes current user this share amount
-                memberBalance.amount += shareAmount;
+              // Skip if it's the current user's share or an ASSISTANT role
+              if ((memberId === userId && paidById === userId) || 
+                  group.members.some((m: { userId: string; role: string }) => m.userId === memberId && m.role === 'ASSISTANT')) {
+                return; // Skip current user's share or AI Assistant
               }
-            } 
-            // If current user is paying a share
-            else if (memberId === userId && paidById !== userId) {
-              const payerBalance = balanceMap.get(paidById);
-              if (payerBalance) {
-                // Current user owes payer this share amount
-                payerBalance.amount -= shareAmount;
+
+              // If current user paid
+              if (paidById === userId && memberId !== userId) {
+                const memberBalance = balanceMap.get(memberId);
+                if (memberBalance) {
+                  // Other member owes current user this share amount
+                  memberBalance.amount += shareAmount;
+                }
+              } 
+              // If current user is paying a share
+              else if (memberId === userId && paidById !== userId) {
+                const payerBalance = balanceMap.get(paidById);
+                if (payerBalance) {
+                  // Current user owes payer this share amount
+                  payerBalance.amount -= shareAmount;
+                }
               }
             }
           });
@@ -1101,25 +1113,22 @@ export const resolvers = {
         // Create settlement
         const settlementInput: SettlementInput = {
           amount: data.amount,
-          currency: data.currency,
           description: data.description,
-          date: data.date,
           groupId: data.groupId!,
-          settledWithUserId: data.settledWithUserId,
-          settlementType: data.settlementType,
-          settlementStatus: data.settlementStatus
+          toUserId: data.settledWithUserId,
+          type: data.settlementType || SettlementType.MANUAL,
         };
         
         const settlement = await resolvers.Mutation.createSettlement(
           _parent, 
-          { data: settlementInput }, 
+          settlementInput, 
           context
         );
         
         // Get the created expense that's linked to the settlement
         const expense = await prisma.expense.findFirst({
           where: { 
-            settlementId: settlement.id 
+            settlementId: settlement.settlement ? settlement.settlement.id : undefined 
           },
           include: {
             paidBy: true,
@@ -1215,7 +1224,7 @@ export const resolvers = {
       }
 
       // Update expense and shares in a transaction
-      return prisma.$transaction(async (tx) => {
+      return prisma.$transaction(async (tx: PrismaClient) => {
         // Update the expense
         await tx.expense.update({
           where: { id: data.id },
@@ -1574,7 +1583,7 @@ export const resolvers = {
       });
 
       // Remove the user from the group and from the group's conversation in a transaction
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: PrismaClient) => {
         // Remove the user from the group
         await tx.groupUser.delete({
           where: {
@@ -1709,7 +1718,7 @@ export const resolvers = {
       }
 
       // Delete the group in a transaction, cascading to memberships
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: PrismaClient) => {
         // Delete all group memberships
         await tx.groupUser.deleteMany({
           where: { groupId: id },
@@ -2110,7 +2119,7 @@ export const resolvers = {
         }
 
         // Add the user to the group with MEMBER role
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: PrismaClient) => {
           // Add user to the group
           await tx.groupUser.create({
             data: {
@@ -2355,7 +2364,7 @@ export const resolvers = {
         }
         
         // Verify that none of the users is an AI Assistant
-        const assistantMembership = memberships.find(m => m.role === 'ASSISTANT');
+        const assistantMembership = memberships.find((m: { role: string }) => m.role === 'ASSISTANT');
         if (assistantMembership) {
           throw new GraphQLError('Cannot record payments for AI Assistant users', {
             extensions: { code: 'BAD_REQUEST' },
@@ -2431,9 +2440,10 @@ export const resolvers = {
     },
 
     // Create a new settlement
-    createSettlement: async (_parent: unknown, { data }: { data: SettlementInput }, context: Context) => {
+    createSettlement: async (_parent: unknown, args: SettlementInput, context: Context) => {
       try {
         const session = await getServerSession(context);
+        
         if (!session?.user) {
           throw new GraphQLError('Not authenticated', {
             extensions: { code: 'UNAUTHENTICATED' },
@@ -2447,228 +2457,137 @@ export const resolvers = {
           });
         }
 
-        // Check database connection first
-        const isConnected = await checkDatabaseConnection(prisma);
-        if (!isConnected) {
-          throw new Error('Database connection failed. Please try again later.');
+        // Check if database is accessible
+        const isDatabaseConnected = await checkDatabaseConnection(prisma);
+        if (!isDatabaseConnected) {
+          throw new GraphQLError('Database connection error', {
+            extensions: { code: 'DATABASE_ERROR' },
+          });
         }
-  
-        // Check if user is member of the group
-        const userInGroup = await prisma.groupUser.findFirst({
+
+        // Check if user is a member of the group
+        const isGroupMember = await prisma.groupUser.findFirst({
           where: {
-            userId: userId,
-            groupId: data.groupId
-          }
+            userId,
+            groupId: args.groupId,
+          },
         });
-  
-        if (!userInGroup) {
+
+        if (!isGroupMember) {
           throw new GraphQLError('User is not a member of this group', {
             extensions: { code: 'FORBIDDEN' },
           });
         }
-  
-        // Check if settled with user is in the group
-        const settledWithUserInGroup = await prisma.groupUser.findFirst({
-          where: {
-            userId: data.settledWithUserId,
-            groupId: data.groupId
-          }
-        });
-  
-        if (!settledWithUserInGroup) {
-          throw new GraphQLError('Settled with user is not a member of this group', {
-            extensions: { code: 'BAD_REQUEST' },
-          });
-        }
-  
-        // Create settlement transaction in a transaction
-        return prisma.$transaction(async (tx) => {
-          // 1. Create the settlement record
-          const settlement = await tx.settlement.create({
-            data: {
-              amount: data.amount,
-              currency: data.currency,
-              description: data.description || 'Balance settlement',
-              date: new Date(data.date),
-              settlementStatus: data.settlementStatus,
-              settlementType: data.settlementType,
-              initiatedBy: { connect: { id: userId } },
-              settledWithUser: { connect: { id: data.settledWithUserId } },
-              group: { connect: { id: data.groupId } }
-            },
-            include: {
-              initiatedBy: true,
-              settledWithUser: true,
-              group: true,
-            }
-          });
-  
-          // 2. Create an expense to represent this settlement
-          await tx.expense.create({
-            data: {
-              amount: data.amount,
-              description: data.description || 'Balance settlement',
-              date: new Date(data.date),
-              currency: data.currency,
-              isSettlement: true,
-              paidBy: {
-                connect: { 
-                  id: data.settlementType === SettlementType.PAYMENT 
-                    ? userId 
-                    : data.settledWithUserId 
-                }
-              },
-              group: { connect: { id: data.groupId } },
-              settlement: { connect: { id: settlement.id } },
-              // Create shares appropriately based on settlement type
-              shares: {
-                create: [
-                  {
-                    amount: data.amount,
-                    type: ShareType.FIXED,
-                    user: {
-                      connect: { 
-                        id: data.settlementType === SettlementType.PAYMENT 
-                          ? data.settledWithUserId 
-                          : userId 
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          });
-  
-          return {
-            id: settlement.id,
-            amount: settlement.amount,
-            currency: settlement.currency,
-            settlementStatus: settlement.settlementStatus,
-            settlementType: settlement.settlementType,
-            date: settlement.date,
-            description: settlement.description,
-            initiatedById: settlement.initiatedById,
-            settledWithUserId: settlement.settledWithUserId,
-            groupId: settlement.groupId,
-            initiatedBy: {
-              id: settlement.initiatedBy.id,
-              email: settlement.initiatedBy.email,
-              name: settlement.initiatedBy.name,
-              image: settlement.initiatedBy.image,
-            },
-            settledWithUser: {
-              id: settlement.settledWithUser.id,
-              email: settlement.settledWithUser.email,
-              name: settlement.settledWithUser.name,
-              image: settlement.settledWithUser.image,
-            },
-            group: {
-              id: settlement.group.id,
-              name: settlement.group.name,
-              description: settlement.group.description,
-              image: settlement.group.image,
-            }
-          };
-        });
-      } catch (error: unknown) {
-        console.error('Error creating settlement:', error);
-        // Provide more helpful error message for client
-        if (error instanceof Error && error.message && error.message.includes("Can't reach database server")) {
-          throw new Error('Database connection failed. Please try again later.');
-        }
-        throw error;
-      }
-    },
-    
-    // Update settlement status
-    updateSettlementStatus: async (_parent: unknown, { settlementId, status }: { settlementId: string, status: SettlementStatus }, context: Context) => {
-      try {
-        const session = await getServerSession(context);
-        if (!session?.user) {
-          throw new GraphQLError('Not authenticated', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
 
-        const userId = context.user?.id || session.user.id;
-        if (!userId) {
-          throw new GraphQLError('User ID not found in session', {
-            extensions: { code: 'INTERNAL_SERVER_ERROR' },
-          });
-        }
-
-        // Check database connection first
-        const isConnected = await checkDatabaseConnection(prisma);
-        if (!isConnected) {
-          throw new Error('Database connection failed. Please try again later.');
-        }
-
-        // Fetch the settlement to verify permissions
-        const settlement = await prisma.settlement.findUnique({
-          where: { id: settlementId },
-          include: {
-            initiatedBy: true,
-            settledWithUser: true,
-            group: true,
+        // Create the settlement
+        const settlement = await prisma.settlement.create({
+          data: {
+            amount: args.amount,
+            description: args.description,
+            toUserId: args.toUserId,
+            fromUserId: userId,
+            groupId: args.groupId,
+            status: SettlementStatus.PENDING,
+            type: args.type || SettlementType.MANUAL,
           },
-        });
-
-        if (!settlement) {
-          throw new Error('Settlement not found');
-        }
-
-        // Only allow status updates from users involved in the settlement
-        if (settlement.initiatedById !== userId && settlement.settledWithUserId !== userId) {
-          throw new Error('You are not authorized to update this settlement');
-        }
-
-        // Update the settlement status
-        const updatedSettlement = await prisma.settlement.update({
-          where: { id: settlementId },
-          data: { settlementStatus: status },
           include: {
-            initiatedBy: true,
-            settledWithUser: true,
+            toUser: true,
+            fromUser: true,
             group: true,
           },
         });
 
         return {
-          id: updatedSettlement.id,
-          amount: updatedSettlement.amount,
-          currency: updatedSettlement.currency,
-          settlementStatus: updatedSettlement.settlementStatus,
-          settlementType: updatedSettlement.settlementType,
-          date: updatedSettlement.date,
-          description: updatedSettlement.description,
-          initiatedById: updatedSettlement.initiatedById,
-          settledWithUserId: updatedSettlement.settledWithUserId,
-          groupId: updatedSettlement.groupId,
-          initiatedBy: {
-            id: updatedSettlement.initiatedBy.id,
-            email: updatedSettlement.initiatedBy.email,
-            name: updatedSettlement.initiatedBy.name,
-            image: updatedSettlement.initiatedBy.image,
+          success: true,
+          message: 'Settlement created successfully',
+          settlement,
+        };
+      } catch (error: unknown) {
+        console.error('Error creating settlement:', error);
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throw new GraphQLError('Failed to create settlement', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
+    
+    // Update settlement status
+    updateSettlementStatus: async (_parent: unknown, args: { id: string; status: SettlementStatus }, context: Context) => {
+      try {
+        const session = await getServerSession(context);
+        
+        if (!session?.user) {
+          throw new GraphQLError('Not authenticated', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+
+        const userId = context.user?.id || session.user.id;
+        if (!userId) {
+          throw new GraphQLError('User ID not found in session', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
+
+        // Check if database is accessible
+        const isDatabaseConnected = await checkDatabaseConnection(prisma);
+        if (!isDatabaseConnected) {
+          throw new GraphQLError('Database connection error', {
+            extensions: { code: 'DATABASE_ERROR' },
+          });
+        }
+
+        // Get the settlement
+        const settlement = await prisma.settlement.findUnique({
+          where: { id: args.id },
+        });
+
+        if (!settlement) {
+          throw new GraphQLError('Settlement not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Only the recipient (toUser) can mark a settlement as COMPLETED
+        if (args.status === SettlementStatus.COMPLETED && settlement.toUserId !== userId) {
+          throw new GraphQLError('Only the recipient can mark a settlement as completed', {
+            extensions: { code: 'FORBIDDEN' },
+          });
+        }
+
+        // Only the sender (fromUser) can mark a settlement as CANCELLED
+        if (args.status === SettlementStatus.CANCELLED && settlement.fromUserId !== userId) {
+          throw new GraphQLError('Only the sender can cancel a settlement', {
+            extensions: { code: 'FORBIDDEN' },
+          });
+        }
+
+        // Update the settlement status
+        const updatedSettlement = await prisma.settlement.update({
+          where: { id: args.id },
+          data: { status: args.status },
+          include: {
+            toUser: true,
+            fromUser: true,
+            group: true,
           },
-          settledWithUser: {
-            id: updatedSettlement.settledWithUser.id,
-            email: updatedSettlement.settledWithUser.email,
-            name: updatedSettlement.settledWithUser.name,
-            image: updatedSettlement.settledWithUser.image,
-          },
-          group: {
-            id: updatedSettlement.group.id,
-            name: updatedSettlement.group.name,
-            description: updatedSettlement.group.description,
-            image: updatedSettlement.group.image,
-          },
+        });
+
+        return {
+          success: true,
+          message: `Settlement ${args.status.toLowerCase()} successfully`,
+          settlement: updatedSettlement,
         };
       } catch (error: unknown) {
         console.error('Error updating settlement status:', error);
-        if (error instanceof Error && error.message && error.message.includes("Can't reach database server")) {
-          throw new Error('Database connection failed. Please try again later.');
+        if (error instanceof GraphQLError) {
+          throw error;
         }
-        throw error;
+        throw new GraphQLError('Failed to update settlement status', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
       }
     },
     
