@@ -929,8 +929,14 @@ export const resolvers = {
           }
         });
 
-        // Process all expenses
-        expenses.forEach((expense: ExpenseType) => {
+        // Process all expenses with explicit typing
+        (expenses as Array<{
+          paidBy: { id: string };
+          shares: Array<{
+            user?: { id: string };
+            amount: number;
+          }>
+        }>).forEach(expense => {
           if (!expense.paidBy || !expense.shares) return;
           
           const paidById = expense.paidBy.id;
