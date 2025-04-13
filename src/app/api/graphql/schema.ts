@@ -263,7 +263,7 @@ export const typeDefs = gql`
     updateExpense(data: UpdateExpenseInput!): Expense!
     deleteExpense(id: ID!): Boolean!
     createCategory(name: String!, icon: String, color: String): CustomCategory!
-    createGroup(data: GroupInput!): Group!
+    createGroupWithConversation(data: GroupInput!): Group!
     addGroupMember(groupId: ID!, data: GroupMemberInput!): Boolean!
     removeGroupMember(groupId: ID!, userId: ID!): Boolean!
     leaveGroup(groupId: ID!): Boolean!

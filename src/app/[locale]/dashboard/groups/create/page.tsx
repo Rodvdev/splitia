@@ -74,6 +74,7 @@ export default function CreateGroupPage() {
     setIsSubmitting(true);
     
     try {
+      console.log('Creating group with values:', values);
       // Import the createGroup function
       const { createGroup } = await import('@/lib/graphql-client');
       
@@ -87,21 +88,28 @@ export default function CreateGroupPage() {
         image: imagePreview || undefined
       });
       
-      console.log('Group created:', result);
+      console.log('Group created successfully:', result);
       toast.success(t('createSuccess'));
       router.push('/dashboard/groups');
     } catch (error) {
       console.error('Failed to create group:', error);
       
       // Check for authentication errors
-      if (error instanceof Error && 
-          (error.message.includes('Not authenticated') || 
-           error.message.includes('UNAUTHENTICATED'))) {
-        toast.error(t('authError') || 'Authentication failed. Please log in again.');
-        // Optionally redirect to login
-        // router.push('/sign-in');
+      if (error instanceof Error) {
+        if (error.message.includes('Not authenticated') || 
+            error.message.includes('UNAUTHENTICATED')) {
+          toast.error(t('authError') || 'Authentication failed. Please log in again.');
+          // Optionally redirect to login
+          // router.push('/sign-in');
+        } else if (error.message.includes('Failed to create group')) {
+          toast.error(error.message);
+        } else if (error.message.includes('Network Error')) {
+          toast.error('Network error. Please check your connection and try again.');
+        } else {
+          toast.error(t('createError') || 'Failed to create group. Please try again.');
+        }
       } else {
-        toast.error(t('createError') || 'Failed to create group');
+        toast.error(t('createError') || 'An unexpected error occurred.');
       }
     } finally {
       setIsSubmitting(false);

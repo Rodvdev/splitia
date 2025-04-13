@@ -26,52 +26,67 @@ export async function createGroupWithConversation(
     image?: string;
   }
 ) {
-  return await prisma.$transaction(async (tx: TransactionClient) => {
-    // Create the conversation first
-    const conversation = await tx.conversation.create({
-      data: {
-        isGroupChat: true,
-        // We don't need to set name here as it will use the group name
-      }
-    });
-
-    // Create the group with the conversation reference
-    const group = await tx.group.create({
-      data: {
-        name: groupData.name,
-        description: groupData.description,
-        image: groupData.image,
-        conversationId: conversation.id,
-        createdById: userId,
-        members: {
-          create: {
-            userId: userId,
-            role: 'ADMIN' as GroupRole
-          }
+  try {
+    return await prisma.$transaction(async (tx: TransactionClient) => {
+      console.log('Creating conversation...');
+      // Create the conversation first
+      const conversation = await tx.conversation.create({
+        data: {
+          isGroupChat: true,
+          name: groupData.name // Add name to conversation
         }
-      },
-      include: {
-        members: true,
-        conversation: true
-      }
-    });
+      });
+      console.log('Conversation created:', conversation);
 
-    // Update the conversation with the group reference
-    await tx.conversation.update({
-      where: { id: conversation.id },
-      data: { groupId: group.id }
-    });
+      console.log('Creating group...');
+      // Create the group with the conversation reference
+      const group = await tx.group.create({
+        data: {
+          name: groupData.name,
+          description: groupData.description,
+          image: groupData.image,
+          conversationId: conversation.id,
+          createdById: userId,
+          members: {
+            create: {
+              userId: userId,
+              role: 'ADMIN' as GroupRole
+            }
+          }
+        },
+        include: {
+          members: {
+            include: {
+              user: true
+            }
+          },
+          conversation: true
+        }
+      });
+      console.log('Group created:', group);
 
-    // Add group creator as conversation participant
-    await tx.conversationParticipant.create({
-      data: {
-        conversationId: conversation.id,
-        userId: userId
-      }
-    });
+      console.log('Updating conversation with group reference...');
+      // Update the conversation with the group reference
+      await tx.conversation.update({
+        where: { id: conversation.id },
+        data: { groupId: group.id }
+      });
 
-    return group;
-  });
+      console.log('Adding group creator as conversation participant...');
+      // Add group creator as conversation participant
+      await tx.conversationParticipant.create({
+        data: {
+          conversationId: conversation.id,
+          userId: userId
+        }
+      });
+
+      return group;
+    });
+  } catch (error) {
+    console.error('Error in createGroupWithConversation:', error);
+    throw error;
+  }
 }
 
 /**

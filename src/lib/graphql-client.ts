@@ -548,8 +548,8 @@ export async function createGroup(data: {
   image?: string;
 }) {
   const mutation = `
-    mutation CreateGroup($data: GroupInput!) {
-      createGroup(data: $data) {
+    mutation CreateGroupWithConversation($data: GroupInput!) {
+      createGroupWithConversation(data: $data) {
         id
         name
         description

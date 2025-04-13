@@ -1480,48 +1480,70 @@ export const resolvers = {
 
     // Create a new group with an automatic chat conversation
     createGroup: async (_parent: unknown, { data }: { data: GroupInput }, context: Context) => {
-      const session = await getServerSession(context);
-      
-      if (!session?.user) {
-        throw new GraphQLError('Not authenticated', {
-          extensions: { code: 'UNAUTHENTICATED' },
+      try {
+        console.log('Starting group creation with data:', data);
+        const session = await getServerSession(context);
+        
+        if (!session?.user) {
+          console.error('Authentication failed: No session or user');
+          throw new GraphQLError('Not authenticated', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+
+        const userId = context.user?.id || session.user.id;
+        if (!userId) {
+          console.error('User ID not found in session');
+          throw new GraphQLError('User ID not found in session', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
+
+        console.log('Creating group with Prisma user ID:', userId);
+
+        // Use the new utility to create a group with a conversation
+        const group = await createGroupWithConversation(userId, {
+          name: data.name,
+          description: data.description || undefined,
+          image: data.image || undefined
         });
-      }
 
-      const userId = context.user?.id || session.user.id;
-      if (!userId) {
-        throw new GraphQLError('User ID not found in session', {
-          extensions: { code: 'INTERNAL_SERVER_ERROR' },
-        });
-      }
+        // Assert the group has the expected structure
+        if (!group || typeof group !== 'object' || !('name' in group) || !('conversationId' in group)) {
+          console.error('Invalid group structure:', group);
+          throw new GraphQLError('Failed to create group: Invalid group structure', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
 
-      console.log('Creating group with Prisma user ID:', userId);
+        console.log('Group created successfully:', group);
 
-      // Use the new utility to create a group with a conversation
-      const group = await createGroupWithConversation(userId, {
-        name: data.name,
-        description: data.description || undefined,
-        image: data.image || undefined
-      });
+        // Add a welcome message
+        try {
+          await prisma.message.create({
+            data: {
+              content: `Welcome to the ${group.name} group chat!`,
+              conversationId: group.conversationId as string,
+              senderId: userId,
+              isAI: true,
+            },
+          });
+          console.log('Welcome message added');
+        } catch (messageError) {
+          console.error('Failed to create welcome message:', messageError);
+          // Don't throw here as the group was created successfully
+        }
 
-      // Assert the group has the expected structure
-      if (!group || typeof group !== 'object' || !('name' in group) || !('conversationId' in group)) {
+        return group;
+      } catch (error) {
+        console.error('Error in createGroup resolver:', error);
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to create group', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }
-
-      // Add a welcome message
-      await prisma.message.create({
-        data: {
-          content: `Welcome to the ${group.name} group chat!`,
-          conversationId: group.conversationId as string,
-          senderId: userId,
-          isAI: true,
-        },
-      });
-
-      return group;
     },
 
     // Add a member to a group and to the group's conversation
