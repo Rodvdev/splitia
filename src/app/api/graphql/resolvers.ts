@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { GraphQLError } from 'graphql';
 import { createGroupWithConversation, addUserToGroupAndConversation, createGroupChatWithGroup } from '@/lib/conversations';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 // Helper function to get the session
 async function getServerSession(context?: Context) {
@@ -594,7 +594,7 @@ export const resolvers = {
       });
 
       // Use explicit type assertion to resolve the issue
-      return participations.map((p) => p.conversation);
+      return participations.map((p: { conversation: ConversationType }) => p.conversation);
     },
 
     // Get a specific conversation by ID
@@ -909,7 +909,7 @@ export const resolvers = {
         }>();
 
         // Filter out ASSISTANT members and initialize balances for regular members
-        group.members.forEach(member => {
+        group.members.forEach((member: { userId: string; role: string; user: { name: string; email: string; image: string | null } }) => {
           // Skip AI Assistants and the current user
           if (member.role !== 'ASSISTANT' && member.userId !== userId) {
             balanceMap.set(member.userId, { 
@@ -922,17 +922,20 @@ export const resolvers = {
         });
 
         // Process all expenses
-        expenses.forEach(expense => {
+        expenses.forEach((expense: { 
+          paidBy: { id: string },
+          shares: { user: { id: string }, amount: number }[]
+        }) => {
           const paidById = expense.paidBy.id;
           
           // Calculate each member's share
-          expense.shares.forEach(share => {
+          expense.shares.forEach((share: { user: { id: string }, amount: number }) => {
             const memberId = share.user.id;
             const shareAmount = share.amount;
 
             // Skip if it's the current user's share or an ASSISTANT role
             if ((memberId === userId && paidById === userId) || 
-                group.members.some(m => m.userId === memberId && m.role === 'ASSISTANT')) {
+                group.members.some((m: { userId: string, role: string }) => m.userId === memberId && m.role === 'ASSISTANT')) {
               return; // Skip current user's share or AI Assistant
             }
 
@@ -1148,9 +1151,7 @@ export const resolvers = {
         
         return expense;
       }
-      
-      // Handle normal expense creation (existing logic)
-      // [Keep the existing expense creation logic here]
+
     },
 
     // Update an existing expense
@@ -1215,7 +1216,7 @@ export const resolvers = {
       }
 
       // Update expense and shares in a transaction
-      return prisma.$transaction(async (tx) => {
+      return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Update the expense
         await tx.expense.update({
           where: { id: data.id },
@@ -1574,7 +1575,7 @@ export const resolvers = {
       });
 
       // Remove the user from the group and from the group's conversation in a transaction
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Remove the user from the group
         await tx.groupUser.delete({
           where: {
@@ -1709,7 +1710,7 @@ export const resolvers = {
       }
 
       // Delete the group in a transaction, cascading to memberships
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Delete all group memberships
         await tx.groupUser.deleteMany({
           where: { groupId: id },
@@ -2110,7 +2111,7 @@ export const resolvers = {
         }
 
         // Add the user to the group with MEMBER role
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           // Add user to the group
           await tx.groupUser.create({
             data: {
@@ -2355,7 +2356,7 @@ export const resolvers = {
         }
         
         // Verify that none of the users is an AI Assistant
-        const assistantMembership = memberships.find(m => m.role === 'ASSISTANT');
+        const assistantMembership = memberships.find((m: { role: string }) => m.role === 'ASSISTANT');
         if (assistantMembership) {
           throw new GraphQLError('Cannot record payments for AI Assistant users', {
             extensions: { code: 'BAD_REQUEST' },
@@ -2482,7 +2483,7 @@ export const resolvers = {
         }
   
         // Create settlement transaction in a transaction
-        return prisma.$transaction(async (tx) => {
+        return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           // 1. Create the settlement record
           const settlement = await tx.settlement.create({
             data: {
