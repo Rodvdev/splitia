@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { addAIAssistantToGroup, createAIAssistant, getAIAssistant } from '@/lib/ai-assistant';
+import { addAIAssistantToGroup, getAIAssistant } from '@/lib/ai-assistant';
 
 /**
  * POST /api/ai-assistant/add-to-group
@@ -31,10 +31,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if AI Assistant exists, create if not
-    let aiAssistant = await getAIAssistant();
+    const aiAssistant = await getAIAssistant();
     if (!aiAssistant) {
-      console.log('AI Assistant not found, creating...');
-      aiAssistant = await createAIAssistant();
+      console.log('AI Assistant not found, ...');
     }
 
     // Add AI Assistant to the group

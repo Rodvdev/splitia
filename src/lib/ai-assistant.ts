@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { addUserToGroupAndConversation } from './conversations';
-import { hash } from 'bcrypt';
+
 
 // Define GroupRole enum to match the Prisma schema
 enum GroupRole {
@@ -17,30 +17,6 @@ const AI_ASSISTANT_EMAIL = 'ai-assistant@splitia.app';
  * Create the AI Assistant user in the database
  * @returns The AI Assistant user object
  */
-export async function createAIAssistant() {
-  console.log('Creating AI Assistant user...');
-  try {
-    const password = await hash('ai-password-not-used', 10);
-    
-    const aiAssistant = await prisma.user.upsert({
-      where: { email: AI_ASSISTANT_EMAIL },
-      update: {},
-      create: {
-        name: 'Splitia Assistant AI',
-        email: AI_ASSISTANT_EMAIL,
-        password,
-        image: '/images/ai-avatar.png',
-        externalId: 'ai-assistant',
-      },
-    });
-    
-    console.log('AI Assistant user created/updated:', aiAssistant.id);
-    return aiAssistant;
-  } catch (error) {
-    console.error('Error creating AI Assistant user:', error);
-    throw error;
-  }
-}
 
 /**
  * Get the AI Assistant user from the database
