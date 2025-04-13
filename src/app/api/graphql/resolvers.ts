@@ -2579,7 +2579,7 @@ export const resolvers = {
         // Update the settlement status
         const updatedSettlement = await prisma.settlement.update({
           where: { id: args.id },
-          data: { settlementStatus: args.status },
+          data: { settlementStatus: { set: args.status } },
           include: {
             initiatedBy: true,
             settledWithUser: true,
@@ -2648,7 +2648,7 @@ export const resolvers = {
       // Update the settlement to confirmed status
       return prisma.settlement.update({
         where: { id: settlementId },
-        data: { settlementStatus: SettlementStatus.CONFIRMED },
+        data: { settlementStatus: { set: SettlementStatus.CONFIRMED } },
         include: {
           initiatedBy: true,
           settledWithUser: true,
