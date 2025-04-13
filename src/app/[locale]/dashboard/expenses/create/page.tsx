@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
@@ -23,12 +23,13 @@ interface ExpenseFormData {
   groupId?: string;
 }
 
-export default function CreateExpensePage() {
+// Separate client component that uses useSearchParams
+function ExpenseFormWithParams() {
+  const searchParams = useSearchParams();
+  const [initialData, setInitialData] = useState<Partial<ExpenseFormData> | undefined>(undefined);
   const t = useTranslations('expenses');
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialData, setInitialData] = useState<Partial<ExpenseFormData> | undefined>(undefined);
   
   // Get groupId from URL params and set initial form data
   useEffect(() => {
@@ -90,6 +91,24 @@ export default function CreateExpensePage() {
   };
   
   return (
+    <ExpenseForm
+      initialData={initialData}
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+      isSubmitting={isSubmitting}
+    />
+  );
+}
+
+export default function CreateExpensePage() {
+  const t = useTranslations('expenses');
+  const router = useRouter();
+  
+  const handleCancel = () => {
+    router.back();
+  };
+  
+  return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Button
@@ -104,12 +123,9 @@ export default function CreateExpensePage() {
       </div>
       
       <div className="bg-card border rounded-lg p-6">
-        <ExpenseForm
-          initialData={initialData}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isSubmitting={isSubmitting}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ExpenseFormWithParams />
+        </Suspense>
       </div>
     </div>
   );

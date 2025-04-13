@@ -321,7 +321,6 @@
     "sending": "Sending...",
     "sendInvite": "Send Invitation",
     "inviteSent": "Invitation sent successfully",
-    "inviteError": "Error sending invitation",
     "invalidEmail": "Please enter a valid email address",
     "limitUses": "Limit Number of Uses",
     "limitUsesDescription": "Limit how many times this invite link can be used",
@@ -475,6 +474,9 @@
     "newMessage": "New Message",
     "newChat": "New Chat",
     "createChat": "Create Chat",
+    "createGroupChat": "Create Group Chat",
+    "searchContacts": "Search Contacts",
+    "searchContactsPlaceholder": "Search by name or email...",
     "today": "Today",
     "yesterday": "Yesterday",
     "messageInput": "Type a message...",
@@ -493,6 +495,7 @@
     "role": "Role",
     "selectRole": "Select a role",
     "email": "Email",
+    
     "roles": {
       "admin": "Admin",
       "member": "Member",

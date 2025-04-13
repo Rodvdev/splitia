@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 
 // Interface for user profile data
@@ -30,7 +30,7 @@ export function useProfile() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch profile data
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!isAuthenticated) return null;
     
     try {
@@ -53,7 +53,7 @@ export function useProfile() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   // Update profile data
   const updateProfile = async (updateData: ProfileUpdateData) => {
@@ -95,7 +95,7 @@ export function useProfile() {
     } else {
       setProfile(null);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchProfile]);
 
   return {
     profile,
