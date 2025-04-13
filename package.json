@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && NODE_OPTIONS='--max_old_space_size=4096' next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -83,5 +83,11 @@
     "prisma": "^6.5.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "^0.0.0",
+    "@tailwindcss/oxide-linux-x64-musl": "^0.0.0",
+    "lightningcss-linux-x64-gnu": "^1.29.3",
+    "lightningcss-linux-x64-musl": "^1.29.3"
   }
 }
