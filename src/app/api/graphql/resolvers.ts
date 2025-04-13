@@ -55,8 +55,7 @@ enum SettlementStatus {
 // Define SettlementType enum to match the Prisma schema
 enum SettlementType {
   PAYMENT = 'PAYMENT',
-  RECEIPT = 'RECEIPT',
-  MANUAL = 'MANUAL'
+  RECEIPT = 'RECEIPT'
 }
 
 // Basic type definitions for resolvers
@@ -1124,7 +1123,7 @@ export const resolvers = {
           description: data.description,
           groupId: data.groupId!,
           toUserId: data.settledWithUserId,
-          type: data.settlementType || SettlementType.MANUAL,
+          type: data.settlementType || SettlementType.PAYMENT,
         };
         
         const settlement = await resolvers.Mutation.createSettlement(
@@ -2500,7 +2499,7 @@ export const resolvers = {
               connect: { id: args.groupId }
             },
             settlementStatus: SettlementStatus.PENDING,
-            settlementType: args.type ?? SettlementType.MANUAL,
+            settlementType: args.type ?? SettlementType.PAYMENT,
             date: new Date(),
           },
           include: {
