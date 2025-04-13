@@ -28,6 +28,11 @@ async function getServerSession(context?: Context) {
   return null;
 }
 
+// Helper function to round to two decimal places
+function roundToTwoDecimals(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 // Define ShareType enum to match the Prisma schema
 enum ShareType {
   EQUAL = 'EQUAL',
@@ -1165,6 +1170,67 @@ export const resolvers = {
         return expense;
       }
 
+      // Handle regular expense creation
+      try {
+        // Round expense amount to two decimals if needed
+        const roundedAmount = roundToTwoDecimals(data.amount);
+        
+        // Round share amounts to two decimals
+        let sharesData: Array<{amount: number; type: ShareType; userId: string}> = [];
+        if (data.shares && data.shares.length > 0) {
+          sharesData = data.shares.map(share => ({
+            amount: roundToTwoDecimals(share.amount),
+            type: share.type as ShareType,
+            userId: share.userId
+          }));
+          
+          // Verify the sum of shares equals the total expense amount
+          const sharesSum = sharesData.reduce((sum, share) => sum + share.amount, 0);
+          const roundedSharesSum = roundToTwoDecimals(sharesSum);
+          
+          // If there's a small rounding discrepancy, adjust the first share
+          if (roundedSharesSum !== roundedAmount && sharesData.length > 0) {
+            const diff = roundedAmount - roundedSharesSum;
+            sharesData[0].amount = roundToTwoDecimals(sharesData[0].amount + diff);
+          }
+        }
+        
+        return prisma.expense.create({
+          data: {
+            amount: roundedAmount,
+            description: data.description,
+            date: new Date(data.date),
+            categoryId: data.categoryId || null,
+            currency: data.currency,
+            location: data.location || null,
+            notes: data.notes || null,
+            groupId: data.groupId || null,
+            paidBy: {
+              connect: {
+                id: data.paidById || userId,
+              },
+            },
+            shares: {
+              create: sharesData,
+            },
+          },
+          include: {
+            paidBy: true,
+            group: true,
+            category: true,
+            shares: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+      } catch (error) {
+        console.error('Error creating expense:', error);
+        throw new GraphQLError('Failed to create expense', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
     },
 
     // Update an existing expense
@@ -1230,11 +1296,14 @@ export const resolvers = {
 
       // Update expense and shares in a transaction
       return prisma.$transaction(async (tx: TransactionClient) => {
+        // Round the amount to two decimals if provided
+        const roundedAmount = data.amount !== undefined ? roundToTwoDecimals(data.amount) : undefined;
+        
         // Update the expense
         await tx.expense.update({
           where: { id: data.id },
           data: {
-            amount: data.amount !== undefined ? data.amount : undefined,
+            amount: roundedAmount,
             description: data.description !== undefined ? data.description : undefined,
             date: data.date !== undefined ? new Date(data.date) : undefined,
             categoryId: data.categoryId !== undefined ? data.categoryId : undefined,
@@ -1247,6 +1316,25 @@ export const resolvers = {
 
         // Update shares if provided
         if (data.shares && data.shares.length > 0) {
+          // Round share amounts to two decimals
+          const roundedShares = data.shares.map(share => ({
+            amount: roundToTwoDecimals(share.amount),
+            type: share.type as ShareType,
+            userId: share.userId
+          }));
+          
+          // Verify the sum of shares equals the total expense amount
+          if (roundedAmount !== undefined) {
+            const sharesSum = roundedShares.reduce((sum, share) => sum + share.amount, 0);
+            const roundedSharesSum = roundToTwoDecimals(sharesSum);
+            
+            // If there's a small rounding discrepancy, adjust the first share
+            if (roundedSharesSum !== roundedAmount && roundedShares.length > 0) {
+              const diff = roundedAmount - roundedSharesSum;
+              roundedShares[0].amount = roundToTwoDecimals(roundedShares[0].amount + diff);
+            }
+          }
+          
           // Delete existing shares
           await tx.expenseShare.deleteMany({
             where: { expenseId: data.id },
@@ -1254,11 +1342,11 @@ export const resolvers = {
 
           // Create new shares
           await Promise.all(
-            data.shares.map((share: ExpenseShareInput) =>
+            roundedShares.map((share) =>
               tx.expenseShare.create({
                 data: {
                   amount: share.amount,
-                  type: share.type as ShareType,
+                  type: share.type,
                   userId: share.userId,
                   expenseId: data.id!,
                 },
