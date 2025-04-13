@@ -1198,15 +1198,15 @@ export const resolvers = {
         // Create the expense with properly formatted data
         return prisma.expense.create({
           data: {
-            amount: roundedAmount,
-            description: data.description,
-            date: new Date(data.date),
-            categoryId: data.categoryId || null,
-            currency: data.currency,
-            location: data.location || null,
-            notes: data.notes || null,
-            groupId: data.groupId || null,
-            paidById: data.paidById || userId,
+          amount: roundedAmount,
+          description: data.description,
+          date: new Date(data.date),
+          categoryId: data.categoryId || null,
+          currency: data.currency,
+          location: data.location || null,
+          notes: data.notes || null,
+          groupId: data.groupId || null,
+          paidById: data.paidById || userId,
             shares: {
               createMany: {
                 data: sharesData
