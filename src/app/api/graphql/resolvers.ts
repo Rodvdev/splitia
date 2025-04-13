@@ -142,7 +142,7 @@ interface GroupInput {
 
 interface GroupMemberInput {
   email: string;
-  role: GroupRole;
+  role: string;
 }
 
 // Define types based on the Prisma models
