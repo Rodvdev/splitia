@@ -64,6 +64,14 @@ interface Group {
   members?: Member[];
 }
 
+interface GraphQLError {
+  response?: {
+    status?: number;
+    headers?: Record<string, string>;
+  };
+  message?: string;
+}
+
 export default function DashboardPage() {
   const tExpenses = useTranslations('expenses');
   const tGroups = useTranslations('groups');
@@ -127,29 +135,49 @@ export default function DashboardPage() {
   
   const fetchData = useCallback(async () => {
     try {
+      const session = await getSession();
+      if (!session) {
+        router.push('/sign-in');
+        return;
+      }
+
       setIsLoadingExpenses(true);
       setError(null);
-      const expensesData = await fetchExpenses({ limit: 5 }) as { expenses: Expense[] };
-      setExpenses(expensesData.expenses || []);
+      try {
+        const expensesData = await fetchExpenses({ limit: 5 }) as { expenses: Expense[] };
+        setExpenses(expensesData.expenses || []);
+      } catch (error: unknown) {
+        console.error('Error fetching expenses:', error);
+        const graphqlError = error as GraphQLError;
+        if (graphqlError?.response?.status === 400 || graphqlError?.response?.status === 401) {
+          router.push('/sign-in');
+          return;
+        }
+        setError('No se pudieron cargar los gastos. Por favor, intenta de nuevo más tarde.');
+        toast.error(tErrors('fetchExpenses') || 'Error al cargar los gastos');
+      }
+      
+      setIsLoadingGroups(true);
+      try {
+        const groupsData = await fetchUserGroups() as { userGroups: Group[] };
+        setGroups(groupsData.userGroups || []);
+      } catch (error: unknown) {
+        console.error('Error fetching groups:', error);
+        const graphqlError = error as GraphQLError;
+        if (graphqlError?.response?.status === 400 || graphqlError?.response?.status === 401) {
+          router.push('/sign-in');
+          return;
+        }
+        toast.error(tErrors('fetchGroups') || 'Error al cargar los grupos');
+      }
     } catch (error) {
-      console.error('Error fetching expenses:', error);
-      setError('No se pudieron cargar los datos. Por favor, intenta de nuevo más tarde.');
-      toast.error(tErrors('fetchExpenses') || 'Error al cargar los gastos');
+      console.error('General error:', error);
+      router.push('/sign-in');
     } finally {
       setIsLoadingExpenses(false);
-    }
-    
-    try {
-      setIsLoadingGroups(true);
-      const groupsData = await fetchUserGroups() as { userGroups: Group[] };
-      setGroups(groupsData.userGroups || []);
-    } catch (error) {
-      console.error('Error fetching groups:', error);
-      toast.error(tErrors('fetchGroups') || 'Error al cargar los grupos');
-    } finally {
       setIsLoadingGroups(false);
     }
-  }, [tErrors]);
+  }, [router, tErrors]);
 
   useEffect(() => {
     fetchData();

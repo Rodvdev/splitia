@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { createUser } from '@/lib/auth/server-actions';
 import { signIn } from 'next-auth/react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 // Componente interno que usa useSearchParams
 function SignUpForm() {
@@ -15,6 +15,7 @@ function SignUpForm() {
   const searchParams = useSearchParams();
   
   const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,6 +24,8 @@ function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Get the callback URL and email from URL parameters
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
@@ -76,7 +79,7 @@ function SignUpForm() {
     
     try {
       // Use the server action to create a user
-      const { user, error: serverError } = await createUser(email, password, name, currency, language);
+      const { user, error: serverError } = await createUser(email, password, name, lastName, currency, language);
       
       if (serverError) {
         setError(serverError.message);
@@ -168,6 +171,24 @@ function SignUpForm() {
             
             <div>
               <label 
+                htmlFor="lastName" 
+                className="block text-sm font-medium mb-1"
+              >
+                {t('auth.lastName')}
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                placeholder={t('auth.lastNamePlaceholder')}
+              />
+            </div>
+            
+            <div>
+              <label 
                 htmlFor="email" 
                 className="block text-sm font-medium mb-1"
               >
@@ -229,40 +250,58 @@ function SignUpForm() {
               </div>
             </div>
             
-            <div>
+            <div className="relative">
               <label 
                 htmlFor="password" 
                 className="block text-sm font-medium mb-1"
               >
                 {t('auth.password')}
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary pr-10"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
             
-            <div>
+            <div className="relative">
               <label 
                 htmlFor="confirmPassword" 
                 className="block text-sm font-medium mb-1"
               >
                 {t('auth.confirmPassword')}
               </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary pr-10"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
           </div>
 
