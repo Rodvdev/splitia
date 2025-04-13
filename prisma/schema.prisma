@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "./node_modules/@prisma/client"
 }
 
 datasource db {
@@ -40,6 +41,10 @@ model User {
   createdInvitations GroupInvitation[] @relation("CreatedInvitations")
   // Group invitations the user has been invited through
   receivedInvitations GroupInvitation[] @relation("ReceivedInvitations")
+  // Settlements initiated by this user
+  initiatedSettlements Settlement[] @relation("InitiatedSettlements")
+  // Settlements where this user is the counterparty
+  receivedSettlements Settlement[] @relation("ReceivedSettlements")
 }
 
 // Group model
@@ -58,6 +63,7 @@ model Group {
   invitations   GroupInvitation[]
   createdBy     User           @relation("CreatedGroups", fields: [createdById], references: [id])
   createdById   String
+  settlements   Settlement[]
 }
 
 // GroupUser model (for many-to-many relationship between User and Group)
@@ -87,6 +93,7 @@ model Expense {
   currency    String         @default("USD")
   location    String?
   notes       String?
+  isSettlement Boolean       @default(false)
   // Relations
   paidBy      User           @relation(fields: [paidById], references: [id])
   paidById    String
@@ -94,6 +101,8 @@ model Expense {
   groupId     String?
   shares      ExpenseShare[]
   category    CustomCategory? @relation(fields: [categoryId], references: [id])
+  settlement  Settlement?    @relation(fields: [settlementId], references: [id])
+  settlementId String?       @unique
 }
 
 // ExpenseShare model
@@ -247,6 +256,27 @@ model GroupInvitation {
   invitedUserId String?
 }
 
+// Settlement model
+model Settlement {
+  id              String           @id @default(cuid())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  amount          Float
+  currency        String           @default("USD")
+  description     String?
+  date            DateTime
+  settlementStatus SettlementStatus @default(PENDING)
+  settlementType   SettlementType   @default(PAYMENT)
+  // Relations
+  initiatedBy     User             @relation("InitiatedSettlements", fields: [initiatedById], references: [id])
+  initiatedById   String
+  settledWithUser User             @relation("ReceivedSettlements", fields: [settledWithUserId], references: [id])
+  settledWithUserId String
+  group           Group            @relation(fields: [groupId], references: [id])
+  groupId         String
+  expense         Expense?
+}
+
 // Enums
 enum GroupRole {
   ADMIN
@@ -261,14 +291,20 @@ enum ShareType {
   FIXED
 }
 
+enum SettlementStatus {
+  PENDING
+  PENDING_CONFIRMATION
+  CONFIRMED
+}
+
+enum SettlementType {
+  PAYMENT
+  RECEIPT
+}
+
 enum AIActionType {
-  CREATE_EXPENSE
-  UPDATE_EXPENSE
-  DELETE_EXPENSE
-  CREATE_GROUP
-  ADD_USER_TO_GROUP
-  SUGGEST_SETTLEMENT
-  CREATE_GROUP_CHAT
-  SEND_MESSAGE
-  CREATE_CONVERSATION
+  EXPENSE_CREATE
+  EXPENSE_UPDATE
+  GROUP_CREATE
+  PAYMENT_RECORD
 }

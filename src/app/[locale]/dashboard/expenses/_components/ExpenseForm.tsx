@@ -64,6 +64,11 @@ const formSchema = z.object({
   isPaid: z.boolean(),
   isGroupExpense: z.boolean(),
   groupId: z.string().optional(),
+  paidById: z.string().optional(),
+  isSettlement: z.boolean().optional(),
+  settlementStatus: z.enum(['PENDING', 'PENDING_CONFIRMATION', 'CONFIRMED']).optional(),
+  settlementType: z.enum(['PAYMENT', 'RECEIPT']).optional(),
+  settledWithUserId: z.string().optional(),
 });
 
 // Define the form values type
@@ -75,6 +80,7 @@ interface ExpenseFormProps {
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  isEditing?: boolean;
 }
 
 // Define type for the form control to avoid TypeScript errors
@@ -96,6 +102,15 @@ interface Category {
   color?: string;
 }
 
+// Interface for user data
+interface User {
+  id: string;
+  name: string;
+  email?: string;
+  image?: string;
+  role?: string;
+}
+
 // Interface for the GraphQL response
 interface UserGroupsResponse {
   userGroups: Group[];
@@ -110,12 +125,15 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   isSubmitting = false,
+  isEditing = false,
 }: ExpenseFormProps) {
   const t = useTranslations('expenses.form');
   const [groups, setGroups] = React.useState<Group[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
+  const [groupMembers, setGroupMembers] = React.useState<User[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = React.useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = React.useState(false);
+  const [isLoadingMembers, setIsLoadingMembers] = React.useState(false);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
   const { profile } = useUserProfile();
   
@@ -133,6 +151,11 @@ export function ExpenseForm({
       isPaid: initialData?.isPaid !== undefined ? initialData.isPaid : true,
       isGroupExpense: initialData?.isGroupExpense !== undefined ? initialData.isGroupExpense : false,
       groupId: initialData?.groupId || '',
+      paidById: initialData?.paidById || profile?.id || '',
+      isSettlement: initialData?.isSettlement || false,
+      settlementStatus: initialData?.settlementStatus || 'PENDING',
+      settlementType: initialData?.settlementType || 'PAYMENT',
+      settledWithUserId: initialData?.settledWithUserId || '',
     },
   });
 
@@ -148,6 +171,13 @@ export function ExpenseForm({
   
   // Get the groupId value from the form
   const groupId = form.watch('groupId');
+  
+  // Watch the groupId field to load group members when it changes
+  const selectedGroupId = form.watch('groupId');
+  
+  // Watch the fields for settlement functionality
+  const isSettlement = form.watch('isSettlement');
+  const settlementType = form.watch('settlementType');
   
   // Fetch user groups when component mounts or when isGroupExpense becomes true
   React.useEffect(() => {
@@ -204,7 +234,90 @@ export function ExpenseForm({
     
     loadCategories();
   }, []);
+
+  // Fetch group members when the selected group changes
+  React.useEffect(() => {
+    if (isGroupExpense && selectedGroupId && selectedGroupId !== 'new') {
+      const fetchGroupMembers = async () => {
+        setIsLoadingMembers(true);
+        try {
+          // Query to fetch group members
+          const response = await fetch('/api/graphql', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              query: `
+                query GroupMembers($groupId: ID!) {
+                  group(id: $groupId) {
+                    members {
+                      id
+                      name
+                      email
+                      image
+                      role
+                    }
+                  }
+                }
+              `,
+              variables: {
+                groupId: selectedGroupId,
+              },
+            }),
+          });
+
+          const result = await response.json();
+          
+          if (result.errors) {
+            console.error('Error fetching group members:', result.errors);
+            return;
+          }
+          
+          if (result.data?.group?.members) {
+            // Filter out members with role "assistant"
+            const filteredMembers = result.data.group.members.filter(
+              (member: User) => member.role !== 'assistant'
+            );
+            
+            setGroupMembers(filteredMembers);
+            
+            // If current paidById is not in the filtered group members, reset it to the current user
+            const currentPaidById = form.getValues('paidById');
+            const memberIds = filteredMembers.map((member: User) => member.id);
+            
+            if (currentPaidById && !memberIds.includes(currentPaidById)) {
+              form.setValue('paidById', profile?.id || '');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch group members:', error);
+        } finally {
+          setIsLoadingMembers(false);
+        }
+      };
+      
+      fetchGroupMembers();
+    } else if (!isGroupExpense || selectedGroupId === 'new') {
+      // Reset to only the current user if not a group expense
+      setGroupMembers([]);
+      if (profile) {
+        form.setValue('paidById', profile.id);
+      }
+    }
+  }, [selectedGroupId, isGroupExpense, form, profile]);
   
+  // Handle settlement option changes
+  React.useEffect(() => {
+    if (isSettlement) {
+      // Auto open additional details when it's a settlement
+      setShowAdditionalFields(true);
+      
+      // Reset settlement status when changing type
+      form.setValue('settlementStatus', 'PENDING');
+    }
+  }, [isSettlement, settlementType, form]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => onSubmit(data as unknown as FormValues))} className="space-y-6">
@@ -361,6 +474,66 @@ export function ExpenseForm({
               />
             </div>
 
+            {/* Paid By - Who made this expense */}
+            <FormField
+              control={form.control as FormControlType}
+              name="paidById"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Users className="h-4 w-4" />
+                    <FormLabel className="font-medium">Who paid?</FormLabel>
+                  </div>
+                  
+                  {isLoadingMembers ? (
+                    <div className="flex items-center justify-center p-3 border rounded-md">
+                      <span className="text-sm text-muted-foreground">Loading members...</span>
+                    </div>
+                  ) : isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && groupMembers.length > 0 ? (
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select who paid" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {groupMembers.map((member) => (
+                          <SelectItem 
+                            key={member.id} 
+                            value={member.id}
+                            className="flex items-center"
+                          >
+                            <div className="flex items-center gap-2">
+                              {member.name || member.email}
+                              {member.id === profile?.id && (
+                                <span className="text-xs text-muted-foreground ml-1">(you)</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input 
+                      value={profile?.name || 'You'}
+                      disabled
+                      className="bg-muted"
+                    />
+                  )}
+                  {isGroupExpense && groupMembers.length === 0 && !isLoadingMembers && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      No available members found. Assistants are excluded from payment options.
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Group Expense Toggle + Selection */}
             {initialData?.isGroupExpense || initialData?.groupId ? (
               <div className="space-y-3">
@@ -490,6 +663,145 @@ export function ExpenseForm({
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-4 space-y-4">
+              {/* Is Settlement - for settlement transactions between users */}
+              {isGroupExpense && (
+                <FormField
+                  control={form.control as FormControlType}
+                  name="isSettlement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <CreditCard className="h-4 w-4" />
+                          <FormLabel className="font-medium">This is a settlement between users</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </div>
+                      {field.value && (
+                        <div className="mt-3 pl-6 border-l-2 border-muted-foreground/20 space-y-3">
+                          {/* Settlement Type */}
+                          <FormField
+                            control={form.control as FormControlType}
+                            name="settlementType"
+                            render={({ field: typeField }) => (
+                              <FormItem>
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <FormLabel className="font-medium">Settlement Type</FormLabel>
+                                </div>
+                                <Select
+                                  onValueChange={typeField.onChange}
+                                  defaultValue={typeField.value}
+                                  value={typeField.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select settlement type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="PAYMENT">I&apos;m paying someone</SelectItem>
+                                    <SelectItem value="RECEIPT">I&apos;m being paid</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {/* Settled With User */}
+                          <FormField
+                            control={form.control as FormControlType}
+                            name="settledWithUserId"
+                            render={({ field: userField }) => (
+                              <FormItem>
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <FormLabel className="font-medium">
+                                    {form.watch('settlementType') === 'PAYMENT' 
+                                      ? 'Paying To' 
+                                      : 'Receiving From'}
+                                  </FormLabel>
+                                </div>
+                                <Select
+                                  onValueChange={userField.onChange}
+                                  defaultValue={userField.value}
+                                  value={userField.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select user" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {groupMembers
+                                      .filter(member => member.id !== profile?.id)
+                                      .map((member) => (
+                                        <SelectItem 
+                                          key={member.id} 
+                                          value={member.id}
+                                          className="flex items-center"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            {member.name || member.email}
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {/* Settlement Status */}
+                          <FormField
+                            control={form.control as FormControlType}
+                            name="settlementStatus"
+                            render={({ field: statusField }) => (
+                              <FormItem>
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <FormLabel className="font-medium">Status</FormLabel>
+                                </div>
+                                <Select
+                                  onValueChange={statusField.onChange}
+                                  defaultValue={statusField.value}
+                                  value={statusField.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="PENDING">Pending</SelectItem>
+                                    <SelectItem value="PENDING_CONFIRMATION">
+                                      {form.watch('settlementType') === 'PAYMENT' 
+                                        ? 'Marked as Paid (Waiting Confirmation)' 
+                                        : 'Marked as Received (Waiting Confirmation)'}
+                                    </SelectItem>
+                                    <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {form.watch('settlementStatus') === 'PENDING' && 'Transaction not settled yet'}
+                                  {form.watch('settlementStatus') === 'PENDING_CONFIRMATION' && 'Waiting for other user to confirm'}
+                                  {form.watch('settlementStatus') === 'CONFIRMED' && 'Transaction fully confirmed by both parties'}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {/* Location */}
               <FormField
                 control={form.control as FormControlType}
@@ -542,7 +854,15 @@ export function ExpenseForm({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <CreditCard className="h-4 w-4" />
-                        <FormLabel className="font-medium">Expense Already Paid</FormLabel>
+                        <div>
+                          <FormLabel className="font-medium">Initial expense already paid</FormLabel>
+                          <div className="text-xs text-muted-foreground">
+                            {!isSettlement ? 
+                              "This indicates whether the expense was paid at time of purchase" : 
+                              "Note: This only applies to the original expense, not the settlement between users"
+                            }
+                          </div>
+                        </div>
                       </div>
                       <FormControl>
                         <Switch
@@ -573,7 +893,12 @@ export function ExpenseForm({
             disabled={isSubmitting}
             className="px-8"
           >
-            {isSubmitting ? t('actions.submitting') : t('actions.submit')}
+            {isSubmitting 
+              ? t('actions.submitting') 
+              : isEditing 
+                ? t('actions.update') 
+                : t('actions.submit')
+            }
           </Button>
         </div>
       </form>

@@ -94,6 +94,42 @@ export const typeDefs = gql`
     balances: [GroupBalance!]!
   }
 
+  enum SettlementStatus {
+    PENDING
+    PENDING_CONFIRMATION
+    CONFIRMED
+  }
+
+  enum SettlementType {
+    PAYMENT
+    RECEIPT
+  }
+
+  type Settlement {
+    id: ID!
+    amount: Float!
+    currency: String!
+    settlementStatus: SettlementStatus!
+    settlementType: SettlementType!
+    date: DateTime!
+    description: String
+    initiatedBy: User!
+    settledWithUser: User!
+    group: Group!
+    groupId: ID!
+  }
+
+  input SettlementInput {
+    amount: Float!
+    currency: String!
+    description: String
+    date: DateTime!
+    groupId: ID!
+    settledWithUserId: ID!
+    settlementType: SettlementType!
+    settlementStatus: SettlementStatus!
+  }
+
   type Expense {
     id: ID!
     createdAt: DateTime!
@@ -111,6 +147,8 @@ export const typeDefs = gql`
     groupId: ID
     category: CustomCategory
     shares: [ExpenseShare!]
+    isSettlement: Boolean
+    settlement: Settlement
   }
 
   type ExpenseShare {
@@ -142,7 +180,12 @@ export const typeDefs = gql`
     location: String
     notes: String
     groupId: ID
+    paidById: ID
     shares: [ExpenseShareInput!]
+    isSettlement: Boolean
+    settlementType: SettlementType
+    settlementStatus: SettlementStatus
+    settledWithUserId: ID
   }
 
   input UpdateExpenseInput {
@@ -155,7 +198,12 @@ export const typeDefs = gql`
     location: String
     notes: String
     groupId: ID
+    paidById: ID
     shares: [ExpenseShareInput!]
+    isSettlement: Boolean
+    settlementType: SettlementType
+    settlementStatus: SettlementStatus
+    settledWithUserId: ID
   }
 
   type Conversation {
@@ -201,6 +249,11 @@ export const typeDefs = gql`
     verifyInviteToken(token: String!): GroupInvitation
     checkUserExists(email: String!): UserExistsResult!
     getGroupDetailsFromToken(token: String!): Group
+    settlements(
+      groupId: ID!
+      userId: ID
+      status: SettlementStatus
+    ): [Settlement!]!
   }
 
   type Mutation {
@@ -221,6 +274,9 @@ export const typeDefs = gql`
     createGroupInvitation(groupId: ID!, data: GroupInvitationInput!): GroupInvitation!
     joinGroupByToken(token: String!, email: String): JoinGroupResult!
     recordPayment(groupId: ID!, userId: ID!, amount: Float!, currency: String!, method: String!): Boolean!
+    createSettlement(data: SettlementInput!): Settlement!
+    updateSettlementStatus(settlementId: ID!, status: SettlementStatus!): Settlement!
+    confirmSettlement(settlementId: ID!): Settlement!
   }
 
   input GroupChatInput {

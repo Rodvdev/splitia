@@ -391,6 +391,7 @@
     "tabs": {
       "balances": "Balances",
       "expenses": "Gastos",
+      "settlements": "Liquidaciones",
       "members": "Miembros"
     },
     "balances": {
@@ -726,6 +727,66 @@
         "submitting": "Guardando...",
         "cancel": "Cancelar"
       }
+    }
+  },
+  "settlements": {
+    "title": "Liquidaciones",
+    "settleUp": "Saldar Deudas",
+    "balanceSummary": "Resumen de Balances",
+    "currentBalances": "Balances Actuales",
+    "settleUpForm": "Formulario de Liquidación",
+    "noBalances": "No hay balances para mostrar",
+    "noSettlements": "No hay liquidaciones para mostrar",
+    "defaultDescription": "Liquidación de balance",
+    "createSuccess": "Liquidación creada exitosamente",
+    "confirmSuccess": "Liquidación confirmada exitosamente",
+    "statusUpdateSuccess": "Estado de liquidación actualizado",
+    "paidBy": "Pagado por",
+    "paidTo": "Pagado a",
+    "receivedBy": "Recibido por",
+    "receivedFrom": "Recibido de",
+    "filterPlaceholder": "Filtrar",
+    "filters": {
+      "all": "Todas",
+      "pending": "Pendientes",
+      "confirmed": "Confirmadas"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "pending_confirmation": "Esperando confirmación",
+      "confirmed": "Confirmada"
+    },
+    "types": {
+      "payment": "Pago",
+      "receipt": "Cobro"
+    },
+    "fields": {
+      "type": "Tipo de liquidación",
+      "selectType": "Selecciona el tipo",
+      "user": "Usuario",
+      "selectUser": "Selecciona un usuario",
+      "amount": "Importe",
+      "description": "Descripción (opcional)",
+      "descriptionPlaceholder": "Añade una descripción para esta liquidación"
+    },
+    "actions": {
+      "settle": "Liquidar",
+      "processing": "Procesando...",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar",
+      "newSettlement": "Nueva Liquidación",
+      "createFirst": "Crear primera liquidación",
+      "requestConfirmation": "Solicitar confirmación"
+    },
+    "errors": {
+      "loadFailed": "Error al cargar los datos",
+      "createFailed": "Error al crear la liquidación",
+      "confirmFailed": "Error al confirmar la liquidación",
+      "statusUpdateFailed": "Error al actualizar el estado",
+      "fetchFailed": "Error al obtener las liquidaciones",
+      "invalidAmount": "El importe no es válido",
+      "notFound": "Liquidación no encontrada",
+      "notFoundDescription": "La liquidación que buscas no existe o no tienes acceso"
     }
   }
 } 

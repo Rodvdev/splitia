@@ -359,6 +359,7 @@
     "tabs": {
       "balances": "Saldos",
       "expenses": "Despesas",
+      "settlements": "Acertos",
       "members": "Membros"
     },
     "balances": {
@@ -717,5 +718,65 @@
   },
   "removeConfirmTitle": "Remover Membro",
   "removeConfirmDescription": "Tem certeza que deseja remover este membro do grupo?",
-  "you": "Você"
+  "you": "Você",
+  "settlements": {
+    "title": "Acertos",
+    "settleUp": "Acertar Contas",
+    "balanceSummary": "Resumo de Saldos",
+    "currentBalances": "Saldos Atuais",
+    "settleUpForm": "Formulário de Acerto",
+    "noBalances": "Não há saldos para mostrar",
+    "noSettlements": "Não há acertos para mostrar",
+    "defaultDescription": "Acerto de saldo",
+    "createSuccess": "Acerto criado com sucesso",
+    "confirmSuccess": "Acerto confirmado com sucesso",
+    "statusUpdateSuccess": "Status do acerto atualizado",
+    "paidBy": "Pago por",
+    "paidTo": "Pago para",
+    "receivedBy": "Recebido por",
+    "receivedFrom": "Recebido de",
+    "filterPlaceholder": "Filtrar",
+    "filters": {
+      "all": "Todos",
+      "pending": "Pendentes",
+      "confirmed": "Confirmados"
+    },
+    "status": {
+      "pending": "Pendente",
+      "pending_confirmation": "Aguardando confirmação",
+      "confirmed": "Confirmado"
+    },
+    "types": {
+      "payment": "Pagamento",
+      "receipt": "Recebimento"
+    },
+    "fields": {
+      "type": "Tipo de acerto",
+      "selectType": "Selecione o tipo",
+      "user": "Usuário",
+      "selectUser": "Selecione um usuário",
+      "amount": "Valor",
+      "description": "Descrição (opcional)",
+      "descriptionPlaceholder": "Adicione uma descrição para este acerto"
+    },
+    "actions": {
+      "settle": "Acertar",
+      "processing": "Processando...",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar",
+      "newSettlement": "Novo Acerto",
+      "createFirst": "Criar primeiro acerto",
+      "requestConfirmation": "Solicitar confirmação"
+    },
+    "errors": {
+      "loadFailed": "Falha ao carregar dados",
+      "createFailed": "Falha ao criar acerto",
+      "confirmFailed": "Falha ao confirmar acerto",
+      "statusUpdateFailed": "Falha ao atualizar status",
+      "fetchFailed": "Falha ao buscar acertos",
+      "invalidAmount": "Valor inválido",
+      "notFound": "Acerto não encontrado",
+      "notFoundDescription": "O acerto que você está procurando não existe ou você não tem acesso"
+    }
+  }
 } 

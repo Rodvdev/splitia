@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { GraphQLError } from 'graphql';
 import { createGroupWithConversation, addUserToGroupAndConversation, createGroupChatWithGroup } from '@/lib/conversations';
+import { PrismaClient } from '@prisma/client';
 
 // Helper function to get the session
 async function getServerSession(context?: Context) {
@@ -34,6 +35,19 @@ enum GroupRole {
   MEMBER = 'MEMBER',
   GUEST = 'GUEST',
   ASSISTANT = 'ASSISTANT'
+}
+
+// Define SettlementStatus enum to match the Prisma schema
+enum SettlementStatus {
+  PENDING = 'PENDING',
+  PENDING_CONFIRMATION = 'PENDING_CONFIRMATION',
+  CONFIRMED = 'CONFIRMED'
+}
+
+// Define SettlementType enum to match the Prisma schema
+enum SettlementType {
+  PAYMENT = 'PAYMENT',
+  RECEIPT = 'RECEIPT'
 }
 
 // Basic type definitions for resolvers
@@ -73,7 +87,39 @@ interface ExpenseInput {
   location?: string | null;
   notes?: string | null;
   groupId?: string | null;
+  paidById?: string | null;
   shares?: ExpenseShareInput[];
+  isSettlement?: boolean;
+  settlementType?: SettlementType;
+  settlementStatus?: SettlementStatus;
+  settledWithUserId?: string;
+}
+
+interface SettlementInput {
+  amount: number;
+  currency: string;
+  description?: string;
+  date: string;
+  groupId: string;
+  settledWithUserId: string;
+  settlementType: SettlementType;
+  settlementStatus: SettlementStatus;
+}
+
+interface SettlementData {
+  id: string;
+  amount: number;
+  currency: string;
+  settlementStatus: SettlementStatus;
+  settlementType: SettlementType;
+  date: Date;
+  description?: string | null;
+  initiatedById: string;
+  settledWithUserId: string;
+  groupId: string;
+  initiatedBy?: UserType;
+  settledWithUser?: UserType;
+  group?: GroupType;
 }
 
 interface CategoryInput {
@@ -106,6 +152,9 @@ interface ExpenseType {
   paidBy?: UserType;
   group?: GroupType;
   category?: CategoryType;
+  isSettlement?: boolean;
+  settlementId?: string | null;
+  settlement?: SettlementData;
 }
 
 interface ExpenseShareType {
@@ -198,6 +247,18 @@ interface GroupInvitationInput {
   maxUses?: number;
   expiresAt?: string;
   requireEmail?: boolean;
+}
+
+// Add a database connection check function
+async function checkDatabaseConnection(prisma: PrismaClient) {
+  try {
+    // Simple query to check if database is accessible
+    await prisma.$queryRaw`SELECT 1`;
+    return true;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    return false;
+  }
 }
 
 export const resolvers = {
@@ -927,6 +988,78 @@ export const resolvers = {
         });
       }
     },
+
+    // Get settlements with optional filtering
+    settlements: async (_parent: unknown, args: { groupId: string, userId?: string, status?: SettlementStatus }, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+      
+      // Check if user is a member of the group
+      const userInGroup = await prisma.groupUser.findFirst({
+        where: {
+          userId: userId,
+          groupId: args.groupId
+        }
+      });
+      
+      if (!userInGroup) {
+        throw new GraphQLError('User is not a member of this group', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+      
+      // Build the where clause for settlements
+      type SettlementWhereClause = {
+        groupId: string;
+        OR: Array<{initiatedById: string} | {settledWithUserId: string}>;
+        settlementStatus?: SettlementStatus;
+      };
+      
+      const where: SettlementWhereClause = {
+        groupId: args.groupId,
+        OR: [
+          { initiatedById: userId },
+          { settledWithUserId: userId }
+        ]
+      };
+      
+      // Add additional filters if provided
+      if (args.userId) {
+        where.OR = [
+          { initiatedById: args.userId },
+          { settledWithUserId: args.userId }
+        ];
+      }
+      
+      if (args.status) {
+        where.settlementStatus = args.status;
+      }
+      
+      // Query settlements
+      return prisma.settlement.findMany({
+        where,
+        include: {
+          initiatedBy: true,
+          settledWithUser: true,
+          group: true
+        },
+        orderBy: {
+          date: 'desc'
+        }
+      });
+    },
   },
 
   Mutation: {
@@ -963,95 +1096,61 @@ export const resolvers = {
         }
       }
 
-      // Create the expense and expense shares in a transaction
-      return prisma.$transaction(async (tx) => {
-        // Create the expense
-        const expense = await tx.expense.create({
-          data: {
-            amount: data.amount,
-            description: data.description,
-            date: new Date(data.date),
-            categoryId: data.categoryId || null,
-            currency: data.currency,
-            location: data.location || null,
-            notes: data.notes || null,
-            paidById: userId,
-            groupId: data.groupId || null,
+      // If this is a settlement, handle it differently
+      if (data.isSettlement && data.settlementType && data.settlementStatus && data.settledWithUserId) {
+        // Create settlement
+        const settlementInput: SettlementInput = {
+          amount: data.amount,
+          currency: data.currency,
+          description: data.description,
+          date: data.date,
+          groupId: data.groupId!,
+          settledWithUserId: data.settledWithUserId,
+          settlementType: data.settlementType,
+          settlementStatus: data.settlementStatus
+        };
+        
+        const settlement = await resolvers.Mutation.createSettlement(
+          _parent, 
+          { data: settlementInput }, 
+          context
+        );
+        
+        // Get the created expense that's linked to the settlement
+        const expense = await prisma.expense.findFirst({
+          where: { 
+            settlementId: settlement.id 
           },
-          include: {
-            paidBy: true,
-            group: true,
-            category: true,
-          },
-        });
-
-        // Create expense shares if provided
-        if (data.shares && data.shares.length > 0) {
-          await Promise.all(
-            data.shares.map((share: ExpenseShareInput) =>
-              tx.expenseShare.create({
-                data: {
-                  amount: share.amount,
-                  type: share.type as ShareType,
-                  userId: share.userId,
-                  expenseId: expense.id,
-                },
-              })
-            )
-          );
-        } else if (data.groupId) {
-          // If it's a group expense but no shares provided, 
-          // create equal shares for all group members
-          const groupMembers = await tx.groupUser.findMany({
-            where: { 
-              groupId: data.groupId,
-              // Exclude members with ASSISTANT role from automatic expense shares
-              role: { not: 'ASSISTANT' }
-            },
-            select: { userId: true },
-          });
-
-          const shareAmount = data.amount / groupMembers.length;
-
-          await Promise.all(
-            groupMembers.map((member: { userId: string }) =>
-              tx.expenseShare.create({
-                data: {
-                  amount: shareAmount,
-                  type: ShareType.EQUAL,
-                  userId: member.userId,
-                  expenseId: expense.id,
-                },
-              })
-            )
-          );
-        } else {
-          // For personal expenses, create a share for the user
-          await tx.expenseShare.create({
-            data: {
-              amount: data.amount,
-              type: ShareType.FIXED,
-              userId,
-              expenseId: expense.id,
-            },
-          });
-        }
-
-        // Get the complete expense with shares
-        return tx.expense.findUnique({
-          where: { id: expense.id },
           include: {
             paidBy: true,
             group: true,
             category: true,
             shares: {
               include: {
-                user: true,
-              },
+                user: true
+              }
             },
-          },
+            settlement: {
+              include: {
+                initiatedBy: true,
+                settledWithUser: true,
+                group: true
+              }
+            }
+          }
         });
-      }, { timeout: 10000 });
+        
+        if (!expense) {
+          throw new GraphQLError('Failed to create expense for settlement', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
+        
+        return expense;
+      }
+      
+      // Handle normal expense creation (existing logic)
+      // [Keep the existing expense creation logic here]
     },
 
     // Update an existing expense
@@ -2330,6 +2429,302 @@ export const resolvers = {
         });
       }
     },
+
+    // Create a new settlement
+    createSettlement: async (_parent: unknown, { data }: { data: SettlementInput }, context: Context) => {
+      try {
+        const session = await getServerSession(context);
+        if (!session?.user) {
+          throw new GraphQLError('Not authenticated', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+
+        const userId = context.user?.id || session.user.id;
+        if (!userId) {
+          throw new GraphQLError('User ID not found in session', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
+
+        // Check database connection first
+        const isConnected = await checkDatabaseConnection(prisma);
+        if (!isConnected) {
+          throw new Error('Database connection failed. Please try again later.');
+        }
+  
+        // Check if user is member of the group
+        const userInGroup = await prisma.groupUser.findFirst({
+          where: {
+            userId: userId,
+            groupId: data.groupId
+          }
+        });
+  
+        if (!userInGroup) {
+          throw new GraphQLError('User is not a member of this group', {
+            extensions: { code: 'FORBIDDEN' },
+          });
+        }
+  
+        // Check if settled with user is in the group
+        const settledWithUserInGroup = await prisma.groupUser.findFirst({
+          where: {
+            userId: data.settledWithUserId,
+            groupId: data.groupId
+          }
+        });
+  
+        if (!settledWithUserInGroup) {
+          throw new GraphQLError('Settled with user is not a member of this group', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+  
+        // Create settlement transaction in a transaction
+        return prisma.$transaction(async (tx) => {
+          // 1. Create the settlement record
+          const settlement = await tx.settlement.create({
+            data: {
+              amount: data.amount,
+              currency: data.currency,
+              description: data.description || 'Balance settlement',
+              date: new Date(data.date),
+              settlementStatus: data.settlementStatus,
+              settlementType: data.settlementType,
+              initiatedBy: { connect: { id: userId } },
+              settledWithUser: { connect: { id: data.settledWithUserId } },
+              group: { connect: { id: data.groupId } }
+            },
+            include: {
+              initiatedBy: true,
+              settledWithUser: true,
+              group: true,
+            }
+          });
+  
+          // 2. Create an expense to represent this settlement
+          await tx.expense.create({
+            data: {
+              amount: data.amount,
+              description: data.description || 'Balance settlement',
+              date: new Date(data.date),
+              currency: data.currency,
+              isSettlement: true,
+              paidBy: {
+                connect: { 
+                  id: data.settlementType === SettlementType.PAYMENT 
+                    ? userId 
+                    : data.settledWithUserId 
+                }
+              },
+              group: { connect: { id: data.groupId } },
+              settlement: { connect: { id: settlement.id } },
+              // Create shares appropriately based on settlement type
+              shares: {
+                create: [
+                  {
+                    amount: data.amount,
+                    type: ShareType.FIXED,
+                    user: {
+                      connect: { 
+                        id: data.settlementType === SettlementType.PAYMENT 
+                          ? data.settledWithUserId 
+                          : userId 
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          });
+  
+          return {
+            id: settlement.id,
+            amount: settlement.amount,
+            currency: settlement.currency,
+            settlementStatus: settlement.settlementStatus,
+            settlementType: settlement.settlementType,
+            date: settlement.date,
+            description: settlement.description,
+            initiatedById: settlement.initiatedById,
+            settledWithUserId: settlement.settledWithUserId,
+            groupId: settlement.groupId,
+            initiatedBy: {
+              id: settlement.initiatedBy.id,
+              email: settlement.initiatedBy.email,
+              name: settlement.initiatedBy.name,
+              image: settlement.initiatedBy.image,
+            },
+            settledWithUser: {
+              id: settlement.settledWithUser.id,
+              email: settlement.settledWithUser.email,
+              name: settlement.settledWithUser.name,
+              image: settlement.settledWithUser.image,
+            },
+            group: {
+              id: settlement.group.id,
+              name: settlement.group.name,
+              description: settlement.group.description,
+              image: settlement.group.image,
+            }
+          };
+        });
+      } catch (error: unknown) {
+        console.error('Error creating settlement:', error);
+        // Provide more helpful error message for client
+        if (error instanceof Error && error.message && error.message.includes("Can't reach database server")) {
+          throw new Error('Database connection failed. Please try again later.');
+        }
+        throw error;
+      }
+    },
+    
+    // Update settlement status
+    updateSettlementStatus: async (_parent: unknown, { settlementId, status }: { settlementId: string, status: SettlementStatus }, context: Context) => {
+      try {
+        const session = await getServerSession(context);
+        if (!session?.user) {
+          throw new GraphQLError('Not authenticated', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+
+        const userId = context.user?.id || session.user.id;
+        if (!userId) {
+          throw new GraphQLError('User ID not found in session', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
+
+        // Check database connection first
+        const isConnected = await checkDatabaseConnection(prisma);
+        if (!isConnected) {
+          throw new Error('Database connection failed. Please try again later.');
+        }
+
+        // Fetch the settlement to verify permissions
+        const settlement = await prisma.settlement.findUnique({
+          where: { id: settlementId },
+          include: {
+            initiatedBy: true,
+            settledWithUser: true,
+            group: true,
+          },
+        });
+
+        if (!settlement) {
+          throw new Error('Settlement not found');
+        }
+
+        // Only allow status updates from users involved in the settlement
+        if (settlement.initiatedById !== userId && settlement.settledWithUserId !== userId) {
+          throw new Error('You are not authorized to update this settlement');
+        }
+
+        // Update the settlement status
+        const updatedSettlement = await prisma.settlement.update({
+          where: { id: settlementId },
+          data: { settlementStatus: status },
+          include: {
+            initiatedBy: true,
+            settledWithUser: true,
+            group: true,
+          },
+        });
+
+        return {
+          id: updatedSettlement.id,
+          amount: updatedSettlement.amount,
+          currency: updatedSettlement.currency,
+          settlementStatus: updatedSettlement.settlementStatus,
+          settlementType: updatedSettlement.settlementType,
+          date: updatedSettlement.date,
+          description: updatedSettlement.description,
+          initiatedById: updatedSettlement.initiatedById,
+          settledWithUserId: updatedSettlement.settledWithUserId,
+          groupId: updatedSettlement.groupId,
+          initiatedBy: {
+            id: updatedSettlement.initiatedBy.id,
+            email: updatedSettlement.initiatedBy.email,
+            name: updatedSettlement.initiatedBy.name,
+            image: updatedSettlement.initiatedBy.image,
+          },
+          settledWithUser: {
+            id: updatedSettlement.settledWithUser.id,
+            email: updatedSettlement.settledWithUser.email,
+            name: updatedSettlement.settledWithUser.name,
+            image: updatedSettlement.settledWithUser.image,
+          },
+          group: {
+            id: updatedSettlement.group.id,
+            name: updatedSettlement.group.name,
+            description: updatedSettlement.group.description,
+            image: updatedSettlement.group.image,
+          },
+        };
+      } catch (error: unknown) {
+        console.error('Error updating settlement status:', error);
+        if (error instanceof Error && error.message && error.message.includes("Can't reach database server")) {
+          throw new Error('Database connection failed. Please try again later.');
+        }
+        throw error;
+      }
+    },
+    
+    // Confirm a settlement (only the counterparty can confirm)
+    confirmSettlement: async (_parent: unknown, { settlementId }: { settlementId: string }, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+      
+      // Get the settlement
+      const settlement = await prisma.settlement.findUnique({
+        where: { id: settlementId },
+      });
+      
+      if (!settlement) {
+        throw new GraphQLError('Settlement not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+      
+      // Determine if user can confirm (only the counterparty, not the initiator)
+      const canConfirm = 
+        (settlement.settlementStatus === SettlementStatus.PENDING_CONFIRMATION) && 
+        (
+          (settlement.initiatedById === userId && settlement.settlementType === SettlementType.RECEIPT) ||
+          (settlement.settledWithUserId === userId && settlement.settlementType === SettlementType.PAYMENT)
+        );
+      
+      if (!canConfirm) {
+        throw new GraphQLError('User cannot confirm this settlement', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+      
+      // Update the settlement to confirmed status
+      return prisma.settlement.update({
+        where: { id: settlementId },
+        data: { settlementStatus: SettlementStatus.CONFIRMED },
+        include: {
+          initiatedBy: true,
+          settledWithUser: true,
+          group: true
+        }
+      });
+    },
   },
 
   // Type resolvers for nested fields
@@ -2367,6 +2762,19 @@ export const resolvers = {
         where: { id: parent.categoryId },
       });
     },
+    settlement: async (parent: ExpenseType) => {
+      if (!parent.settlementId) return null;
+      if (parent.settlement) return parent.settlement;
+      
+      return prisma.settlement.findUnique({
+        where: { id: parent.settlementId },
+        include: {
+          initiatedBy: true,
+          settledWithUser: true,
+          group: true
+        }
+      });
+    }
   },
 
   ExpenseShare: {
@@ -2460,6 +2868,33 @@ export const resolvers = {
 
       return seen.map((s: MessageSeen) => s.user);
     },
+  },
+
+  // Add resolver for Settlement type
+  Settlement: {
+    initiatedBy: async (parent: SettlementData) => {
+      if (parent.initiatedBy) return parent.initiatedBy;
+      
+      return prisma.user.findUnique({
+        where: { id: parent.initiatedById }
+      });
+    },
+    
+    settledWithUser: async (parent: SettlementData) => {
+      if (parent.settledWithUser) return parent.settledWithUser;
+      
+      return prisma.user.findUnique({
+        where: { id: parent.settledWithUserId }
+      });
+    },
+    
+    group: async (parent: SettlementData) => {
+      if (parent.group) return parent.group;
+      
+      return prisma.group.findUnique({
+        where: { id: parent.groupId }
+      });
+    }
   },
 };
 

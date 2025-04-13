@@ -44,6 +44,7 @@ import { toast } from 'sonner';
 import { GroupMembers } from './_components/GroupMembers';
 import { GroupExpenses } from './_components/GroupExpenses';
 import { GroupBalances } from './_components/GroupBalances';
+import { SettlementsTab } from './_components/SettlementsTab';
 
 interface GroupMember {
   id: string;
@@ -278,7 +279,6 @@ export default function GroupPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">{t('view.title')}</h1>
         </div>
         
         <div className="flex items-center gap-2">
@@ -369,12 +369,15 @@ export default function GroupPage() {
 
       {/* Main content tabs */}
       <Tabs defaultValue="balances" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="balances">
             {t('tabs.balances')}
           </TabsTrigger>
           <TabsTrigger value="expenses">
             {t('tabs.expenses')}
+          </TabsTrigger>
+          <TabsTrigger value="settlements">
+            {t('tabs.settlements')}
           </TabsTrigger>
           <TabsTrigger value="members">
             {t('tabs.members')}
@@ -392,6 +395,14 @@ export default function GroupPage() {
         {/* Expenses tab */}
         <TabsContent value="expenses" className="mt-6">
           <GroupExpenses groupId={group.id} />
+        </TabsContent>
+        
+        {/* Settlements tab */}
+        <TabsContent value="settlements" className="mt-6">
+          <SettlementsTab
+            groupId={group.id}
+            currentUserId={currentUserId || ''}
+          />
         </TabsContent>
 
         {/* Members tab */}

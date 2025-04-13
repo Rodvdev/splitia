@@ -221,7 +221,8 @@
       "actions": {
         "submit": "Save Expense",
         "submitting": "Saving...",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "update": "Update Expense"
       }
     }
   },
@@ -378,6 +379,7 @@
     "tabs": {
       "balances": "Balances",
       "expenses": "Expenses",
+      "settlements": "Settlements",
       "members": "Members"
     },
     "balances": {
@@ -731,5 +733,65 @@
     "removing": "Removing...",
     "cancel": "Cancel",
     "openMenu": "Open menu"
+  },
+  "settlements": {
+    "title": "Settlements",
+    "settleUp": "Settle Up",
+    "balanceSummary": "Balance Summary",
+    "currentBalances": "Current Balances",
+    "settleUpForm": "Settlement Form",
+    "noBalances": "No balances to show",
+    "noSettlements": "No settlements to show",
+    "defaultDescription": "Balance settlement",
+    "createSuccess": "Settlement created successfully",
+    "confirmSuccess": "Settlement confirmed successfully",
+    "statusUpdateSuccess": "Settlement status updated",
+    "paidBy": "Paid by",
+    "paidTo": "Paid to",
+    "receivedBy": "Received by",
+    "receivedFrom": "Received from",
+    "filterPlaceholder": "Filter",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "confirmed": "Confirmed"
+    },
+    "status": {
+      "pending": "Pending",
+      "pending_confirmation": "Awaiting confirmation",
+      "confirmed": "Confirmed"
+    },
+    "types": {
+      "payment": "Payment",
+      "receipt": "Receipt"
+    },
+    "fields": {
+      "type": "Settlement type",
+      "selectType": "Select type",
+      "user": "User",
+      "selectUser": "Select a user",
+      "amount": "Amount",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Add a description for this settlement"
+    },
+    "actions": {
+      "settle": "Settle",
+      "processing": "Processing...",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "newSettlement": "New Settlement",
+      "createFirst": "Create first settlement",
+      "requestConfirmation": "Request confirmation"
+    },
+    "errors": {
+      "loadFailed": "Failed to load data",
+      "createFailed": "Failed to create settlement",
+      "confirmFailed": "Failed to confirm settlement",
+      "statusUpdateFailed": "Failed to update status",
+      "fetchFailed": "Failed to fetch settlements",
+      "invalidAmount": "Invalid amount",
+      "notFound": "Settlement not found",
+      "notFoundDescription": "The settlement you're looking for doesn't exist or you don't have access"
+    }
   }
 } 

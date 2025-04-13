@@ -181,6 +181,15 @@ export async function fetchExpense(id: string): Promise<{ expense: {
       image?: string;
     };
   }>;
+  isSettlement?: boolean;
+  settlement?: {
+    id: string;
+    amount: number;
+    currency: string;
+    settlementStatus: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED';
+    settlementType: 'PAYMENT' | 'RECEIPT';
+    settledWithUserId: string;
+  };
   createdAt: string;
   updatedAt: string;
 } | null }> {
@@ -219,6 +228,15 @@ export async function fetchExpense(id: string): Promise<{ expense: {
             name
             image
           }
+        }
+        isSettlement
+        settlement {
+          id
+          amount
+          currency
+          settlementStatus
+          settlementType
+          settledWithUserId
         }
       }
     }
@@ -776,6 +794,141 @@ export async function recordPayment({
     });
   } catch (error) {
     console.error('Error recording payment:', error);
+    throw error;
+  }
+}
+
+// Fetch settlements for a group
+export async function fetchSettlements(groupId: string, userId?: string, status?: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED') {
+  const query = `
+    query GetSettlements($groupId: ID!, $userId: ID, $status: SettlementStatus) {
+      settlements(groupId: $groupId, userId: $userId, status: $status) {
+        id
+        amount
+        currency
+        date
+        description
+        settlementStatus
+        settlementType
+        initiatedBy {
+          id
+          name
+          image
+        }
+        settledWithUser {
+          id
+          name
+          image
+        }
+        group {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client to ensure session token is sent
+    const client = await getAuthenticatedClient();
+    return await client.request(query, { groupId, userId, status });
+  } catch (error) {
+    console.error('Error fetching settlements:', error);
+    throw error;
+  }
+}
+
+// Create a new settlement
+export async function createSettlement(data: {
+  amount: number;
+  currency: string;
+  description?: string;
+  date: Date;
+  groupId: string;
+  settledWithUserId: string;
+  settlementType: 'PAYMENT' | 'RECEIPT';
+  settlementStatus: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED';
+}) {
+  const mutation = `
+    mutation CreateSettlement($data: SettlementInput!) {
+      createSettlement(data: $data) {
+        id
+        amount
+        currency
+        description
+        date
+        settlementStatus
+        settlementType
+        initiatedBy {
+          id
+          name
+        }
+        settledWithUser {
+          id
+          name
+        }
+        group {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  // Format the date as ISO string
+  const formattedData = {
+    ...data,
+    date: data.date instanceof Date ? data.date.toISOString() : data.date
+  };
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { data: formattedData });
+  } catch (error) {
+    console.error('Error creating settlement:', error);
+    throw error;
+  }
+}
+
+// Update settlement status
+export async function updateSettlementStatus(settlementId: string, status: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED') {
+  const mutation = `
+    mutation UpdateSettlementStatus($settlementId: ID!, $status: SettlementStatus!) {
+      updateSettlementStatus(settlementId: $settlementId, status: $status) {
+        id
+        settlementStatus
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { settlementId, status });
+  } catch (error) {
+    console.error('Error updating settlement status:', error);
+    throw error;
+  }
+}
+
+// Confirm a settlement
+export async function confirmSettlement(settlementId: string) {
+  const mutation = `
+    mutation ConfirmSettlement($settlementId: ID!) {
+      confirmSettlement(settlementId: $settlementId) {
+        id
+        settlementStatus
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, { settlementId });
+  } catch (error) {
+    console.error('Error confirming settlement:', error);
     throw error;
   }
 } 

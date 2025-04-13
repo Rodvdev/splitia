@@ -138,7 +138,7 @@ export default function ExpensePage() {
   
   // Handle edit button
   const handleEdit = () => {
-    router.push(`/dashboard/expenses/edit/${expenseId}`);
+    router.push(`/dashboard/expenses/${expenseId}/edit`);
   };
   
   // Handle delete button
