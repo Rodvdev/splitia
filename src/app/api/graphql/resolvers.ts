@@ -1065,9 +1065,15 @@ export const resolvers = {
         where.settlementStatus = args.status;
       }
       
+      // Type-safe way to add the settlement status filter
+      const finalWhere = {
+        ...where,
+        ...(args.status ? { settlementStatus: { equals: args.status } } : {})
+      };
+      
       // Query settlements
       return prisma.settlement.findMany({
-        where,
+        where: finalWhere,
         include: {
           initiatedBy: true,
           settledWithUser: true,
