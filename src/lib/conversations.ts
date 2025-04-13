@@ -1,5 +1,19 @@
-import { GroupRole } from '@prisma/client';
-import { prisma } from './prisma';
+import { PrismaClient } from "@prisma/client";
+import { prisma } from "./prisma";
+
+// Define our own GroupRole enum to match the Prisma schema
+enum GroupRole {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+  GUEST = 'GUEST',
+  ASSISTANT = 'ASSISTANT'
+}
+
+// Common type for transaction callback parameters
+type TransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 /**
  * Creates a new group with an associated conversation
@@ -12,7 +26,7 @@ export async function createGroupWithConversation(
     image?: string;
   }
 ) {
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: TransactionClient) => {
     // Create the conversation first
     const conversation = await tx.conversation.create({
       data: {
@@ -70,7 +84,7 @@ export async function createGroupChatWithGroup(
     participantIds: string[];
   }
 ) {
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: TransactionClient) => {
     // Create the conversation
     const conversation = await tx.conversation.create({
       data: {
@@ -128,7 +142,7 @@ export async function addUserToGroupAndConversation(
   userId: string,
   role: GroupRole = 'MEMBER' as GroupRole
 ) {
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: TransactionClient) => {
     // Get the group with its conversation
     const group = await tx.group.findUnique({
       where: { id: groupId },
