@@ -485,6 +485,7 @@
     "addMembers": "Adicionar Membros",
     "addMembersDescription": "Digite o email da pessoa que você deseja adicionar a este grupo de chat",
     "addMember": "Adicionar Membro",
+    "startChat": "Iniciar Chat",
     "adding": "Adicionando...",
     "memberAdded": "Membro adicionado com sucesso",
     "errorAddingMember": "Erro ao adicionar membro ao grupo",
