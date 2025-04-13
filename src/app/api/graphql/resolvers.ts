@@ -1195,6 +1195,7 @@ export const resolvers = {
           }
         }
         
+        // Create the expense with properly formatted data
         return prisma.expense.create({
           data: {
             amount: roundedAmount,
@@ -1205,14 +1206,12 @@ export const resolvers = {
             location: data.location || null,
             notes: data.notes || null,
             groupId: data.groupId || null,
-            paidBy: {
-              connect: {
-                id: data.paidById || userId,
-              },
-            },
+            paidById: data.paidById || userId,
             shares: {
-              create: sharesData,
-            },
+              createMany: {
+                data: sharesData
+              }
+            }
           },
           include: {
             paidBy: true,
