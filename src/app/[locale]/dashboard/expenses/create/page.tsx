@@ -9,6 +9,7 @@ import { ExpenseForm } from '../_components/ExpenseForm';
 import { toast } from 'sonner';
 import { createExpense } from '@/lib/graphql-client';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import React from 'react';
 
 // Define the expense form data type
 interface ExpenseFormData {
@@ -22,43 +23,71 @@ interface ExpenseFormData {
   isPaid: boolean;
   isGroupExpense: boolean;
   groupId?: string;
+  paidById?: string;
 }
+
+// Crea un componente envoltorio para evitar re-renderizados
+function ExpenseFormWrapper({ 
+  initialData, 
+  onSubmit, 
+  onCancel, 
+  isSubmitting 
+}: { 
+  initialData: Partial<ExpenseFormData>; 
+  onSubmit: (data: ExpenseFormData) => Promise<void>; 
+  onCancel: () => void; 
+  isSubmitting: boolean; 
+}) {
+  // Use React.memo to avoid re-renders
+  return (
+    <ExpenseForm
+      initialData={initialData}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+      isSubmitting={isSubmitting}
+    />
+  );
+}
+
+// Memoize the wrapper component to prevent unnecessary rerenders
+const MemoizedExpenseForm = React.memo(ExpenseFormWrapper);
 
 // Separate client component that uses useSearchParams
 function ExpenseFormWithParams() {
   const searchParams = useSearchParams();
-  const [initialData, setInitialData] = useState<Partial<ExpenseFormData> | undefined>(undefined);
   const t = useTranslations('expenses');
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { profile, isLoading } = useUserProfile();
+  const [formData, setFormData] = useState<Partial<ExpenseFormData> | null>(null);
   
-  // Get groupId from URL params and set initial form data
+  // Configurar datos iniciales solo una vez al cargar la página
   useEffect(() => {
-    if (profile && searchParams) {
-      const groupId = searchParams.get('groupId');
+    if (profile && !formData) {
+      const groupId = searchParams?.get('groupId');
       
-      // Set initial data with user's currency preference
-      const formData: Partial<ExpenseFormData> = {
-        currency: profile.currency || 'USD',
-      };
-      
-      if (groupId) {
-        formData.isGroupExpense = true;
-        formData.groupId = groupId;
+      // Guardar preferencias de moneda en localStorage para evitar flickering
+      if (profile.currency) {
+        localStorage.setItem('userPreferredCurrency', profile.currency);
       }
       
-      setInitialData(formData);
+      // Set initial data with user's currency preference
+      const initialData: Partial<ExpenseFormData> = {
+        currency: profile.currency || 'USD',
+        paidById: profile.id,
+        isGroupExpense: !!groupId,
+        groupId: groupId || undefined
+      };
+      
+      setFormData(initialData);
     }
-  }, [searchParams, profile]);
+  }, [profile, searchParams, formData]);
   
   // Handle form submission with GraphQL
   const handleSubmit = async (data: ExpenseFormData) => {
     setIsSubmitting(true);
     
     try {
-      console.log('Form submitted with currency:', data.currency);
-      
       // Map form data to GraphQL input format
       const expenseInput = {
         amount: data.amount,
@@ -105,13 +134,13 @@ function ExpenseFormWithParams() {
   };
   
   // Show loading state while currency is being loaded
-  if (isLoading || !initialData) {
+  if (isLoading || !formData) {
     return <div className="p-6 flex justify-center">Loading...</div>;
   }
   
   return (
-    <ExpenseForm
-      initialData={initialData}
+    <MemoizedExpenseForm
+      initialData={formData}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       isSubmitting={isSubmitting}

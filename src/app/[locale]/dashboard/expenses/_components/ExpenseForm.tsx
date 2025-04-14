@@ -136,8 +136,9 @@ export function ExpenseForm({
   const [isLoadingCategories, setIsLoadingCategories] = React.useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = React.useState(false);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
-  const { profile, isLoading: isProfileLoading } = useUserProfile();
-  const [formIsReady, setFormIsReady] = useState(false);
+  
+  // Prevent rerender issues by using the profile only when needed
+  const { profile } = useUserProfile();
   
   // Initialize form with React Hook Form
   const form = useForm<FormValues>({
@@ -145,7 +146,7 @@ export function ExpenseForm({
     defaultValues: {
       title: initialData?.title || '',
       amount: initialData?.amount || 0,
-      currency: initialData?.currency || profile?.currency || 'USD',
+      currency: initialData?.currency || 'USD',
       date: initialData?.date || new Date(),
       category: initialData?.category || '',
       location: initialData?.location || '',
@@ -153,7 +154,7 @@ export function ExpenseForm({
       isPaid: initialData?.isPaid !== undefined ? initialData.isPaid : true,
       isGroupExpense: initialData?.isGroupExpense !== undefined ? initialData.isGroupExpense : false,
       groupId: initialData?.groupId || '',
-      paidById: initialData?.paidById || profile?.id || '',
+      paidById: initialData?.paidById || '',
       isSettlement: initialData?.isSettlement || false,
       settlementStatus: initialData?.settlementStatus || 'PENDING',
       settlementType: initialData?.settlementType || 'PAYMENT',
@@ -161,25 +162,13 @@ export function ExpenseForm({
     },
   });
 
-  // Marcar el formulario como listo una vez que el perfil está cargado
+  // Apply form values only on mount, not on every render
+  const formValuesApplied = React.useRef(false);
   React.useEffect(() => {
-    if ((initialData?.currency || profile?.currency) && !isProfileLoading) {
-      // Asegurarse de que la moneda esté configurada correctamente
-      if (profile?.currency && !initialData?.currency) {
-        form.setValue('currency', profile.currency, { shouldDirty: false });
-      }
-      
-      // Establecer el ID del usuario si está disponible
-      if (profile?.id) {
-        const currentPaidById = form.getValues('paidById');
-        if (!currentPaidById) {
-          form.setValue('paidById', profile.id, { shouldDirty: false });
-        }
-      }
-      
-      setFormIsReady(true);
+    if (!formValuesApplied.current && initialData) {
+      formValuesApplied.current = true;
     }
-  }, [profile, isProfileLoading, form, initialData]);
+  }, [initialData, form]);
 
   // Watch the isGroupExpense field to conditionally show group selection
   const isGroupExpense = form.watch('isGroupExpense');
@@ -337,11 +326,6 @@ export function ExpenseForm({
       form.setValue('settlementStatus', 'PENDING');
     }
   }, [isSettlement, settlementType, form]);
-
-  // Mostrar estado de carga mientras el formulario no está listo
-  if (isProfileLoading || !formIsReady) {
-    return <div className="p-6 flex justify-center">Loading currency preferences...</div>;
-  }
 
   return (
     <Form {...form}>
@@ -618,19 +602,32 @@ export function ExpenseForm({
                 control={form.control as FormControlType}
                 name="isGroupExpense"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="p-5 border rounded-md hover:bg-accent/40 transition-colors relative">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4" />
-                        <FormLabel className="font-medium">Split with a group</FormLabel>
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-primary/10 p-2 rounded-full">
+                          <Users className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <FormLabel className="font-medium text-base cursor-pointer">Split with a group</FormLabel>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Divide the expense equally among group members
+                          </p>
+                        </div>
                       </div>
                       <FormControl>
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-input h-6 w-11"
                         />
                       </FormControl>
                     </div>
+                    {field.value && (
+                      <div className="absolute -top-2 -right-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
+                        Active
+                      </div>
+                    )}
                   </FormItem>
                 )}
               />
