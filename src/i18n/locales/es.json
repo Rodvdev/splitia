@@ -232,9 +232,25 @@
       },
       "balancePreview": {
         "title": "Vista previa del balance",
+        "subtitle": "Mira cuánto deberá cada persona",
         "eachPersonPays": "Cada persona paga",
         "paidTheBill": "Pagó la cuenta",
-        "selectGroupToSeePreview": "Selecciona un grupo para ver la vista previa del balance"
+        "selectGroupToSeePreview": "Selecciona un grupo para ver la vista previa del balance",
+        "customDivision": "División Personalizada",
+        "equalDivision": "División Equitativa",
+        "switchTip": "Cambia entre división equitativa y personalizada",
+        "remainingToAllocate": "Pendiente por asignar",
+        "fullyAllocated": "Totalmente asignado",
+        "remainingAmountTip": "El monto total debe ser igual al monto del gasto",
+        "resetEqual": "Restaurar Equitativo",
+        "distributeRemaining": "Distribuir Restante",
+        "autocomplete": "Autocompletar",
+        "selectAll": "Seleccionar Todos",
+        "deselectAll": "Deseleccionar Todos",
+        "amount": "Monto",
+        "balance": "Balance",
+        "totalAmount": "Monto total",
+        "membersSelected": "miembros seleccionados"
       },
       "splitWithGroup": {
         "label": "Dividir con un grupo",

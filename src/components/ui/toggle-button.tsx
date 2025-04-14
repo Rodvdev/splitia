@@ -9,11 +9,11 @@ interface ToggleButtonProps {
 
 export const ToggleButton: React.FC<ToggleButtonProps> = ({ isActive, onClick, className, children }) => {
   return (
-    <button
+    <div
       onClick={onClick}
       className={`px-2 py-1 border rounded-md ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'} ${className}`}
     >
       {children}
-    </button>
+    </div>
   );
 }; 

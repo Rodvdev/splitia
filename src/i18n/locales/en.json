@@ -230,9 +230,25 @@
       },
       "balancePreview": {
         "title": "Balance preview",
+        "subtitle": "See how much each person will owe",
         "eachPersonPays": "Each person pays",
         "paidTheBill": "Paid the bill",
-        "selectGroupToSeePreview": "Select a group to see balance preview"
+        "selectGroupToSeePreview": "Select a group to see balance preview",
+        "customDivision": "Custom Division",
+        "equalDivision": "Equal Division",
+        "switchTip": "Toggle between equal and custom expense division",
+        "remainingToAllocate": "Remaining to allocate",
+        "fullyAllocated": "Fully allocated",
+        "remainingAmountTip": "The total amount should equal the expense amount",
+        "resetEqual": "Reset to Equal",
+        "distributeRemaining": "Distribute Remaining",
+        "autocomplete": "Autocomplete",
+        "selectAll": "Select All",
+        "deselectAll": "Deselect All",
+        "amount": "Amount",
+        "balance": "Balance",
+        "totalAmount": "Total amount",
+        "membersSelected": "members selected"
       },
       "splitWithGroup": {
         "label": "Split with group",

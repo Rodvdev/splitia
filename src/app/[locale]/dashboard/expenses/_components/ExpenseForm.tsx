@@ -230,7 +230,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
       form.setValue('paidById', profileRef.current?.id || '');
     }
   }, [initialData, form, profileRef]);
-
+  
   // Fetch user groups when component mounts or when isGroupExpense becomes true
   React.useEffect(() => {
     if (isGroupExpense) {
@@ -403,7 +403,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
                 render={({ field }) => (
                   <FormItem className="w-24">
                     <Select 
-                      onValueChange={field.onChange} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Prevent form submission
+                        const formElement = document.querySelector('form');
+                        if (formElement) {
+                          formElement.addEventListener('submit', (e) => e.preventDefault());
+                        }
+                      }} 
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -456,8 +463,16 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <Select 
-                      onValueChange={field.onChange} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Prevent form submission
+                        const formElement = document.querySelector('form');
+                        if (formElement) {
+                          formElement.addEventListener('submit', (e) => e.preventDefault());
+                        }
+                      }} 
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="bg-white">
@@ -578,67 +593,74 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
             {isGroupExpense && amount > 0 && currency && (
               <>
                 {/* Who paid is now moved right above the balance preview for better context */}
-                <FormField
-                  control={form.control as FormControlType}
-                  name="paidById"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Users className="h-4 w-4" />
+            <FormField
+              control={form.control as FormControlType}
+              name="paidById"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Users className="h-4 w-4" />
                         <FormLabel className="font-medium">{t('whoPaid.label')}</FormLabel>
-                      </div>
-                      
-                      {isLoadingMembers ? (
-                        <div className="flex items-center justify-center p-3 border rounded-md">
+                  </div>
+                  
+                  {isLoadingMembers ? (
+                    <div className="flex items-center justify-center p-3 border rounded-md">
                           <span className="text-sm text-muted-foreground">{t('whoPaid.loadingMembers')}</span>
-                        </div>
-                      ) : isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && groupMembers.length > 0 ? (
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-white">
+                    </div>
+                  ) : isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && groupMembers.length > 0 ? (
+                    <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Prevent form submission
+                            const formElement = document.querySelector('form');
+                            if (formElement) {
+                              formElement.addEventListener('submit', (e) => e.preventDefault());
+                            }
+                          }}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-white">
                               <SelectValue placeholder={t('whoPaid.placeholder')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-white">
-                            {groupMembers.map((member) => (
-                              <SelectItem 
-                                key={member.id} 
-                                value={member.id}
-                                className="flex items-center"
-                              >
-                                <div className="flex items-center gap-2">
-                                  {member.name || member.email}
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-white">
+                        {groupMembers.map((member) => (
+                          <SelectItem 
+                            key={member.id} 
+                            value={member.id}
+                            className="flex items-center"
+                          >
+                            <div className="flex items-center gap-2">
+                              {member.name || member.email}
                                   {member.id === profileRef.current?.id && (
-                                    <span className="text-xs text-muted-foreground ml-1">(you)</span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input 
-                          type="text"
+                                <span className="text-xs text-muted-foreground ml-1">(you)</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input 
+                      type="text"
                           value={profileRef.current?.name ?? 'You'}
-                          onChange={() => {}}
-                          disabled
-                          className="bg-muted"
-                        />
-                      )}
-                      {isGroupExpense && groupMembers.length === 0 && !isLoadingMembers && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {t('whoPaid.noMembersFound')}
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
+                      onChange={() => {}}
+                      disabled
+                      className="bg-muted"
+                    />
                   )}
-                />
-                
+                  {isGroupExpense && groupMembers.length === 0 && !isLoadingMembers && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                          {t('whoPaid.noMembersFound')}
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
                 {/* Balance preview - show as soon as we have an amount, even if not all group details are selected */}
                 {groupMembers.length > 0 ? (
                   <ExpenseBalancePreview
@@ -682,7 +704,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
                       </div>
                     ) : groups.length > 0 ? (
                       <Select 
-                        onValueChange={field.onChange} 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Prevent form submission
+                          const formElement = document.querySelector('form');
+                          if (formElement) {
+                            formElement.addEventListener('submit', (e) => e.preventDefault());
+                          }
+                        }} 
                         defaultValue={field.value || groupId || ''}
                         value={field.value}
                       >
@@ -759,7 +788,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
                                   <FormLabel className="font-medium">Settlement Type</FormLabel>
                                 </div>
                                 <Select
-                                  onValueChange={typeField.onChange}
+                                  onValueChange={(value) => {
+                                    typeField.onChange(value);
+                                    // Prevent form submission
+                                    const formElement = document.querySelector('form');
+                                    if (formElement) {
+                                      formElement.addEventListener('submit', (e) => e.preventDefault());
+                                    }
+                                  }}
                                   defaultValue={typeField.value}
                                   value={typeField.value}
                                 >
@@ -792,7 +828,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
                                   </FormLabel>
                                 </div>
                                 <Select
-                                  onValueChange={userField.onChange}
+                                  onValueChange={(value) => {
+                                    userField.onChange(value);
+                                    // Prevent form submission
+                                    const formElement = document.querySelector('form');
+                                    if (formElement) {
+                                      formElement.addEventListener('submit', (e) => e.preventDefault());
+                                    }
+                                  }}
                                   defaultValue={userField.value}
                                   value={userField.value}
                                 >
@@ -832,7 +875,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
                                   <FormLabel className="font-medium">Status</FormLabel>
                                 </div>
                                 <Select
-                                  onValueChange={statusField.onChange}
+                                  onValueChange={(value) => {
+                                    statusField.onChange(value);
+                                    // Prevent form submission
+                                    const formElement = document.querySelector('form');
+                                    if (formElement) {
+                                      formElement.addEventListener('submit', (e) => e.preventDefault());
+                                    }
+                                  }}
                                   defaultValue={statusField.value}
                                   value={statusField.value}
                                 >
