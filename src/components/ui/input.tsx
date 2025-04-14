@@ -5,14 +5,8 @@ import { cn } from "@/lib/utils"
 function Input({ 
   className, 
   type, 
-  value,
-  defaultValue,
   ...props 
 }: React.ComponentProps<"input">) {
-  // Ensure we're using controlled inputs consistently
-  // If value is undefined but defaultValue isn't, prefer defaultValue
-  const inputValue = value !== undefined ? value : defaultValue;
-  
   return (
     <input
       type={type}
@@ -23,7 +17,6 @@ function Input({
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         className
       )}
-      value={inputValue}
       {...props}
     />
   )

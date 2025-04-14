@@ -355,11 +355,11 @@ export function ExpenseForm({
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 bg-white">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         {[
                           'USD', 'EUR', 'GBP', 'PEN', 'CLP', 'COP', 'ARS', 'MXN',
                           'BOB', 'UYU', 'PYG', 'BRL'
@@ -407,11 +407,11 @@ export function ExpenseForm({
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white">
                           <SelectValue placeholder={t('category.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         {isLoadingCategories ? (
                           <SelectItem value="loading" disabled>Loading categories...</SelectItem>
                         ) : categories.length > 0 ? (
@@ -496,11 +496,11 @@ export function ExpenseForm({
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white">
                           <SelectValue placeholder="Select who paid" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         {groupMembers.map((member) => (
                           <SelectItem 
                             key={member.id} 
@@ -519,7 +519,9 @@ export function ExpenseForm({
                     </Select>
                   ) : (
                     <Input 
-                      value={profile?.name || 'You'}
+                      type="text"
+                      value={profile?.name ?? 'You'}
+                      onChange={() => {}}
                       disabled
                       className="bg-muted"
                     />
@@ -558,11 +560,11 @@ export function ExpenseForm({
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white">
                               <SelectValue placeholder="Select a group to split with" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             {groups.map((group) => (
                               <SelectItem key={group.id} value={group.id}>
                                 {group.name}
@@ -622,11 +624,11 @@ export function ExpenseForm({
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white">
                             <SelectValue placeholder="Select a group to split with" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           {groups.map((group) => (
                             <SelectItem key={group.id} value={group.id}>
                               {group.name}
@@ -699,11 +701,11 @@ export function ExpenseForm({
                                   value={typeField.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white">
                                       <SelectValue placeholder="Select settlement type" />
                                     </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent>
+                                  <SelectContent className="bg-white">
                                     <SelectItem value="PAYMENT">I&apos;m paying someone</SelectItem>
                                     <SelectItem value="RECEIPT">I&apos;m being paid</SelectItem>
                                   </SelectContent>
@@ -732,11 +734,11 @@ export function ExpenseForm({
                                   value={userField.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white">
                                       <SelectValue placeholder="Select user" />
                                     </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent>
+                                  <SelectContent className="bg-white">
                                     {groupMembers
                                       .filter(member => member.id !== profile?.id)
                                       .map((member) => (
@@ -772,11 +774,11 @@ export function ExpenseForm({
                                   value={statusField.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white">
                                       <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent>
+                                  <SelectContent className="bg-white">
                                     <SelectItem value="PENDING">Pending</SelectItem>
                                     <SelectItem value="PENDING_CONFIRMATION">
                                       {form.watch('settlementType') === 'PAYMENT' 
