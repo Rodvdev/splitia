@@ -143,7 +143,7 @@ export function ExpenseForm({
     defaultValues: {
       title: initialData?.title || '',
       amount: initialData?.amount || undefined,
-      currency: initialData?.currency || profile?.currency || 'USD',
+      currency: initialData?.currency || 'USD',
       date: initialData?.date || new Date(),
       category: initialData?.category || '',
       location: initialData?.location || '',
@@ -159,10 +159,19 @@ export function ExpenseForm({
     },
   });
 
-  // Update currency when profile loads
+  // Update form when profile loads - IMPORTANT to set currency
   React.useEffect(() => {
-    if (profile && !initialData?.currency) {
-      form.setValue('currency', profile.currency);
+    if (profile) {
+      // Set the currency as soon as the profile is loaded, unless initialData has a specific value
+      if (profile.currency && !initialData?.currency) {
+        console.log('Estableciendo moneda preferida del usuario:', profile.currency);
+        form.setValue('currency', profile.currency);
+      }
+      
+      // Set the user ID if available
+      if (profile.id) {
+        form.setValue('paidById', profile.id);
+      }
     }
   }, [profile, form, initialData]);
 
@@ -353,6 +362,7 @@ export function ExpenseForm({
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="h-12 bg-white">

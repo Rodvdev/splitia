@@ -1160,6 +1160,26 @@ export const resolvers = {
         });
       }
 
+      // Get user's preferred currency if not provided
+      let currency = data.currency;
+      if (!currency) {
+        // Fetch user's preferred currency from database
+        console.log('Currency not provided, fetching from user profile...');
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { currency: true }
+          });
+          currency = user?.currency || 'USD'; // Default to USD if not found
+          console.log(`Using user's preferred currency: ${currency}`);
+        } catch (error) {
+          console.error('Error fetching user currency:', error);
+          currency = 'USD'; // Fallback to USD on error
+        }
+      } else {
+        console.log(`Using provided currency: ${currency}`);
+      }
+
       // If this is a group expense, verify user is in the group
       if (data.groupId) {
         const membership = await prisma.groupUser.findFirst({
@@ -1186,7 +1206,7 @@ export const resolvers = {
           toUserId: data.settledWithUserId,
           settlementType: data.settlementType || SettlementType.PAYMENT,
           settlementStatus: data.settlementStatus || SettlementStatus.PENDING,
-          currency: data.currency,
+          currency: currency, // Use the determined currency
           date: data.date
         };
         
@@ -1301,7 +1321,7 @@ export const resolvers = {
               const settlement = await prisma.settlement.create({
                 data: {
                   amount: share.amount,
-                  currency: data.currency,
+                  currency: currency, // Use the determined currency
                   description: `Settlement for expense: ${data.description}`,
                   date: new Date(data.date),
                   settlementStatus: SettlementStatus.PENDING,
@@ -1328,7 +1348,7 @@ export const resolvers = {
             description: data.description,
             date: new Date(data.date),
             categoryId: data.categoryId || null,
-            currency: data.currency,
+            currency: currency, // Use the determined currency
             location: data.location || null,
             notes: data.notes || null,
             groupId: data.groupId || null,

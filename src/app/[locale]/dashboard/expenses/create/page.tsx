@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ExpenseForm } from '../_components/ExpenseForm';
 import { toast } from 'sonner';
 import { createExpense } from '@/lib/graphql-client';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
 
 // Define the expense form data type
 interface ExpenseFormData {
@@ -30,26 +31,36 @@ function ExpenseFormWithParams() {
   const t = useTranslations('expenses');
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { profile, isLoading } = useUserProfile();
   
   // Get groupId from URL params and set initial form data
   useEffect(() => {
+    // Sólo actualizamos el initialData cuando el perfil está cargado o cambia
     if (searchParams) {
       const groupId = searchParams.get('groupId');
       
+      // Set initial data with user's currency preference if available
+      const formData: Partial<ExpenseFormData> = {
+        currency: profile?.currency || 'USD',
+      };
+      
       if (groupId) {
-        setInitialData({
-          isGroupExpense: true,
-          groupId
-        });
+        formData.isGroupExpense = true;
+        formData.groupId = groupId;
       }
+      
+      console.log('Setting initial form data with currency:', formData.currency);
+      setInitialData(formData);
     }
-  }, [searchParams]);
+  }, [searchParams, profile]);
   
   // Handle form submission with GraphQL
   const handleSubmit = async (data: ExpenseFormData) => {
     setIsSubmitting(true);
     
     try {
+      console.log('Form submitted with currency:', data.currency);
+      
       // Map form data to GraphQL input format
       const expenseInput = {
         amount: data.amount,
@@ -94,6 +105,11 @@ function ExpenseFormWithParams() {
   const handleCancel = () => {
     router.back();
   };
+  
+  // Show loading state while currency is being loaded
+  if (isLoading) {
+    return <div className="p-6 flex justify-center">Loading...</div>;
+  }
   
   return (
     <ExpenseForm
