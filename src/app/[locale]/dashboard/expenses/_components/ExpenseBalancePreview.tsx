@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
 import { useTranslations } from 'next-intl';
-import { ToggleButton } from '@/components/ui/toggle-button';
-import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { InfoIcon } from 'lucide-react';
 
@@ -30,27 +27,25 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   const activeMembers = selectedMembers.length || 1; // Prevent division by zero
   const sharePerPerson = parseFloat((amount / activeMembers).toFixed(2));
   
-  // Initialize custom amounts when switching to custom mode or when members change
+  // Initialize the component with default equal division
+  useEffect(() => {
+    // Initialize custom amounts with equal shares immediately when component mounts
+    // or when key factors change (amount, members)
+    resetToEqual();
+    
+    // Reset to equal division whenever these key factors change
+  }, [amount, selectedMembers.length, sharePerPerson]);
+
+  // Initialize custom amounts when switching to custom mode
   useEffect(() => {
     if (isCustomDivision) {
-      // Create a new object to avoid mutations
-      const defaultAmounts: { [key: string]: number } = {};
-      selectedMembers.forEach(id => {
-        // If amount already exists, keep it, otherwise set to equal share
-        defaultAmounts[id] = customAmounts[id] !== undefined ? customAmounts[id] : sharePerPerson;
-      });
-      
-      // Only update if values actually changed to prevent loops
-      const hasChanges = selectedMembers.some(id => 
-        customAmounts[id] === undefined || customAmounts[id] !== defaultAmounts[id]
-      );
-      
-      if (hasChanges) {
-        setCustomAmounts(defaultAmounts);
+      // Only set custom amounts if they're not already set
+      const hasUnsetMembers = selectedMembers.some(id => customAmounts[id] === undefined);
+      if (hasUnsetMembers) {
+        resetToEqual();
       }
     }
-  // Removing customAmounts from dependencies to prevent loops
-  }, [isCustomDivision, selectedMembers, sharePerPerson]);
+  }, [isCustomDivision]);
   
   // Recalculate total allocated and remaining amount
   useEffect(() => {
@@ -221,160 +216,220 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
     };
   }), [groupMembers, selectedMembers, isCustomDivision, customAmounts, sharePerPerson, paidById, amount]);
 
+  // Check if this member should have autocomplete
+  const shouldShowAutocompleteForMember = (memberId: string) => {
+    if (!shouldShowAutocomplete() || !isCustomDivision) return false;
+    
+    // Find members with no custom amount set or zero amount
+    const membersWithoutAmount = selectedMembers.filter(
+      id => customAmounts[id] === undefined || customAmounts[id] === 0
+    );
+    
+    // If there's only one member without an amount, show autocomplete for it
+    if (membersWithoutAmount.length === 1) {
+      return membersWithoutAmount[0] === memberId;
+    }
+    
+    // If all members have amounts but there's still remaining amount, 
+    // show for the first member (where we'd add the remaining amount)
+    if (membersWithoutAmount.length === 0 && selectedMembers.length > 0) {
+      return selectedMembers[0] === memberId;
+    }
+    
+    return false;
+  };
+
   return (
-    <Card className="mt-4 shadow-sm">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-sm font-medium">{t('title')}</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
-              {t('subtitle')}
-            </CardDescription>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-md border">
-              <span className={`text-sm font-medium ${isCustomDivision ? 'opacity-40' : 'text-blue-600'}`}>
-                {t('equalDivision')}
-              </span>
-              <Switch
-                checked={isCustomDivision}
-                onCheckedChange={(value) => {
-                  // Usar la forma funcional para prevenir posibles loops
-                  setIsCustomDivision(value);
-                }}
-                className="mx-2"
-              />
-              <span className={`text-sm font-medium ${isCustomDivision ? 'text-blue-600' : 'opacity-40'}`}>
-                {t('customDivision')}
-              </span>
-            </div>
+    <div className="mt-4 space-y-4">
+      {/* Header section with title and mode toggle */}
+      <div className="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center px-1">
+        <div>
+          <h3 className="text-sm font-medium flex items-center gap-1.5">
+            {t('title')}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                  <InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help opacity-70" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs max-w-[200px]">{t('switchTip')}</p>
+                <TooltipContent side="top">
+                  <p className="text-xs max-w-[220px]">{t('subtitle')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          </h3>
+        </div>
+        
+        <div className="flex items-center">
+          <div className="bg-slate-50 dark:bg-slate-900 p-0.5 rounded-full shadow-sm flex items-center">
+            <button
+              onClick={() => setIsCustomDivision(false)}
+              className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+                !isCustomDivision 
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-sm font-medium'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {t('equalDivision')}
+            </button>
+            <button
+              onClick={() => setIsCustomDivision(true)}
+              className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+                isCustomDivision 
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-sm font-medium'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {t('customDivision')}
+            </button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {isCustomDivision && (
-          <div className="mb-4 bg-muted p-2 rounded-md">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-1">
-                <span className={`font-medium ${remainingAmount !== 0 ? 'text-amber-500' : 'text-green-500'}`}>
-                  {remainingAmount !== 0 
-                    ? t('remainingToAllocate') 
-                    : t('fullyAllocated')}:
-                  {' '}{remainingAmount.toFixed(2)} {currency}
-                </span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <InfoIcon className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">{t('remainingAmountTip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex gap-2">
-                <div 
-                  onClick={resetToEqual} 
-                  className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+      </div>
+      
+      {/* Custom division controls - only shown in custom mode */}
+      {isCustomDivision && (
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3">
+          <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <span className={`text-xs font-medium ${
+                remainingAmount !== 0 ? 'text-amber-500' : 'text-emerald-500'
+              }`}>
+                {remainingAmount !== 0 
+                  ? t('remainingToAllocate') 
+                  : t('fullyAllocated')}:
+                {' '}{remainingAmount.toFixed(2)} {currency}
+              </span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoIcon className="h-3 w-3 text-muted-foreground opacity-70" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs">{t('remainingAmountTip')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={resetToEqual} 
+                className="px-2 py-1 text-xs bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors shadow-sm"
+              >
+                {t('resetEqual')}
+              </button>
+              {shouldShowAutocomplete() ? (
+                <button 
+                  onClick={autocompleteLastMember} 
+                  className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-md transition-colors shadow-sm"
                 >
-                  {t('resetEqual')}
-                </div>
-                {shouldShowAutocomplete() ? (
-                  <div 
-                    onClick={autocompleteLastMember} 
-                    className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded-md transition-colors text-blue-700"
-                  >
-                    {t('autocomplete')}
-                  </div>
-                ) : remainingAmount !== 0 && (
-                  <div 
-                    onClick={distributeRemaining} 
-                    className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded-md transition-colors"
-                  >
-                    {t('distributeRemaining')}
-                  </div>
-                )}
-              </div>
+                  {t('autocomplete')}
+                </button>
+              ) : remainingAmount !== 0 && (
+                <button 
+                  onClick={distributeRemaining} 
+                  className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-md transition-colors shadow-sm"
+                >
+                  {t('distributeRemaining')}
+                </button>
+              )}
             </div>
           </div>
-        )}
-        
-        <div className="mb-2 flex justify-between items-center">
-          <div className="flex gap-2">
-            <div 
-              onClick={toggleAllMembers}
-              className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              {selectedMembers.length === groupMembers.length ? t('deselectAll') : t('selectAll')}
-            </div>
-          </div>
-          <div className="flex text-xs text-muted-foreground">
-            <span className="mr-8">{t('amount')}</span>
+        </div>
+      )}
+      
+      {/* Group members list with balances */}
+      <div className="bg-white dark:bg-slate-950 rounded-xl overflow-hidden shadow-sm">
+        {/* Members list header */}
+        <div className="bg-slate-50 dark:bg-slate-900 px-4 py-2 flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2">
+          <button 
+            onClick={toggleAllMembers}
+            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+          >
+            {selectedMembers.length === groupMembers.length ? t('deselectAll') : t('selectAll')}
+          </button>
+          <div className="flex text-xs text-slate-500 dark:text-slate-400">
+            <span className="mr-6 sm:mr-8">{t('amount')}</span>
             <span>{t('balance')}</span>
           </div>
         </div>
         
-        <ScrollArea className="h-[200px] pr-4">
-          <div className="space-y-3">
+        {/* Members list */}
+        <ScrollArea className="h-[200px] scrollbar-thin">
+          <div className="px-4 divide-y divide-slate-100 dark:divide-slate-800/50">
             {balances.map((member) => (
               <div 
                 key={member.id} 
-                className={`flex items-center justify-between p-2 rounded-md transition-colors ${
-                  selectedMembers.includes(member.id) ? 'bg-blue-50' : 'bg-white'
-                } ${member.id === paidById ? 'border border-blue-200' : ''}`}
+                className={`py-2.5 flex items-center justify-between transition-colors ${
+                  !selectedMembers.includes(member.id) ? 'opacity-60' : ''
+                }`}
               >
                 <div className="flex items-center gap-2">
-                  <ToggleButton
-                    isActive={selectedMembers.includes(member.id)}
+                  <button
                     onClick={() => toggleMemberSelection(member.id)}
-                    className="h-7 w-7"
+                    className={`h-5 w-5 flex items-center justify-center rounded-full border ${
+                      selectedMembers.includes(member.id) 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700'
+                    }`}
                   >
-                    {selectedMembers.includes(member.id) ? '✓' : ''}
-                  </ToggleButton>
-                  <Avatar className="h-8 w-8">
+                    {selectedMembers.includes(member.id) && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    )}
+                  </button>
+                  
+                  <Avatar className="h-7 w-7 border-2 border-white dark:border-slate-800 shadow-sm">
                     <AvatarImage src={member.image || ''} />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
                       {member.name?.charAt(0) || member.email?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
+                  
                   <div>
-                    <p className="text-sm font-medium">{member.name || member.email}</p>
-                    {member.id === paidById && (
-                      <p className="text-xs text-blue-600">{t('paidTheBill')}</p>
-                    )}
+                    <p className="text-xs font-medium truncate max-w-[90px] sm:max-w-[120px]">
+                      {member.name || member.email}
+                      {member.id === paidById && (
+                        <span className="ml-1.5 inline-flex items-center text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded-full">
+                          {t('paidTheBill')}
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {isCustomDivision && (
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={customAmounts[member.id] !== undefined ? customAmounts[member.id] : sharePerPerson}
-                      onChange={(e) => handleCustomAmountChange(member.id, e.target.value)}
-                      className={`w-20 text-right border rounded-md p-1 ${
-                        !selectedMembers.includes(member.id) ? 'opacity-50' : ''
-                      }`}
-                      disabled={!selectedMembers.includes(member.id)}
-                    />
-                  )}
-                  {!isCustomDivision && (
-                    <span className="w-20 text-right text-sm">
+                
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {isCustomDivision ? (
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={customAmounts[member.id] !== undefined ? customAmounts[member.id] : sharePerPerson}
+                        onChange={(e) => handleCustomAmountChange(member.id, e.target.value)}
+                        className={`w-16 sm:w-20 text-right border rounded-md p-1 text-xs ${
+                          !selectedMembers.includes(member.id) ? 'opacity-50' : ''
+                        } bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-500 outline-none`}
+                        disabled={!selectedMembers.includes(member.id)}
+                      />
+                      
+                      {shouldShowAutocompleteForMember(member.id) && (
+                        <button 
+                          onClick={autocompleteLastMember} 
+                          className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-700 dark:text-blue-400 rounded-md"
+                          title={t('autocomplete')}
+                        >
+                          <span className="hidden sm:inline">{t('autocomplete')}</span>
+                          <span className="sm:hidden">Auto</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="w-16 sm:w-20 text-right text-xs">
                       {sharePerPerson.toFixed(2)} {currency}
                     </span>
                   )}
-                  <span className={`w-20 text-sm font-medium ${
-                    member.balance > 0 ? 'text-green-600' : member.balance < 0 ? 'text-red-600' : 'text-gray-400'
+                  
+                  <span className={`w-16 sm:w-20 text-xs font-medium ${
+                    member.balance > 0 ? 'text-emerald-600 dark:text-emerald-400' : 
+                    member.balance < 0 ? 'text-rose-600 dark:text-rose-400' : 
+                    'text-slate-400 dark:text-slate-500'
                   }`}>
                     {member.balance > 0 ? '+' : ''}{member.balance.toFixed(2)} {currency}
                   </span>
@@ -383,25 +438,19 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
             ))}
           </div>
         </ScrollArea>
-        <div className="mt-4 pt-3 border-t flex justify-between items-center">
-          <div className="text-sm font-medium">
+        
+        {/* Footer summary */}
+        <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 px-4 py-2.5 flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2">
+          <div className="text-xs font-medium">
             {isCustomDivision 
               ? t('totalAmount') 
               : t('eachPersonPays')}: {isCustomDivision ? amount.toFixed(2) : sharePerPerson.toFixed(2)} {currency}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             {selectedMembers.length} {t('membersSelected')}
           </div>
-          {shouldShowAutocomplete() && (
-            <div 
-              onClick={autocompleteLastMember} 
-              className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded-md transition-colors text-blue-700"
-            >
-              {t('autocomplete')}
-            </div>
-          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 } 
