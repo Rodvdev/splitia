@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { Control } from 'react-hook-form';
 import { fetchUserGroups, fetchCategories } from '@/lib/graphql-client';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { ExpenseBalancePreview } from './ExpenseBalancePreview';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -187,6 +188,11 @@ export function ExpenseForm({
   // Watch the fields for settlement functionality
   const isSettlement = form.watch('isSettlement');
   const settlementType = form.watch('settlementType');
+  
+  // Watch amount and currency for the preview
+  const amount = form.watch('amount');
+  const currency = form.watch('currency');
+  const selectedPaidById = form.watch('paidById');
   
   // Fetch user groups when component mounts or when isGroupExpense becomes true
   React.useEffect(() => {
@@ -655,6 +661,16 @@ export function ExpenseForm({
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+            )}
+
+            {/* Show balance preview when it's a group expense and we have all required data */}
+            {isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && amount && currency && groupMembers.length > 0 && (
+              <ExpenseBalancePreview
+                amount={amount}
+                currency={currency}
+                groupMembers={groupMembers}
+                paidById={selectedPaidById}
               />
             )}
           </div>
