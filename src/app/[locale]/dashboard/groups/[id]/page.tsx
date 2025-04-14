@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
 import {
@@ -98,7 +98,7 @@ export default function GroupPage() {
   const [balanceSummary, setBalanceSummary] = useState<GroupBalanceSummary | null>(null);
   
   // Function to load balances
-  const loadBalances = async () => {
+  const loadBalances = useCallback(async () => {
     try {
       const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
       if (balancesResponse?.groupBalances) {
@@ -109,7 +109,7 @@ export default function GroupPage() {
       console.error('Failed to load balances:', error);
       toast.error(t('errors.balancesFetchFailed'));
     }
-  };
+  }, [groupId, t]);
 
   // Fetch group data when component mounts
   useEffect(() => {
@@ -136,7 +136,7 @@ export default function GroupPage() {
     };
     
     loadGroup();
-  }, [groupId, t]);
+  }, [groupId, t, loadBalances]);
 
   // Fetch current user ID when component mounts
   useEffect(() => {
