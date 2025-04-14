@@ -227,6 +227,16 @@
         "submit": "Guardar Gasto",
         "submitting": "Guardando...",
         "cancel": "Cancelar"
+      },
+      "balancePreview": {
+        "title": "Vista previa del balance",
+        "eachPersonPays": "Cada persona paga",
+        "paidTheBill": "Pagó la cuenta"
+      },
+      "splitWithGroup": {
+        "label": "Dividir con un grupo",
+        "description": "Divide el gasto equitativamente entre los miembros del grupo",
+        "active": "Activo"
       }
     },
     "details": {

@@ -226,6 +226,16 @@
         "submitting": "Saving...",
         "cancel": "Cancel",
         "update": "Update Expense"
+      },
+      "balancePreview": {
+        "title": "Balance Preview",
+        "eachPersonPays": "Each person pays",
+        "paidTheBill": "Paid the bill"
+      },
+      "splitWithGroup": {
+        "label": "Split with a group",
+        "description": "Divide the expense equally among group members",
+        "active": "Active"
       }
     }
   },

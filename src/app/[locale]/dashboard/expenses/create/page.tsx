@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
@@ -9,7 +9,27 @@ import { ExpenseForm } from '../_components/ExpenseForm';
 import { toast } from 'sonner';
 import { createExpense } from '@/lib/graphql-client';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
-import React from 'react';
+
+// Store para mantener el estado de la página entre navegaciones
+const createGlobalState = () => {
+  let data: Partial<ExpenseFormData> | null = null;
+  const listeners = new Set<(data: Partial<ExpenseFormData> | null) => void>();
+
+  return {
+    getState: () => data,
+    setState: (newData: Partial<ExpenseFormData> | null) => {
+      data = newData;
+      listeners.forEach((listener) => listener(data));
+    },
+    subscribe: (listener: (data: Partial<ExpenseFormData> | null) => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    }
+  };
+};
+
+// Crear una instancia global que sobrevive a la navegación
+const globalFormState = createGlobalState();
 
 // Define the expense form data type
 interface ExpenseFormData {
@@ -17,7 +37,7 @@ interface ExpenseFormData {
   amount: number;
   currency: string;
   date: Date;
-  category: string; // Now this will be the category ID, not the name
+  category: string;
   location?: string;
   notes?: string;
   isPaid: boolean;
@@ -26,39 +46,23 @@ interface ExpenseFormData {
   paidById?: string;
 }
 
-// Separate client component that uses useSearchParams - Wrapped in a memo to prevent re-renders
-const ExpenseFormContainer = React.memo(function ExpenseFormContainerMemo() {
+// Memorizar el componente para evitar re-renders
+const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
   const searchParams = useSearchParams();
   const t = useTranslations('expenses');
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { profile, isLoading } = useUserProfile();
+  const [initialData, setInitialData] = useState(() => globalFormState.getState());
   const initializedRef = useRef(false);
-  const [initialData, setInitialData] = useState<Partial<ExpenseFormData> | null>(() => {
-    // Try to retrieve form data from localStorage on mount
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('expense_form_data');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.date) {
-            parsed.date = new Date(parsed.date);
-          }
-          return parsed;
-        } catch (e) {
-          console.error('Error parsing saved form data:', e);
-        }
-      }
-    }
-    return null;
-  });
 
-  // Initialize form data only once
+  // Solo actualizar los datos iniciales si no existen
   useEffect(() => {
     if (!initializedRef.current && profile && !initialData) {
       initializedRef.current = true;
-      
       const groupId = searchParams?.get('groupId');
+      
+      // Crear datos iniciales solo una vez
       const formData = {
         currency: profile.currency || 'USD',
         paidById: profile.id,
@@ -67,11 +71,32 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainerMemo() {
         date: new Date()
       };
       
-      // Save to localStorage to persist across tab changes
-      localStorage.setItem('expense_form_data', JSON.stringify(formData));
+      // Guardar en el estado global para persistencia entre navegaciones
+      globalFormState.setState(formData);
       setInitialData(formData);
+      
+      // También guardar en localStorage como respaldo
+      localStorage.setItem('expense_form_data', JSON.stringify({
+        ...formData,
+        date: formData.date.toISOString()
+      }));
+    } else if (!initialData && !isLoading) {
+      // Intentar recuperar de localStorage si no hay datos en el estado global
+      const savedData = localStorage.getItem('expense_form_data');
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          if (parsedData.date) {
+            parsedData.date = new Date(parsedData.date);
+          }
+          globalFormState.setState(parsedData);
+          setInitialData(parsedData);
+        } catch (e) {
+          console.error('Error parsing saved form data:', e);
+        }
+      }
     }
-  }, [profile, searchParams, initialData]);
+  }, [profile, searchParams, initialData, isLoading]);
   
   // Handle form submission with GraphQL
   const handleSubmit = async (data: ExpenseFormData) => {
@@ -81,14 +106,12 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainerMemo() {
       // Map form data to GraphQL input format
       const expenseInput = {
         amount: data.amount,
-        description: data.title, // Map title to description
+        description: data.title,
         date: data.date,
-        // Only include categoryId if it's a valid ID (not a string like "Food" from fallback)
         ...(data.category && data.category.length > 8 && { categoryId: data.category }),
         currency: data.currency,
         location: data.location || undefined,
         notes: data.notes || undefined,
-        // If it's a group expense and a group is selected, include the groupId
         groupId: data.isGroupExpense && data.groupId && data.groupId !== 'new' 
           ? data.groupId 
           : undefined,
@@ -98,15 +121,15 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainerMemo() {
       // Call the GraphQL API to create the expense
       await createExpense(expenseInput);
       
-      // Clear saved form data after successful submission
+      // Limpiar el estado global y localStorage después de enviar
+      globalFormState.setState(null);
       localStorage.removeItem('expense_form_data');
       
       // Show success message
       toast.success(t('notifications.createSuccess'));
       
-      // Redirect back to expenses list or the group page if creating from there
+      // Redirect based on groupId
       if (data.isGroupExpense && data.groupId && data.groupId !== 'new') {
-        // Check if we need to call the onExpenseCreated callback
         const storedGroupId = localStorage.getItem('onExpenseCreatedCallback');
         if (storedGroupId === data.groupId) {
           localStorage.removeItem('onExpenseCreatedCallback');
@@ -124,19 +147,21 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainerMemo() {
   };
   
   const handleCancel = () => {
-    // Clear saved form data when cancelling
+    // Limpiar el estado global y localStorage al cancelar
+    globalFormState.setState(null);
     localStorage.removeItem('expense_form_data');
     router.back();
   };
   
-  // Show loading state while currency is being loaded
-  if (isLoading || !initialData) {
+  // Mostrar el loader solo durante la carga inicial
+  if (!initialData && isLoading) {
     return <div className="p-6 flex justify-center">Loading...</div>;
   }
   
   return (
     <ExpenseForm
-      initialData={initialData}
+      key="expense-form" // Usar una key estable
+      initialData={initialData || {}}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       isSubmitting={isSubmitting}
@@ -144,12 +169,12 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainerMemo() {
   );
 });
 
-// Use a stable key to prevent re-mounting of the form container
 export default function CreateExpensePage() {
   const t = useTranslations('expenses');
   const router = useRouter();
   
   const handleCancel = () => {
+    globalFormState.setState(null);
     localStorage.removeItem('expense_form_data');
     router.back();
   };
@@ -170,7 +195,6 @@ export default function CreateExpensePage() {
       
       <div className="bg-card border rounded-lg p-6">
         <Suspense fallback={<div>Loading...</div>}>
-          {/* Key is stable, preventing remounts */}
           <ExpenseFormContainer />
         </Suspense>
       </div>

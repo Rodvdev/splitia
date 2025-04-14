@@ -223,6 +223,16 @@
         "submit": "Salvar Despesa",
         "submitting": "Salvando...",
         "cancel": "Cancelar"
+      },
+      "balancePreview": {
+        "title": "Prévia do Saldo",
+        "eachPersonPays": "Cada pessoa paga",
+        "paidTheBill": "Pagou a conta"
+      },
+      "splitWithGroup": {
+        "label": "Dividir com um grupo",
+        "description": "Divide a despesa igualmente entre os membros do grupo",
+        "active": "Ativo"
       }
     },
     "details": {
