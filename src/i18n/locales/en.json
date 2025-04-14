@@ -186,7 +186,8 @@
       },
       "currency": {
         "label": "Currency",
-        "placeholder": "Select currency"
+        "placeholder": "Select currency",
+        "more": "More currencies..."
       },
       "date": {
         "label": "Date",
@@ -228,14 +229,28 @@
         "update": "Update Expense"
       },
       "balancePreview": {
-        "title": "Balance Preview",
+        "title": "Balance preview",
         "eachPersonPays": "Each person pays",
-        "paidTheBill": "Paid the bill"
+        "paidTheBill": "Paid the bill",
+        "selectGroupToSeePreview": "Select a group to see balance preview"
       },
       "splitWithGroup": {
-        "label": "Split with a group",
-        "description": "Divide the expense equally among group members",
+        "label": "Split with group",
+        "description": "Split the expense equally among group members",
         "active": "Active"
+      },
+      "whoPaid": {
+        "label": "Who paid?",
+        "placeholder": "Select who paid",
+        "loadingMembers": "Loading members...",
+        "noMembersFound": "No available members found. Assistants are excluded from payment options.",
+        "selectGroupWithMembers": "Select a group with members to see balance preview"
+      },
+      "group": {
+        "label": "Group",
+        "placeholder": "Select a group to split with",
+        "loadingGroups": "Loading groups...",
+        "createNewGroup": "+ Create New Group"
       }
     }
   },

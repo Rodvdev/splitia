@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import { Control } from 'react-hook-form';
 import { fetchUserGroups, fetchCategories } from '@/lib/graphql-client';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { ExpenseBalancePreview } from './ExpenseBalancePreview';
+import { useCurrencyPreference } from '@/lib/hooks/useCurrencyPreference';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Define form schema
 const formSchema = z.object({
@@ -131,23 +133,30 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
   const t = useTranslations('expenses.form');
   const [groups, setGroups] = React.useState<Group[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = React.useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = React.useState(true);
   const [groupMembers, setGroupMembers] = React.useState<User[]>([]);
-  const [isLoadingGroups, setIsLoadingGroups] = React.useState(false);
-  const [isLoadingCategories, setIsLoadingCategories] = React.useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = React.useState(false);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
   
   // use profile in a way that doesn't cause re-renders
-  const profileRef = React.useRef<{
-    id: string;
-    name?: string;
-    email?: string;
-    currency?: string;
-  } | null>(null);
+  const profileRef = useRef<User | null>(null);
   const { profile } = useUserProfile();
   if (profile) {
     profileRef.current = profile;
   }
+  const { currency: preferredCurrency } = useCurrencyPreference();
+  
+  // Asegurarnos de usar la moneda del perfil como prioridad para que coincida con la del UserProfileDisplay 
+  const defaultCurrency = initialData?.currency || preferredCurrency || profile?.currency || 'USD';
+  
+  // Registro para diagnosticar qué moneda se está utilizando
+  React.useEffect(() => {
+    console.log('Profile currency:', profile?.currency);
+    console.log('Preferred currency:', preferredCurrency);
+    console.log('Initial currency:', initialData?.currency);
+    console.log('Default currency selected:', defaultCurrency);
+  }, [profile, preferredCurrency, initialData, defaultCurrency]);
   
   // Initialize form with React Hook Form
   const form = useForm<FormValues>({
@@ -155,7 +164,7 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
     defaultValues: {
       title: initialData?.title || '',
       amount: initialData?.amount || 0,
-      currency: initialData?.currency || 'USD',
+      currency: defaultCurrency,
       date: initialData?.date || new Date(),
       category: initialData?.category || '',
       location: initialData?.location || '',
@@ -170,6 +179,18 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
       settledWithUserId: initialData?.settledWithUserId || '',
     },
   });
+
+  // Actualiza la moneda cuando se carga el perfil o cambia la preferencia
+  React.useEffect(() => {
+    // Si tenemos una moneda de perfil, usarla siempre que sea posible
+    if (profile?.currency && profile.currency !== form.getValues('currency')) {
+      console.log('Actualizando moneda a la del perfil:', profile.currency);
+      form.setValue('currency', profile.currency);
+    } else if (!profile?.currency && preferredCurrency && preferredCurrency !== form.getValues('currency')) {
+      console.log('Actualizando moneda a la preferida:', preferredCurrency);
+      form.setValue('currency', preferredCurrency);
+    }
+  }, [profile, preferredCurrency, form]);
 
   // Apply form values only on mount, not on every render
   const formValuesApplied = React.useRef(false);
@@ -391,7 +412,7 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                             {currency}
                           </SelectItem>
                         ))}
-                        <SelectItem value="more">More currencies...</SelectItem>
+                        <SelectItem value="more">{t('currency.more')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -505,12 +526,12 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                 <FormItem>
                   <div className="flex items-center space-x-2 mb-2">
                     <Users className="h-4 w-4" />
-                    <FormLabel className="font-medium">Who paid?</FormLabel>
+                    <FormLabel className="font-medium">{t('whoPaid.label')}</FormLabel>
                   </div>
                   
                   {isLoadingMembers ? (
                     <div className="flex items-center justify-center p-3 border rounded-md">
-                      <span className="text-sm text-muted-foreground">Loading members...</span>
+                      <span className="text-sm text-muted-foreground">{t('whoPaid.loadingMembers')}</span>
                     </div>
                   ) : isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && groupMembers.length > 0 ? (
                     <Select
@@ -559,90 +580,122 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
               )}
             />
 
-            {/* Group Expense Toggle + Selection */}
-            {initialData?.isGroupExpense || initialData?.groupId ? (
-              <div className="space-y-3">
+            {/* Group Expense Toggle */}
+            <FormField
+              control={form.control as FormControlType}
+              name="isGroupExpense"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-4 w-4" />
+                      <FormLabel className="font-medium">{t('isGroupExpense.label')}</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {/* Show balance preview immediately after the Group Expense toggle and "Who paid" if there's an amount */}
+            {isGroupExpense && amount > 0 && currency && (
+              <>
+                {/* Who paid is now moved right above the balance preview for better context */}
                 <FormField
                   control={form.control as FormControlType}
-                  name="groupId"
+                  name="paidById"
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center space-x-2 mb-2">
                         <Users className="h-4 w-4" />
-                        <FormLabel className="font-medium">Group Expense</FormLabel>
+                        <FormLabel className="font-medium">{t('whoPaid.label')}</FormLabel>
                       </div>
                       
-                      {isLoadingGroups ? (
+                      {isLoadingMembers ? (
                         <div className="flex items-center justify-center p-3 border rounded-md">
-                          <span className="text-sm text-muted-foreground">Loading groups...</span>
+                          <span className="text-sm text-muted-foreground">{t('whoPaid.loadingMembers')}</span>
                         </div>
-                      ) : groups.length > 0 ? (
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value || groupId || ''}
+                      ) : isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && groupMembers.length > 0 ? (
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
                           value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="bg-white">
-                              <SelectValue placeholder="Select a group to split with" />
+                              <SelectValue placeholder="Select who paid" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-white">
-                            {groups.map((group) => (
-                              <SelectItem key={group.id} value={group.id}>
-                                {group.name}
+                            {groupMembers.map((member) => (
+                              <SelectItem 
+                                key={member.id} 
+                                value={member.id}
+                                className="flex items-center"
+                              >
+                                <div className="flex items-center gap-2">
+                                  {member.name || member.email}
+                                  {member.id === profileRef.current?.id && (
+                                    <span className="text-xs text-muted-foreground ml-1">(you)</span>
+                                  )}
+                                </div>
                               </SelectItem>
                             ))}
-                            <SelectItem value="new">+ Create New Group</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Button type="button" onClick={() => field.onChange('new')} variant="outline" className="w-full">
-                          + Create New Group
-                        </Button>
+                        <Input 
+                          type="text"
+                          value={profileRef.current?.name ?? 'You'}
+                          onChange={() => {}}
+                          disabled
+                          className="bg-muted"
+                        />
+                      )}
+                      {isGroupExpense && groupMembers.length === 0 && !isLoadingMembers && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          No available members found. Assistants are excluded from payment options.
+                        </div>
                       )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-            ) : (
-              <FormField
-                control={form.control as FormControlType}
-                name="isGroupExpense"
-                render={({ field }) => (
-                  <FormItem className="p-5 border rounded-md hover:bg-accent/40 transition-colors relative">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-primary/10 p-2 rounded-full">
-                          <Users className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <FormLabel className="font-medium text-base cursor-pointer">Split with a group</FormLabel>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Divide the expense equally among group members
-                          </p>
-                        </div>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="h-6 w-12 border-2 border-muted-foreground/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"
-                        />
-                      </FormControl>
-                    </div>
-                    {field.value && (
-                      <div className="absolute -top-2 -right-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
-                        Active
-                      </div>
-                    )}
-                  </FormItem>
+                
+                {/* Balance preview - show as soon as we have an amount, even if not all group details are selected */}
+                {groupMembers.length > 0 ? (
+                  <ExpenseBalancePreview
+                    amount={amount}
+                    currency={currency}
+                    groupMembers={groupMembers}
+                    paidById={selectedPaidById}
+                  />
+                ) : selectedGroupId && selectedGroupId !== 'new' ? (
+                  <Card className="mt-4">
+                    <CardContent className="flex items-center justify-center p-6">
+                      <p className="text-sm text-muted-foreground">
+                        {isLoadingMembers ? 'Loading members...' : 'Select a group with members to see balance preview'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="mt-4">
+                    <CardContent className="flex items-center justify-center p-6">
+                      <p className="text-sm text-muted-foreground">
+                        {t('selectGroupToSeePreview')}
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
-              />
+              </>
             )}
 
-            {/* Group Selection - Only show when isGroupExpense is true and not pre-selected */}
+            {/* Move the original group selection to here but keep the original logic */}
             {isGroupExpense && !initialData?.groupId && (
               <FormField
                 control={form.control as FormControlType}
@@ -681,16 +734,6 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                     <FormMessage />
                   </FormItem>
                 )}
-              />
-            )}
-
-            {/* Show balance preview when it's a group expense and we have all required data */}
-            {isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && amount && currency && groupMembers.length > 0 && (
-              <ExpenseBalancePreview
-                amount={amount}
-                currency={currency}
-                groupMembers={groupMembers}
-                paidById={selectedPaidById}
               />
             )}
           </div>

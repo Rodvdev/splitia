@@ -69,7 +69,7 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
           const data = await response.json();
           if (data.user) {
             setUserName(data.user.name || userName);
-            setUserCurrency(data.user.currency || 'PEN');
+            setUserCurrency(data.user.currency || 'USD');
             setUserLanguage(data.user.language || 'es');
           }
         }

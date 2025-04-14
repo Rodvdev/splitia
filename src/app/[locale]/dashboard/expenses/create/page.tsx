@@ -9,6 +9,7 @@ import { ExpenseForm } from '../_components/ExpenseForm';
 import { toast } from 'sonner';
 import { createExpense } from '@/lib/graphql-client';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useCurrencyPreference } from '@/lib/hooks/useCurrencyPreference';
 
 // Store para mantener el estado de la página entre navegaciones
 const createGlobalState = () => {
@@ -52,24 +53,30 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
   const t = useTranslations('expenses');
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { profile, isLoading } = useUserProfile();
+  const { profile, isLoading: isProfileLoading } = useUserProfile();
+  const { currency, isLoading: isCurrencyLoading } = useCurrencyPreference();
   const [initialData, setInitialData] = useState(() => globalFormState.getState());
   const initializedRef = useRef(false);
 
   // Solo actualizar los datos iniciales si no existen
   useEffect(() => {
-    if (!initializedRef.current && profile && !initialData) {
+    if (!initializedRef.current && !initialData) {
       initializedRef.current = true;
+      
       const groupId = searchParams?.get('groupId');
       
-      // Crear datos iniciales solo una vez
+      // Asegurar que usamos la moneda del perfil como prioridad
+      const userCurrency = profile?.currency || currency || 'USD';
+      
       const formData = {
-        currency: profile.currency || 'USD',
-        paidById: profile.id,
+        currency: userCurrency,
+        paidById: profile?.id || '',
         isGroupExpense: !!groupId,
         groupId: groupId || undefined,
         date: new Date()
       };
+      
+      console.log('Inicializando formulario con moneda:', userCurrency);
       
       // Guardar en el estado global para persistencia entre navegaciones
       globalFormState.setState(formData);
@@ -80,7 +87,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
         ...formData,
         date: formData.date.toISOString()
       }));
-    } else if (!initialData && !isLoading) {
+    } else if (!initialData && !isProfileLoading && !isCurrencyLoading) {
       // Intentar recuperar de localStorage si no hay datos en el estado global
       const savedData = localStorage.getItem('expense_form_data');
       if (savedData) {
@@ -94,9 +101,23 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
         } catch (e) {
           console.error('Error parsing saved form data:', e);
         }
+      } else {
+        // Si no hay datos guardados, al menos inicializar con la moneda preferida
+        const userCurrency = profile?.currency || currency || 'USD';
+        
+        const formData = {
+          currency: userCurrency,
+          paidById: profile?.id || '',
+          date: new Date()
+        };
+        
+        console.log('Inicializando formulario sin localStorage con moneda:', userCurrency);
+        
+        globalFormState.setState(formData);
+        setInitialData(formData);
       }
     }
-  }, [profile, searchParams, initialData, isLoading]);
+  }, [profile, searchParams, initialData, currency, isProfileLoading, isCurrencyLoading]);
   
   // Handle form submission with GraphQL
   const handleSubmit = async (data: ExpenseFormData) => {
@@ -154,7 +175,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
   };
   
   // Mostrar el loader solo durante la carga inicial
-  if (!initialData && isLoading) {
+  if (!initialData && (isProfileLoading || isCurrencyLoading)) {
     return <div className="p-6 flex justify-center">Loading...</div>;
   }
   

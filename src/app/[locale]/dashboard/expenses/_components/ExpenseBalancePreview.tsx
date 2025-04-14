@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
-
+import { useTranslations } from 'next-intl';
 
 interface BalancePreviewProps {
   amount: number;
@@ -12,8 +12,9 @@ interface BalancePreviewProps {
   paidById?: string;
 }
 
-
 export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById }: BalancePreviewProps) {
+  const t = useTranslations('expenses.form.balancePreview');
+  
   // Calculate share per person
   const activeMembers = groupMembers.length;
   const sharePerPerson = amount / activeMembers;
@@ -36,7 +37,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   return (
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">Balance Preview</CardTitle>
+        <CardTitle className="text-sm font-medium">{t('title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[200px] pr-4">
@@ -53,7 +54,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                   <div>
                     <p className="text-sm font-medium">{member.name || member.email}</p>
                     {member.id === paidById && (
-                      <p className="text-xs text-muted-foreground">Paid the bill</p>
+                      <p className="text-xs text-muted-foreground">{t('paidTheBill')}</p>
                     )}
                   </div>
                 </div>
@@ -66,7 +67,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
         </ScrollArea>
         <div className="mt-4 pt-4 border-t">
           <div className="text-sm text-muted-foreground">
-            Each person pays: {sharePerPerson.toFixed(2)} {currency}
+            {t('eachPersonPays')}: {sharePerPerson.toFixed(2)} {currency}
           </div>
         </div>
       </CardContent>

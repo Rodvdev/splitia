@@ -184,7 +184,8 @@
       },
       "currency": {
         "label": "Moeda",
-        "placeholder": "Selecionar moeda"
+        "placeholder": "Selecionar moeda",
+        "more": "Mais moedas..."
       },
       "date": {
         "label": "Data",
@@ -205,34 +206,49 @@
       "location": {
         "label": "Localização",
         "placeholder": "Onde ocorreu esta despesa?",
-        "description": "Opcional: Adicione um local para esta despesa"
+        "description": "Opcional: Adicione uma localização para esta despesa"
       },
       "notes": {
         "label": "Notas",
         "placeholder": "Adicione quaisquer detalhes adicionais sobre esta despesa"
       },
       "isPaid": {
-        "label": "Marcar como Paga",
+        "label": "Marcar como Pago",
         "description": "Ative se esta despesa já foi paga"
       },
       "isGroupExpense": {
         "label": "Despesa em Grupo",
-        "description": "Esta é uma despesa para ser dividida com outros?"
+        "description": "Esta é uma despesa para dividir com outros?"
       },
       "actions": {
         "submit": "Salvar Despesa",
         "submitting": "Salvando...",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "update": "Atualizar Despesa"
       },
       "balancePreview": {
-        "title": "Prévia do Saldo",
+        "title": "Prévia do saldo",
         "eachPersonPays": "Cada pessoa paga",
-        "paidTheBill": "Pagou a conta"
+        "paidTheBill": "Pagou a conta",
+        "selectGroupToSeePreview": "Selecione um grupo para ver a prévia do saldo"
       },
       "splitWithGroup": {
-        "label": "Dividir com um grupo",
+        "label": "Dividir com grupo",
         "description": "Divide a despesa igualmente entre os membros do grupo",
         "active": "Ativo"
+      },
+      "whoPaid": {
+        "label": "Quem pagou?",
+        "placeholder": "Selecione quem pagou",
+        "loadingMembers": "Carregando membros...",
+        "noMembersFound": "Nenhum membro disponível encontrado. Assistentes são excluídos das opções de pagamento.",
+        "selectGroupWithMembers": "Selecione um grupo com membros para ver a prévia do saldo"
+      },
+      "group": {
+        "label": "Grupo",
+        "placeholder": "Selecione um grupo para dividir",
+        "loadingGroups": "Carregando grupos...",
+        "createNewGroup": "+ Criar Novo Grupo"
       }
     },
     "details": {

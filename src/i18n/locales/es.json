@@ -188,7 +188,8 @@
       },
       "currency": {
         "label": "Moneda",
-        "placeholder": "Seleccionar moneda"
+        "placeholder": "Seleccionar moneda",
+        "more": "Más monedas..."
       },
       "date": {
         "label": "Fecha",
@@ -226,17 +227,32 @@
       "actions": {
         "submit": "Guardar Gasto",
         "submitting": "Guardando...",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "update": "Actualizar Gasto"
       },
       "balancePreview": {
         "title": "Vista previa del balance",
         "eachPersonPays": "Cada persona paga",
-        "paidTheBill": "Pagó la cuenta"
+        "paidTheBill": "Pagó la cuenta",
+        "selectGroupToSeePreview": "Selecciona un grupo para ver la vista previa del balance"
       },
       "splitWithGroup": {
         "label": "Dividir con un grupo",
         "description": "Divide el gasto equitativamente entre los miembros del grupo",
         "active": "Activo"
+      },
+      "whoPaid": {
+        "label": "¿Quién pagó?",
+        "placeholder": "Selecciona quién pagó",
+        "loadingMembers": "Cargando miembros...",
+        "noMembersFound": "No se encontraron miembros disponibles. Los asistentes están excluidos de las opciones de pago.",
+        "selectGroupWithMembers": "Selecciona un grupo con miembros para ver la vista previa del balance"
+      },
+      "group": {
+        "label": "Grupo",
+        "placeholder": "Selecciona un grupo para dividir",
+        "loadingGroups": "Cargando grupos...",
+        "createNewGroup": "+ Crear Nuevo Grupo"
       }
     },
     "details": {
