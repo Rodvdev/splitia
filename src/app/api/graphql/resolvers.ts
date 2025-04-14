@@ -2724,7 +2724,7 @@ export const resolvers = {
     },
     
     // Update settlement status
-    updateSettlementStatus: async (_parent: unknown, args: { id: string; status: SettlementStatus }, context: Context) => {
+    updateSettlementStatus: async (_parent: unknown, { settlementId, status }: { settlementId: string; status: SettlementStatus }, context: Context) => {
       try {
         const session = await getServerSession(context);
         
@@ -2751,7 +2751,7 @@ export const resolvers = {
 
         // Get the settlement
         const settlement = await prisma.settlement.findUnique({
-          where: { id: args.id },
+          where: { id: settlementId },
         });
 
         if (!settlement) {
@@ -2761,14 +2761,14 @@ export const resolvers = {
         }
 
         // Only the recipient (toUser) can mark a settlement as COMPLETED
-        if (args.status === SettlementStatus.COMPLETED && settlement.settledWithUserId !== userId) {
+        if (status === SettlementStatus.COMPLETED && settlement.settledWithUserId !== userId) {
           throw new GraphQLError('Only the recipient can mark a settlement as completed', {
             extensions: { code: 'FORBIDDEN' },
           });
         }
 
         // Only the sender (fromUser) can mark a settlement as CANCELLED
-        if (args.status === SettlementStatus.CANCELLED && settlement.initiatedById !== userId) {
+        if (status === SettlementStatus.CANCELLED && settlement.initiatedById !== userId) {
           throw new GraphQLError('Only the sender can cancel a settlement', {
             extensions: { code: 'FORBIDDEN' },
           });
@@ -2776,14 +2776,14 @@ export const resolvers = {
 
         // Update the settlement status
         const updatedSettlement = await prisma.settlement.update({
-          where: { id: args.id },
+          where: { id: settlementId },
           data: { 
             // Convert enum to string literals that match Prisma's expected values
-            settlementStatus: args.status === SettlementStatus.PENDING ? 'PENDING' :
-                             args.status === SettlementStatus.PENDING_CONFIRMATION ? 'PENDING_CONFIRMATION' :
-                             args.status === SettlementStatus.CONFIRMED ? 'CONFIRMED' :
-                             args.status === SettlementStatus.COMPLETED ? 'COMPLETED' :
-                             args.status === SettlementStatus.CANCELLED ? 'CANCELLED' : 'PENDING'
+            settlementStatus: status === SettlementStatus.PENDING ? 'PENDING' :
+                             status === SettlementStatus.PENDING_CONFIRMATION ? 'PENDING_CONFIRMATION' :
+                             status === SettlementStatus.CONFIRMED ? 'CONFIRMED' :
+                             status === SettlementStatus.COMPLETED ? 'COMPLETED' :
+                             status === SettlementStatus.CANCELLED ? 'CANCELLED' : 'PENDING'
           },
           include: {
             initiatedBy: true,
@@ -2792,11 +2792,7 @@ export const resolvers = {
           },
         });
 
-        return {
-          success: true,
-          message: `Settlement ${args.status.toLowerCase()} successfully`,
-          settlement: updatedSettlement,
-        };
+        return updatedSettlement;
       } catch (error: unknown) {
         console.error('Error updating settlement status:', error);
         if (error instanceof GraphQLError) {

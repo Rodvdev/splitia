@@ -938,9 +938,14 @@ export async function createSettlement(data: {
 
   // Format the date as ISO string and rename settledWithUserId to toUserId
   const formattedData = {
-    ...data,
+    amount: data.amount,
+    currency: data.currency,
+    description: data.description,
+    date: data.date instanceof Date ? data.date.toISOString() : data.date,
+    groupId: data.groupId,
     toUserId: data.settledWithUserId,
-    date: data.date instanceof Date ? data.date.toISOString() : data.date
+    settlementType: data.settlementType,
+    settlementStatus: data.settlementStatus
   };
 
   try {
@@ -960,6 +965,23 @@ export async function updateSettlementStatus(settlementId: string, status: 'PEND
       updateSettlementStatus(settlementId: $settlementId, status: $status) {
         id
         settlementStatus
+        settlementType
+        amount
+        currency
+        date
+        description
+        initiatedBy {
+          id
+          name
+        }
+        settledWithUser {
+          id
+          name
+        }
+        group {
+          id
+          name
+        }
       }
     }
   `;
