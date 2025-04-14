@@ -144,7 +144,7 @@ export function ExpenseForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || '',
-      amount: initialData?.amount || undefined,
+      amount: initialData?.amount || 0,
       currency: initialData?.currency || profile?.currency || 'USD',
       date: initialData?.date || new Date(),
       category: initialData?.category || '',
@@ -362,7 +362,11 @@ export function ExpenseForm({
                         step="0.01" 
                         placeholder={t('amount.label')}
                         className="text-xl h-12"
-                        {...field} 
+                        value={field.value || ''}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
