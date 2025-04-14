@@ -110,10 +110,13 @@ interface ExpenseInput {
 
 interface SettlementInput {
   amount: number;
+  currency: string;
   description?: string;
+  date: string | Date;
   groupId: string;
   toUserId: string;
-  type?: SettlementType;
+  settlementType: SettlementType;
+  settlementStatus: SettlementStatus;
 }
 
 interface SettlementData {
@@ -1128,12 +1131,15 @@ export const resolvers = {
           description: data.description,
           groupId: data.groupId!,
           toUserId: data.settledWithUserId,
-          type: data.settlementType || SettlementType.PAYMENT,
+          settlementType: data.settlementType || SettlementType.PAYMENT,
+          settlementStatus: data.settlementStatus || SettlementStatus.PENDING,
+          currency: data.currency,
+          date: data.date
         };
         
         const settlement = await resolvers.Mutation.createSettlement(
           _parent, 
-          settlementInput, 
+          { data: settlementInput },
           context
         );
         
@@ -2638,7 +2644,7 @@ export const resolvers = {
     },
 
     // Create a new settlement
-    createSettlement: async (_parent: unknown, args: SettlementInput, context: Context) => {
+    createSettlement: async (_parent: unknown, args: { data: SettlementInput }, context: Context) => {
       try {
         const session = await getServerSession(context);
         
@@ -2667,7 +2673,7 @@ export const resolvers = {
         const isGroupMember = await prisma.groupUser.findFirst({
           where: {
             userId,
-            groupId: args.groupId,
+            groupId: args.data.groupId,
           },
         });
 
@@ -2677,24 +2683,27 @@ export const resolvers = {
           });
         }
 
-        // Create the settlement
-        const settlement = await prisma.settlement.create({
-          data: {
-            amount: args.amount,
-            description: args.description,
-            settledWithUser: {
-              connect: { id: args.toUserId }
-            },
-            initiatedBy: {
-              connect: { id: userId }
-            },
-            group: {
-              connect: { id: args.groupId }
-            },
-            settlementStatus: SettlementStatus.PENDING,
-            settlementType: args.type ?? SettlementType.PAYMENT,
-            date: new Date(),
+        // Create the settlement with properly formatted data
+        const settlementData = {
+          amount: args.data.amount,
+          currency: args.data.currency,
+          description: args.data.description,
+          date: new Date(args.data.date),
+          settlementStatus: args.data.settlementStatus,
+          settlementType: args.data.settlementType,
+          initiatedBy: {
+            connect: { id: userId }
           },
+          settledWithUser: {
+            connect: { id: args.data.toUserId }
+          },
+          group: {
+            connect: { id: args.data.groupId }
+          }
+        };
+
+        const settlement = await prisma.settlement.create({
+          data: settlementData,
           include: {
             initiatedBy: true,
             settledWithUser: true,
@@ -2702,11 +2711,7 @@ export const resolvers = {
           },
         });
 
-        return {
-          success: true,
-          message: 'Settlement created successfully',
-          settlement,
-        };
+        return settlement;
       } catch (error: unknown) {
         console.error('Error creating settlement:', error);
         if (error instanceof GraphQLError) {

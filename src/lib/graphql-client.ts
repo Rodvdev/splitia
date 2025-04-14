@@ -936,9 +936,10 @@ export async function createSettlement(data: {
     }
   `;
 
-  // Format the date as ISO string
+  // Format the date as ISO string and rename settledWithUserId to toUserId
   const formattedData = {
     ...data,
+    toUserId: data.settledWithUserId,
     date: data.date instanceof Date ? data.date.toISOString() : data.date
   };
 

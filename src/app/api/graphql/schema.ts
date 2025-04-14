@@ -127,7 +127,7 @@ export const typeDefs = gql`
     description: String
     date: DateTime!
     groupId: ID!
-    settledWithUserId: ID!
+    toUserId: ID!
     settlementType: SettlementType!
     settlementStatus: SettlementStatus!
   }
