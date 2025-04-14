@@ -20,6 +20,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { fetchExpenses, fetchUserGroups } from '@/lib/graphql-client';
 import { formatCurrency } from '@/lib/format';
@@ -91,6 +93,9 @@ export default function DashboardPage() {
   const [currentGroupIndex, setCurrentGroupIndex] = useState<number>(0);
   const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([]);
   const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
+  const [hasMultipleCurrencies, setHasMultipleCurrencies] = useState(false);
+  const [selectedDisplayCurrency, setSelectedDisplayCurrency] = useState<string>('');
 
   
   // Fetch user profile
@@ -201,14 +206,13 @@ export default function DashboardPage() {
     router.push('/dashboard/expenses');
   };
   
-  // Calculate total expenses in user currency
+  // Calculate total expenses in selected currency
   const getTotalExpenses = () => {
     if (!filteredExpenses.length) return 0;
     
-    // Only consider expenses in the user's currency for simplicity
-    // In a real app, you would convert currencies
+    // Only consider expenses in the selected currency
     return filteredExpenses
-      .filter(expense => expense.currency === userCurrency)
+      .filter(expense => expense.currency === selectedDisplayCurrency)
       .reduce((total, expense) => total + expense.amount, 0);
   };
   
@@ -331,6 +335,30 @@ export default function DashboardPage() {
     if (!name) return '';
     return name.length > maxLength ? `${name.substring(0, maxLength)}...` : name;
   };
+
+  // Get available currencies from expenses
+  useEffect(() => {
+    if (filteredExpenses.length) {
+      const currencies = Array.from(new Set(filteredExpenses.map(expense => expense.currency)));
+      setAvailableCurrencies(currencies);
+      setHasMultipleCurrencies(currencies.length > 1);
+      
+      // Set selected currency (prefer user's currency if available, otherwise first one)
+      if (!selectedDisplayCurrency || !currencies.includes(selectedDisplayCurrency)) {
+        if (currencies.includes(userCurrency)) {
+          setSelectedDisplayCurrency(userCurrency);
+        } else if (currencies.length > 0) {
+          setSelectedDisplayCurrency(currencies[0]);
+        } else {
+          setSelectedDisplayCurrency(userCurrency);
+        }
+      }
+    } else {
+      setAvailableCurrencies([userCurrency]);
+      setSelectedDisplayCurrency(userCurrency);
+      setHasMultipleCurrencies(false);
+    }
+  }, [filteredExpenses, userCurrency, selectedDisplayCurrency]);
 
   return (
     <div className="container mx-auto p-6">
@@ -521,7 +549,7 @@ export default function DashboardPage() {
               </CardFooter>
             </Card>
 
-            {/* Expenses Summary Card */}
+            {/* Expenses Summary Card - Modified */}
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="flex justify-between items-center">
@@ -536,6 +564,30 @@ export default function DashboardPage() {
                   </Badge>
                 </CardTitle>
                 <CardDescription>{tExpenses('description')}</CardDescription>
+                
+                {/* Currency selector for multi-currency support */}
+                {hasMultipleCurrencies && (
+                  <div className="mt-2">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {tGroups('balances.multiCurrencyDescription')}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="displayCurrency">{tGroups('payment.currency')}</Label>
+                      <Select value={selectedDisplayCurrency} onValueChange={setSelectedDisplayCurrency}>
+                        <SelectTrigger className="w-28">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableCurrencies.map(currency => (
+                            <SelectItem key={currency} value={currency}>
+                              {currency}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center">
@@ -543,9 +595,14 @@ export default function DashboardPage() {
                     {isLoadingExpenses ? (
                       <Skeleton className="h-8 w-36" />
                     ) : (
-                      formatUserCurrency(getTotalExpenses(), userCurrency)
+                      formatUserCurrency(getTotalExpenses(), selectedDisplayCurrency)
                     )}
                   </span>
+                  {!isLoadingExpenses && hasMultipleCurrencies && (
+                    <Badge variant="outline">
+                      {selectedDisplayCurrency}
+                    </Badge>
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="pt-2">

@@ -203,25 +203,23 @@ export default function SettleUpPage() {
   
   // Helper function to convert multi-currency balances to single currency
   const convertToSingleCurrencyBalances = (multiBalances: MultiCurrencyBalance[], currency: string): GroupBalance[] => {
-    return multiBalances
-      .map(balance => {
-        const currencyBalance = balance.balances.find(b => b.currency === currency);
-        if (!currencyBalance || currencyBalance.amount === 0) return null;
-        
-        // Usar tipo compatible con GroupBalance
-        const groupBalance: GroupBalance = {
+    const result: GroupBalance[] = [];
+    
+    for (const balance of multiBalances) {
+      const currencyBalance = balance.balances.find(b => b.currency === currency);
+      if (currencyBalance && currencyBalance.amount !== 0) {
+        result.push({
           userId: balance.userId,
           name: balance.name,
           email: balance.email,
           image: balance.image,
           amount: currencyBalance.amount,
           currency: currency
-        };
-        
-        return groupBalance;
-      })
-      // Utilizar una asignación de tipo más directa
-      .filter((balance): balance is GroupBalance => balance !== null) as GroupBalance[];
+        });
+      }
+    }
+    
+    return result;
   };
   
   // Handle currency change

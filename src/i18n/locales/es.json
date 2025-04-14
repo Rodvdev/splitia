@@ -468,6 +468,7 @@
       "requestTitle": "Solicitar pago",
       "amount": "Cantidad",
       "method": "Método de pago",
+      "currency": "Moneda",
       "methods": {
         "bank": "Banco",
         "cash": "Efectivo",

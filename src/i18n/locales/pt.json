@@ -434,6 +434,7 @@
       "requestTitle": "Solicitar pagamento",
       "amount": "Valor",
       "method": "Método de pagamento",
+      "currency": "Moeda",
       "methods": {
         "bank": "Banco",
         "cash": "Dinheiro",

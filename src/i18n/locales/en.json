@@ -437,6 +437,8 @@
       "noBalances": "No balances to show",
       "noBalancesTheyOweYou": "Nobody owes you money currently",
       "noBalancesYouOweThem": "You don't owe money to anyone currently",
+      "multiCurrencyDescription": "This group has transactions in multiple currencies. Balances are shown separated by currency.",
+      "noCurrencyBalancesYouOweThem": "You don't owe money in this currency currently",
       "tabs": {
         "all": "All",
         "theyOweYou": "They owe you",
@@ -452,6 +454,7 @@
       "requestTitle": "Request payment",
       "amount": "Amount",
       "method": "Payment method",
+      "currency": "Currency",
       "methods": {
         "bank": "Bank",
         "cash": "Cash",
