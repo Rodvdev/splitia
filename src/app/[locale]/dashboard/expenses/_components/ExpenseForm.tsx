@@ -144,7 +144,7 @@ export function ExpenseForm({
     defaultValues: {
       title: initialData?.title || '',
       amount: initialData?.amount || undefined,
-      currency: initialData?.currency || 'USD',
+      currency: initialData?.currency || profile?.currency || 'USD',
       date: initialData?.date || new Date(),
       category: initialData?.category || '',
       location: initialData?.location || '',
@@ -160,21 +160,15 @@ export function ExpenseForm({
     },
   });
 
-  // Update form when profile loads - IMPORTANT to set currency
+  // Actualizar sólo el id de usuario cuando el perfil cambia, pero no la moneda
   React.useEffect(() => {
-    if (profile) {
-      // Set the currency as soon as the profile is loaded, unless initialData has a specific value
-      if (profile.currency && !initialData?.currency) {
-        console.log('Estableciendo moneda preferida del usuario:', profile.currency);
-        form.setValue('currency', profile.currency);
-      }
-      
-      // Set the user ID if available
-      if (profile.id) {
-        form.setValue('paidById', profile.id);
+    if (profile?.id) {
+      const currentPaidById = form.getValues('paidById');
+      if (!currentPaidById) {
+        form.setValue('paidById', profile.id, { shouldDirty: false });
       }
     }
-  }, [profile, form, initialData]);
+  }, [profile, form]);
 
   // Watch the isGroupExpense field to conditionally show group selection
   const isGroupExpense = form.watch('isGroupExpense');
