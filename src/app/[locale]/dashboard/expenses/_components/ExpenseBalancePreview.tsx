@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
@@ -27,6 +27,21 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   const activeMembers = selectedMembers.length || 1; // Prevent division by zero
   const sharePerPerson = parseFloat((amount / activeMembers).toFixed(2));
   
+  // Reset to equal division
+  const resetToEqual = useCallback(() => {
+    const equalAmounts: { [key: string]: number } = {};
+    const totalAmount = parseFloat((sharePerPerson * selectedMembers.length).toFixed(2));
+    const correction = parseFloat((amount - totalAmount).toFixed(2));
+    selectedMembers.forEach((id) => {
+      equalAmounts[id] = sharePerPerson;
+    });
+    if (correction !== 0) {
+      // Assign the remaining cent to the first member
+      equalAmounts[selectedMembers[0]] += correction;
+    }
+    setCustomAmounts(equalAmounts);
+  }, [sharePerPerson, selectedMembers, amount, setCustomAmounts]);
+
   // Initialize the component with default equal division
   useEffect(() => {
     // Initialize custom amounts with equal shares immediately when component mounts
@@ -34,7 +49,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
     resetToEqual();
     
     // Reset to equal division whenever these key factors change
-  }, [amount, selectedMembers.length, sharePerPerson]);
+  }, [amount, selectedMembers.length, sharePerPerson, resetToEqual]);
 
   // Initialize custom amounts when switching to custom mode
   useEffect(() => {
@@ -45,7 +60,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
         resetToEqual();
       }
     }
-  }, [isCustomDivision]);
+  }, [isCustomDivision, customAmounts, resetToEqual, selectedMembers]);
   
   // Recalculate total allocated and remaining amount
   useEffect(() => {
@@ -143,7 +158,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
     }
   };
 
-  // Check if autocomplete button should be shown
+  // Check if autocomplete should be shown
   const shouldShowAutocomplete = () => {
     if (remainingAmount === 0 || !isCustomDivision) return false;
     
@@ -156,21 +171,6 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
     return membersWithCustomAmount >= selectedMembers.length - 1 && 
            selectedMembers.length > 0 && 
            remainingAmount !== 0;
-  };
-
-  // Reset to equal division
-  const resetToEqual = () => {
-    const equalAmounts: { [key: string]: number } = {};
-    const totalAmount = parseFloat((sharePerPerson * selectedMembers.length).toFixed(2));
-    const correction = parseFloat((amount - totalAmount).toFixed(2));
-    selectedMembers.forEach((id) => {
-      equalAmounts[id] = sharePerPerson;
-    });
-    if (correction !== 0) {
-      // Assign the remaining cent to the first member
-      equalAmounts[selectedMembers[0]] += correction;
-    }
-    setCustomAmounts(equalAmounts);
   };
 
   // Select or deselect all members
@@ -261,7 +261,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
         
         <div className="flex items-center">
           <div className="bg-slate-50 dark:bg-slate-900 p-0.5 rounded-full shadow-sm flex items-center">
-            <button
+            <div
               onClick={() => setIsCustomDivision(false)}
               className={`px-3 py-1.5 text-xs rounded-full transition-all ${
                 !isCustomDivision 
@@ -270,8 +270,8 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
               }`}
             >
               {t('equalDivision')}
-            </button>
-            <button
+            </div>
+            <div
               onClick={() => setIsCustomDivision(true)}
               className={`px-3 py-1.5 text-xs rounded-full transition-all ${
                 isCustomDivision 
@@ -280,7 +280,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
               }`}
             >
               {t('customDivision')}
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -310,26 +310,26 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
               </TooltipProvider>
             </div>
             <div className="flex gap-2">
-              <button 
+            <div
                 onClick={resetToEqual} 
                 className="px-2 py-1 text-xs bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors shadow-sm"
               >
                 {t('resetEqual')}
-              </button>
+              </div>
               {shouldShowAutocomplete() ? (
-                <button 
+                <div 
                   onClick={autocompleteLastMember} 
                   className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-md transition-colors shadow-sm"
                 >
                   {t('autocomplete')}
-                </button>
+                </div>
               ) : remainingAmount !== 0 && (
-                <button 
+                <div 
                   onClick={distributeRemaining} 
                   className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-md transition-colors shadow-sm"
                 >
                   {t('distributeRemaining')}
-                </button>
+                </div>
               )}
             </div>
           </div>
@@ -340,12 +340,12 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
       <div className="bg-white dark:bg-slate-950 rounded-xl overflow-hidden shadow-sm">
         {/* Members list header */}
         <div className="bg-slate-50 dark:bg-slate-900 px-4 py-2 flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2">
-          <button 
+          <div 
             onClick={toggleAllMembers}
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
           >
             {selectedMembers.length === groupMembers.length ? t('deselectAll') : t('selectAll')}
-          </button>
+          </div>
           <div className="flex text-xs text-slate-500 dark:text-slate-400">
             <span className="mr-6 sm:mr-8">{t('amount')}</span>
             <span>{t('balance')}</span>
@@ -363,7 +363,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <button
+                  <div
                     onClick={() => toggleMemberSelection(member.id)}
                     className={`h-5 w-5 flex items-center justify-center rounded-full border ${
                       selectedMembers.includes(member.id) 
@@ -374,7 +374,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                     {selectedMembers.includes(member.id) && (
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     )}
-                  </button>
+                  </div>
                   
                   <Avatar className="h-7 w-7 border-2 border-white dark:border-slate-800 shadow-sm">
                     <AvatarImage src={member.image || ''} />
@@ -410,14 +410,14 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                       />
                       
                       {shouldShowAutocompleteForMember(member.id) && (
-                        <button 
+                        <div 
                           onClick={autocompleteLastMember} 
                           className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-700 dark:text-blue-400 rounded-md"
                           title={t('autocomplete')}
                         >
                           <span className="hidden sm:inline">{t('autocomplete')}</span>
                           <span className="sm:hidden">Auto</span>
-                        </button>
+                        </div>
                       )}
                     </div>
                   ) : (

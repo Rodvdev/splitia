@@ -348,8 +348,7 @@ export default function GroupPage() {
       </div>
       
       {/* Group info card */}
-      <Card>
-        <CardHeader className="pb-4">
+      <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
               {group.image ? (
@@ -364,7 +363,6 @@ export default function GroupPage() {
               )}
             </div>
           </div>
-        </CardHeader>
         <CardContent className="pt-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center text-sm text-muted-foreground">
@@ -379,7 +377,7 @@ export default function GroupPage() {
             )}
           </div>
         </CardContent>
-      </Card>
+      </div>
 
       {/* Group Action Buttons */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

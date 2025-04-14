@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { MoreHorizontal, UserCog, UserMinus } from 'lucide-react';
 
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -127,7 +126,7 @@ export function GroupMembers({
   };
 
   return (
-    <Card>
+    <div>
       <CardHeader>
         <CardTitle>{t('members')}</CardTitle>
         <CardDescription>
@@ -259,6 +258,6 @@ export function GroupMembers({
           )}
         </div>
       </CardContent>
-    </Card>
+    </div>
   );
 } 

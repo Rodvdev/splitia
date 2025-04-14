@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, Receipt } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExpenseCard } from '@/app/[locale]/dashboard/expenses/_components/ExpenseCard';
 import { fetchExpenses } from '@/lib/graphql-client';
 
@@ -125,7 +125,7 @@ export function GroupExpenses({ groupId, onExpenseCreated }: GroupExpensesProps)
   };
   
   return (
-    <Card className="mt-6">
+    <div className="mt-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-xl flex items-center gap-2">
           <Receipt className="h-5 w-5" />
@@ -173,6 +173,6 @@ export function GroupExpenses({ groupId, onExpenseCreated }: GroupExpensesProps)
           </div>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 } 

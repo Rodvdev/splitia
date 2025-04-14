@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -145,7 +145,7 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
   const owedByMe = balances.filter(b => b.amount < 0);
   
   return (
-    <Card className="mt-6">
+    <div className="mt-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-xl flex items-center gap-2">
           <ArrowRightLeft className="h-5 w-5" />
@@ -339,7 +339,7 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
           </DialogContent>
         </Dialog>
       </CardContent>
-    </Card>
+    </div>
   );
 }
 
