@@ -519,50 +519,18 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
               />
             </div>
 
-            {/* Paid By - Who made this expense */}
-            <FormField
-              control={form.control as FormControlType}
-              name="paidById"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Users className="h-4 w-4" />
-                    <FormLabel className="font-medium">{t('whoPaid.label')}</FormLabel>
-                  </div>
-                  
-                  {isLoadingMembers ? (
-                    <div className="flex items-center justify-center p-3 border rounded-md">
-                      <span className="text-sm text-muted-foreground">{t('whoPaid.loadingMembers')}</span>
+            {/* Paid By - Who made this expense - Solo mostrar cuando NO es un gasto grupal */}
+            {!isGroupExpense && (
+              <FormField
+                control={form.control as FormControlType}
+                name="paidById"
+                render={() => (
+                  <FormItem>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Users className="h-4 w-4" />
+                      <FormLabel className="font-medium">{t('whoPaid.label')}</FormLabel>
                     </div>
-                  ) : isGroupExpense && selectedGroupId && selectedGroupId !== 'new' && groupMembers.length > 0 ? (
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-white">
-                          <SelectValue placeholder="Select who paid" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-white">
-                        {groupMembers.map((member) => (
-                          <SelectItem 
-                            key={member.id} 
-                            value={member.id}
-                            className="flex items-center"
-                          >
-                            <div className="flex items-center gap-2">
-                              {member.name || member.email}
-                              {member.id === profileRef.current?.id && (
-                                <span className="text-xs text-muted-foreground ml-1">(you)</span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
+                    
                     <Input 
                       type="text"
                       value={profileRef.current?.name ?? 'You'}
@@ -570,16 +538,11 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                       disabled
                       className="bg-muted"
                     />
-                  )}
-                  {isGroupExpense && groupMembers.length === 0 && !isLoadingMembers && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      No available members found. Assistants are excluded from payment options.
-                    </div>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Group Expense Toggle */}
             <FormField
@@ -629,7 +592,7 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                         >
                           <FormControl>
                             <SelectTrigger className="bg-white">
-                              <SelectValue placeholder="Select who paid" />
+                              <SelectValue placeholder={t('whoPaid.placeholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-white">
@@ -660,7 +623,7 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                       )}
                       {isGroupExpense && groupMembers.length === 0 && !isLoadingMembers && (
                         <div className="text-xs text-muted-foreground mt-1">
-                          No available members found. Assistants are excluded from payment options.
+                          {t('whoPaid.noMembersFound')}
                         </div>
                       )}
                       <FormMessage />
@@ -680,7 +643,7 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                   <Card className="mt-4">
                     <CardContent className="flex items-center justify-center p-6">
                       <p className="text-sm text-muted-foreground">
-                        {isLoadingMembers ? 'Loading members...' : 'Select a group with members to see balance preview'}
+                        {isLoadingMembers ? t('whoPaid.loadingMembers') : t('whoPaid.selectGroupWithMembers')}
                       </p>
                     </CardContent>
                   </Card>

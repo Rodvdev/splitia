@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { useAuth as useAuthContext } from '@/components/auth/auth-provider';
+import { useUserPreferences } from '@/components/user/user-preferences-provider';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
 
 interface UserProfileDisplayProps {
   showDetails?: boolean;
@@ -30,20 +32,20 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
   const router = useRouter();
   const { user: authUser } = useAuth();
   const { isSigningOut, signOut } = useAuthContext();
+  const { preferences, isLoading: isLoadingPreferences } = useUserPreferences();
+  const { profile, isLoading: isLoadingProfile } = useUserProfile();
   
   const [userName, setUserName] = useState<string>('');
   const [userImage, setUserImage] = useState<string | null>(null);
-  const [userCurrency, setUserCurrency] = useState<string>('');
-  const [userLanguage, setUserLanguage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile
+  // Obtener datos del usuario de los hooks
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const initUserData = async () => {
       try {
         setIsLoading(true);
         
-        // Get current session
+        // Obtener la sesión actual
         const session = await getSession();
         
         if (!session) {
@@ -51,41 +53,31 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
           return;
         }
         
-        // Set basic user info from auth session
+        // Establecer información básica del usuario desde la sesión de autenticación
         if (authUser) {
           setUserName(authUser.name || '');
           setUserImage(authUser.image || null);
         }
         
-        // Fetch additional user profile from database
-        const response = await fetch('/api/profile/get', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.user) {
-            setUserName(data.user.name || userName);
-            setUserCurrency(data.user.currency || 'USD');
-            setUserLanguage(data.user.language || 'es');
-          }
+        // Obtener información adicional del perfil a través de los hooks
+        if (profile) {
+          setUserName(profile.name || userName);
         }
+        
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error inicializando datos de usuario:', error);
         toast.error(tErrors('fetchProfile') || 'Error fetching your profile');
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchUserProfile();
-  }, [router, authUser, userName, tErrors]);
+    initUserData();
+  }, [router, authUser, userName, tErrors, profile]);
   
   const getGreeting = () => {
     const hour = new Date().getHours();
+    const userLanguage = preferences.language;
     
     if (userLanguage === 'en') {
       if (hour < 12) return tGreetings('morning');
@@ -112,11 +104,11 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
       .substring(0, 2);
   };
 
-  // Simple version (avatar only)
+  // Versión simple (solo avatar)
   if (!showDetails) {
     return (
       <div className="flex items-center">
-        {isLoading ? (
+        {isLoading || isLoadingPreferences || isLoadingProfile ? (
           <Skeleton className="h-9 w-9 rounded-full" />
         ) : (
           <DropdownMenu>
@@ -132,9 +124,9 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
                   <p className="font-medium">{userName || t('user.guest')}</p>
-                  {userCurrency && (
+                  {preferences.currency && (
                     <Badge variant="outline" className="text-xs w-fit">
-                      {userCurrency}
+                      {preferences.currency}
                     </Badge>
                   )}
                 </div>
@@ -164,10 +156,10 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
     );
   }
 
-  // Full version with user details
+  // Versión completa con detalles del usuario
   return (
     <div className="flex items-center gap-3">
-      {isLoading ? (
+      {isLoading || isLoadingPreferences || isLoadingProfile ? (
         <>
           <Skeleton className="h-12 w-12 rounded-full" />
           <div className="space-y-2">
@@ -190,9 +182,9 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
                   <p className="font-medium">{userName || t('user.guest')}</p>
-                  {userCurrency && (
+                  {preferences.currency && (
                     <Badge variant="outline" className="text-xs w-fit">
-                      {userCurrency}
+                      {preferences.currency}
                     </Badge>
                   )}
                 </div>
@@ -220,9 +212,9 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
           <div>
             <div className="flex items-center gap-2">
               <p className="font-medium">{userName || t('user.guest')}</p>
-              {userCurrency && (
+              {preferences.currency && (
                 <Badge variant="outline" className="text-xs">
-                  {userCurrency}
+                  {preferences.currency}
                 </Badge>
               )}
             </div>
