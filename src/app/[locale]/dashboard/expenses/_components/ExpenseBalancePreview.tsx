@@ -157,12 +157,13 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
     const equalAmounts: { [key: string]: number } = {};
     const totalAmount = parseFloat((sharePerPerson * selectedMembers.length).toFixed(2));
     const correction = parseFloat((amount - totalAmount).toFixed(2));
-    selectedMembers.forEach((id, index) => {
+    selectedMembers.forEach((id) => {
       equalAmounts[id] = sharePerPerson;
-      if (index === selectedMembers.length - 1) {
-        equalAmounts[id] += correction; // Adjust the last member's amount to correct any rounding error
-      }
     });
+    if (correction !== 0) {
+      // Assign the remaining cent to the first member
+      equalAmounts[selectedMembers[0]] += correction;
+    }
     setCustomAmounts(equalAmounts);
   };
 
@@ -349,7 +350,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                   )}
                   {!isCustomDivision && (
                     <span className="w-20 text-right text-sm">
-                      {sharePerPerson.toFixed(2)} {currency}
+                      {isCustomDivision && customAmounts[member.id] !== undefined ? customAmounts[member.id].toFixed(2) : sharePerPerson.toFixed(2)} {currency}
                     </span>
                   )}
                   <span className={`w-20 text-sm font-medium ${
