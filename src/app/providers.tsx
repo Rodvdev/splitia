@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { NextIntlClientProvider } from 'next-intl';
+import { UserPreferencesProvider } from '@/components/user/user-preferences-provider';
 
 type ProvidersProps = {
   children: ReactNode;
@@ -17,7 +18,11 @@ export function Providers({ children, locale, messages }: ProvidersProps) {
       messages={messages}
       timeZone="UTC"
     >
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <UserPreferencesProvider>
+          {children}
+        </UserPreferencesProvider>
+      </AuthProvider>
     </NextIntlClientProvider>
   );
 } 

@@ -11,7 +11,7 @@ import { Control } from 'react-hook-form';
 import { fetchUserGroups, fetchCategories } from '@/lib/graphql-client';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { ExpenseBalancePreview } from './ExpenseBalancePreview';
-import { useCurrencyPreference } from '@/lib/hooks/useCurrencyPreference';
+import { useUserPreferences } from '@/components/user/user-preferences-provider';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -145,7 +145,8 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
   if (profile) {
     profileRef.current = profile;
   }
-  const { currency: preferredCurrency } = useCurrencyPreference();
+  const { preferences } = useUserPreferences();
+  const preferredCurrency = preferences.currency;
   
   // Asegurarnos de usar la moneda del perfil como prioridad para que coincida con la del UserProfileDisplay 
   const defaultCurrency = initialData?.currency || preferredCurrency || profile?.currency || 'USD';

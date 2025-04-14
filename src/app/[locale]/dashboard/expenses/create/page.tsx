@@ -9,7 +9,7 @@ import { ExpenseForm } from '../_components/ExpenseForm';
 import { toast } from 'sonner';
 import { createExpense } from '@/lib/graphql-client';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
-import { useCurrencyPreference } from '@/lib/hooks/useCurrencyPreference';
+import { useUserPreferences } from '@/components/user/user-preferences-provider';
 
 // Store para mantener el estado de la página entre navegaciones
 const createGlobalState = () => {
@@ -54,7 +54,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { profile, isLoading: isProfileLoading } = useUserProfile();
-  const { currency, isLoading: isCurrencyLoading } = useCurrencyPreference();
+  const { preferences, isLoading: isPreferencesLoading } = useUserPreferences();
   const [initialData, setInitialData] = useState(() => globalFormState.getState());
   const initializedRef = useRef(false);
 
@@ -66,7 +66,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
       const groupId = searchParams?.get('groupId');
       
       // Asegurar que usamos la moneda del perfil como prioridad
-      const userCurrency = profile?.currency || currency || 'USD';
+      const userCurrency = profile?.currency || preferences.currency || 'USD';
       
       const formData = {
         currency: userCurrency,
@@ -87,7 +87,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
         ...formData,
         date: formData.date.toISOString()
       }));
-    } else if (!initialData && !isProfileLoading && !isCurrencyLoading) {
+    } else if (!initialData && !isProfileLoading && !isPreferencesLoading) {
       // Intentar recuperar de localStorage si no hay datos en el estado global
       const savedData = localStorage.getItem('expense_form_data');
       if (savedData) {
@@ -103,7 +103,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
         }
       } else {
         // Si no hay datos guardados, al menos inicializar con la moneda preferida
-        const userCurrency = profile?.currency || currency || 'USD';
+        const userCurrency = profile?.currency || preferences.currency || 'USD';
         
         const formData = {
           currency: userCurrency,
@@ -117,7 +117,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
         setInitialData(formData);
       }
     }
-  }, [profile, searchParams, initialData, currency, isProfileLoading, isCurrencyLoading]);
+  }, [profile, searchParams, initialData, preferences, isProfileLoading, isPreferencesLoading]);
   
   // Handle form submission with GraphQL
   const handleSubmit = async (data: ExpenseFormData) => {
@@ -175,7 +175,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
   };
   
   // Mostrar el loader solo durante la carga inicial
-  if (!initialData && (isProfileLoading || isCurrencyLoading)) {
+  if (!initialData && (isProfileLoading || isPreferencesLoading)) {
     return <div className="p-6 flex justify-center">Loading...</div>;
   }
   
