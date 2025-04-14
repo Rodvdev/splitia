@@ -287,10 +287,12 @@ export async function createExpense(data: {
         paidBy {
           id
           name
+          image
         }
         group {
           id
           name
+          image
         }
         category {
           id
@@ -305,16 +307,47 @@ export async function createExpense(data: {
           user {
             id
             name
+            image
+          }
+        }
+        isSettlement
+        settlement {
+          id
+          amount
+          currency
+          settlementStatus
+          settlementType
+          date
+          description
+          initiatedBy {
+            id
+            name
+            image
+          }
+          settledWithUser {
+            id
+            name
+            image
+          }
+          group {
+            id
+            name
           }
         }
       }
     }
   `;
 
+  // Format the date as ISO string
+  const formattedData = {
+    ...data,
+    date: data.date instanceof Date ? data.date.toISOString() : data.date
+  };
+
   try {
-    // Use authenticated client
+    // Use authenticated client to ensure session token is sent
     const client = await getAuthenticatedClient();
-    return await client.request(mutation, { data });
+    return await client.request(mutation, { data: formattedData });
   } catch (error) {
     console.error('Error creating expense:', error);
     throw error;

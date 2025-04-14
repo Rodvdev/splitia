@@ -43,19 +43,18 @@ interface GroupMember {
 }
 
 interface GroupMembersProps {
+  groupId: string;
   members: GroupMember[];
-  currentUserRole: string;
   currentUserId: string;
-  onRemoveMember?: (memberId: string) => Promise<void>;
-  onChangeRole?: (memberId: string, newRole: string) => Promise<void>;
+  onMemberRemoved: (memberId: string) => void;
+  onRoleChanged: (memberId: string, newRole: string) => void;
 }
 
 export function GroupMembers({
   members,
-  currentUserRole,
   currentUserId,
-  onRemoveMember,
-  onChangeRole,
+  onMemberRemoved,
+  onRoleChanged
 }: GroupMembersProps) {
   const t = useTranslations('groups');
   const [memberToRemove, setMemberToRemove] = useState<GroupMember | null>(null);
@@ -72,7 +71,7 @@ export function GroupMembers({
   };
 
   // Check if the current user has admin privileges
-  const isAdmin = currentUserRole === 'ADMIN';
+  const isAdmin = members.some(member => member.role === 'ADMIN');
 
   // Check if the user can be managed (not the current user and has admin rights)
   const canManageMember = (member: GroupMember) => {
@@ -83,11 +82,11 @@ export function GroupMembers({
 
   // Handle member removal
   const handleRemoveMember = async () => {
-    if (!memberToRemove || !onRemoveMember) return;
+    if (!memberToRemove || !onMemberRemoved) return;
 
     setIsRemoving(true);
     try {
-      await onRemoveMember(memberToRemove.id);
+      await onMemberRemoved(memberToRemove.id);
       toast.success(t('memberRemoved', { name: memberToRemove.name }));
     } catch (error) {
       console.error('Failed to remove member:', error);
@@ -100,10 +99,10 @@ export function GroupMembers({
 
   // Handle role change
   const handleChangeRole = async (memberId: string, newRole: string) => {
-    if (!onChangeRole) return;
+    if (!onRoleChanged) return;
 
     try {
-      await onChangeRole(memberId, newRole);
+      await onRoleChanged(memberId, newRole);
       toast.success(t('roleUpdated'));
     } catch (error) {
       console.error('Failed to change role:', error);

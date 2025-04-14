@@ -149,8 +149,9 @@ export const typeDefs = gql`
     groupId: ID
     category: CustomCategory
     shares: [ExpenseShare!]
-    isSettlement: Boolean
+    isSettlement: Boolean!
     settlement: Settlement
+    settlementId: ID
   }
 
   type ExpenseShare {

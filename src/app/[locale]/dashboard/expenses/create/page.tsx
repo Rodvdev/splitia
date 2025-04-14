@@ -74,6 +74,11 @@ function ExpenseFormWithParams() {
       
       // Redirect back to expenses list or the group page if creating from there
       if (data.isGroupExpense && data.groupId && data.groupId !== 'new') {
+        // Check if we need to call the onExpenseCreated callback
+        const storedGroupId = localStorage.getItem('onExpenseCreatedCallback');
+        if (storedGroupId === data.groupId) {
+          localStorage.removeItem('onExpenseCreatedCallback');
+        }
         router.push(`/dashboard/groups/${data.groupId}`);
       } else {
         router.push('/dashboard/expenses');

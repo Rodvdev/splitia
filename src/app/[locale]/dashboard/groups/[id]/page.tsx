@@ -97,6 +97,20 @@ export default function GroupPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [balanceSummary, setBalanceSummary] = useState<GroupBalanceSummary | null>(null);
   
+  // Function to load balances
+  const loadBalances = async () => {
+    try {
+      const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
+      if (balancesResponse?.groupBalances) {
+        const { totalOwed, totalOwing, netBalance, currency } = balancesResponse.groupBalances;
+        setBalanceSummary({ totalOwed, totalOwing, netBalance, currency });
+      }
+    } catch (error) {
+      console.error('Failed to load balances:', error);
+      toast.error(t('errors.balancesFetchFailed'));
+    }
+  };
+
   // Fetch group data when component mounts
   useEffect(() => {
     const loadGroup = async () => {
@@ -112,11 +126,7 @@ export default function GroupPage() {
         setGroup(response.group);
 
         // Fetch balances
-        const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
-        if (balancesResponse?.groupBalances) {
-          const { totalOwed, totalOwing, netBalance, currency } = balancesResponse.groupBalances;
-          setBalanceSummary({ totalOwed, totalOwing, netBalance, currency });
-        }
+        await loadBalances();
       } catch (error) {
         console.error('Failed to load group:', error);
         toast.error(t('errors.fetchFailed'));
@@ -241,7 +251,12 @@ export default function GroupPage() {
       toast.error(t('errors.memberRemoveFailed'));
     }
   };
-  
+
+  // Handle expense creation
+  const handleExpenseCreated = async () => {
+    await loadBalances();
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -389,51 +404,42 @@ export default function GroupPage() {
       </div>
 
       {/* Main content tabs */}
-      <Tabs defaultValue="balances" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="balances">
-            {t('tabs.balances')}
-          </TabsTrigger>
-          <TabsTrigger value="expenses">
-            {t('tabs.expenses')}
-          </TabsTrigger>
-          <TabsTrigger value="settlements">
-            {t('tabs.settlements')}
-          </TabsTrigger>
-          <TabsTrigger value="members">
-            {t('tabs.members')}
-          </TabsTrigger>
+      <Tabs defaultValue="balances" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="balances">{t('tabs.balances')}</TabsTrigger>
+          <TabsTrigger value="expenses">{t('tabs.expenses')}</TabsTrigger>
+          <TabsTrigger value="settlements">{t('tabs.settlements')}</TabsTrigger>
+          <TabsTrigger value="members">{t('tabs.members')}</TabsTrigger>
         </TabsList>
-
-        {/* Balance tab */}
-        <TabsContent value="balances" className="mt-6">
+        
+        <TabsContent value="balances">
           <GroupBalances 
-            groupId={group.id} 
+            groupId={groupId} 
             currentUserId={currentUserId || ''}
           />
-        </TabsContent>
-
-        {/* Expenses tab */}
-        <TabsContent value="expenses" className="mt-6">
-          <GroupExpenses groupId={group.id} />
         </TabsContent>
         
-        {/* Settlements tab */}
-        <TabsContent value="settlements" className="mt-6">
-          <SettlementsTab
-            groupId={group.id}
+        <TabsContent value="expenses">
+          <GroupExpenses 
+            groupId={groupId} 
+            onExpenseCreated={handleExpenseCreated}
+          />
+        </TabsContent>
+        
+        <TabsContent value="settlements">
+          <SettlementsTab 
+            groupId={groupId} 
             currentUserId={currentUserId || ''}
           />
         </TabsContent>
-
-        {/* Members tab */}
-        <TabsContent value="members" className="mt-6">
-          <GroupMembers
-            members={group.members}
-            currentUserRole={group.members.find(m => m.id === currentUserId)?.role || ''}
+        
+        <TabsContent value="members">
+          <GroupMembers 
+            groupId={groupId} 
+            members={group?.members || []} 
             currentUserId={currentUserId || ''}
-            onChangeRole={handleChangeRole}
-            onRemoveMember={handleRemoveMember}
+            onMemberRemoved={handleRemoveMember}
+            onRoleChanged={handleChangeRole}
           />
         </TabsContent>
       </Tabs>

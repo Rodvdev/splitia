@@ -201,11 +201,6 @@ export default function DashboardPage() {
     router.push('/dashboard/expenses');
   };
   
-  const handleViewAllGroups = () => {
-    router.push('/dashboard/groups');
-  };
-
-  
   // Calculate total expenses in user currency
   const getTotalExpenses = () => {
     if (!filteredExpenses.length) return 0;
@@ -512,9 +507,15 @@ export default function DashboardPage() {
                   variant="outline" 
                   size="sm"
                   className="ml-auto"
-                  onClick={handleViewAllGroups}
+                  onClick={() => {
+                    if (currentGroupIndex === -1) {
+                      router.push('/dashboard/groups');
+                    } else {
+                      router.push(`/dashboard/groups/${groups[currentGroupIndex].id}`);
+                    }
+                  }}
                 >
-                  Ver todos
+                  {currentGroupIndex === -1 ? 'Ver todos' : 'Ver grupo'}
                   <ArrowRight className="ml-2 h-3 w-3" />
                 </Button>
               </CardFooter>

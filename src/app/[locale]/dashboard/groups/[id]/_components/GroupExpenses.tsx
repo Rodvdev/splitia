@@ -47,6 +47,7 @@ interface Expense {
 
 interface GroupExpensesProps {
   groupId: string;
+  onExpenseCreated?: () => void;
 }
 
 // Definir la interfaz para la respuesta de fetchExpenses
@@ -54,7 +55,7 @@ interface ExpensesResponse {
   expenses: Expense[];
 }
 
-export function GroupExpenses({ groupId }: GroupExpensesProps) {
+export function GroupExpenses({ groupId, onExpenseCreated }: GroupExpensesProps) {
   const t = useTranslations('groups');
   const tExpenses = useTranslations('expenses');
   const router = useRouter();
@@ -63,21 +64,21 @@ export function GroupExpenses({ groupId }: GroupExpensesProps) {
   const [isLoading, setIsLoading] = useState(true);
   
   // Fetch expenses for this group
-  useEffect(() => {
-    const loadExpenses = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetchExpenses({ groupId }) as ExpensesResponse;
-        if (response && response.expenses) {
-          setExpenses(response.expenses);
-        }
-      } catch (error) {
-        console.error('Error loading group expenses:', error);
-      } finally {
-        setIsLoading(false);
+  const loadExpenses = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchExpenses({ groupId }) as ExpensesResponse;
+      if (response && response.expenses) {
+        setExpenses(response.expenses);
       }
-    };
-    
+    } catch (error) {
+      console.error('Error loading group expenses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadExpenses();
   }, [groupId]);
   
@@ -88,8 +89,22 @@ export function GroupExpenses({ groupId }: GroupExpensesProps) {
   
   // Handle adding a new expense for this group
   const handleAddExpense = () => {
+    // Store the callback in localStorage so it can be called after expense creation
+    if (onExpenseCreated) {
+      localStorage.setItem('onExpenseCreatedCallback', groupId);
+    }
     router.push(`/dashboard/expenses/create?groupId=${groupId}`);
   };
+
+  // Check if we need to call onExpenseCreated when component mounts
+  useEffect(() => {
+    const storedGroupId = localStorage.getItem('onExpenseCreatedCallback');
+    if (storedGroupId === groupId) {
+      localStorage.removeItem('onExpenseCreatedCallback');
+      loadExpenses();
+      onExpenseCreated?.();
+    }
+  }, [groupId, onExpenseCreated]);
   
   // Format expense data for the ExpenseCard component
   const formatExpenseForCard = (expense: Expense) => {

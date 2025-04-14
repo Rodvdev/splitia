@@ -1193,20 +1193,87 @@ export const resolvers = {
             const diff = roundedAmount - roundedSharesSum;
             sharesData[0].amount = roundToTwoDecimals(sharesData[0].amount + diff);
           }
+        } else if (data.groupId) {
+          // Get all group members
+          const groupMembers = await prisma.groupUser.findMany({
+            where: {
+              groupId: data.groupId,
+              NOT: {
+                role: 'ASSISTANT'
+              }
+            },
+            select: {
+              userId: true
+            }
+          });
+
+          // Calculate equal share amount
+          const memberCount = groupMembers.length;
+          const equalShareAmount = roundToTwoDecimals(roundedAmount / memberCount);
+          
+          // Create shares for each member
+          sharesData = groupMembers.map((member: { userId: string }, index: number) => {
+            // If this is the last member, they get any remaining amount to handle rounding
+            if (index === memberCount - 1) {
+              const totalShares = equalShareAmount * (memberCount - 1);
+              const remaining = roundToTwoDecimals(roundedAmount - totalShares);
+              return {
+                amount: remaining,
+                type: ShareType.EQUAL,
+                userId: member.userId
+              };
+            }
+            return {
+              amount: equalShareAmount,
+              type: ShareType.EQUAL,
+              userId: member.userId
+            };
+          });
+        }
+        
+        // If this is a group expense, create settlements for each share
+        const settlements = [];
+        if (data.groupId && sharesData.length > 0) {
+          // Calculate the amount each person owes to the payer
+          const paidById = data.paidById || userId;
+          for (const share of sharesData) {
+            if (share.userId !== paidById) {
+              // Create a settlement for this share
+              const settlement = await prisma.settlement.create({
+                data: {
+                  amount: share.amount,
+                  currency: data.currency,
+                  description: `Settlement for expense: ${data.description}`,
+                  date: new Date(data.date),
+                  settlementStatus: SettlementStatus.PENDING,
+                  settlementType: SettlementType.PAYMENT,
+                  initiatedById: paidById,
+                  settledWithUserId: share.userId,
+                  groupId: data.groupId,
+                },
+                include: {
+                  initiatedBy: true,
+                  settledWithUser: true,
+                  group: true,
+                },
+              });
+              settlements.push(settlement);
+            }
+          }
         }
         
         // Create the expense with properly formatted data
-        return prisma.expense.create({
+        const expense = await prisma.expense.create({
           data: {
-          amount: roundedAmount,
-          description: data.description,
-          date: new Date(data.date),
-          categoryId: data.categoryId || null,
-          currency: data.currency,
-          location: data.location || null,
-          notes: data.notes || null,
-          groupId: data.groupId || null,
-          paidById: data.paidById || userId,
+            amount: roundedAmount,
+            description: data.description,
+            date: new Date(data.date),
+            categoryId: data.categoryId || null,
+            currency: data.currency,
+            location: data.location || null,
+            notes: data.notes || null,
+            groupId: data.groupId || null,
+            paidById: data.paidById || userId,
             shares: {
               createMany: {
                 data: sharesData
@@ -1224,6 +1291,23 @@ export const resolvers = {
             },
           },
         });
+
+        // Link the expense to the settlements
+        if (settlements.length > 0) {
+          await Promise.all(settlements.map(settlement =>
+            prisma.expense.update({
+              where: { id: expense.id },
+              data: {
+                isSettlement: true,
+                settlement: {
+                  connect: { id: settlement.id }
+                }
+              }
+            })
+          ));
+        }
+
+        return expense;
       } catch (error) {
         console.error('Error creating expense:', error);
         throw new GraphQLError('Failed to create expense', {
