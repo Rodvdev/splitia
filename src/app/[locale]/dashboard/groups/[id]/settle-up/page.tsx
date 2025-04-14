@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
-import { fetchGroup, fetchGroupBalances, createSettlement } from '@/lib/graphql-client';
+import { fetchGroup, fetchGroupBalances, fetchGroupBalancesMultiCurrency, createSettlement } from '@/lib/graphql-client';
 
 interface GroupMember {
   id: string;
@@ -49,6 +49,26 @@ interface GroupBalance {
   currency: string;
 }
 
+interface BalancePerCurrency {
+  currency: string;
+  amount: number;
+}
+
+interface MultiCurrencyBalance {
+  userId: string;
+  name: string;
+  email?: string;
+  image?: string;
+  balances: BalancePerCurrency[];
+}
+
+interface CurrencyBalanceSummary {
+  currency: string;
+  totalOwed: number;
+  totalOwing: number;
+  netBalance: number;
+}
+
 interface Group {
   id: string;
   name: string;
@@ -65,20 +85,30 @@ interface BalanceSummary {
   balances: GroupBalance[];
 }
 
+interface MultiCurrencyBalanceSummary {
+  balancesByCurrency: CurrencyBalanceSummary[];
+  balances: MultiCurrencyBalance[];
+}
+
 export default function SettleUpPage() {
   const router = useRouter();
   const params = useParams();
   const groupId = params?.id as string;
   const t = useTranslations('settlements');
+  const tGroups = useTranslations('groups');
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
   const [balances, setBalances] = useState<BalanceSummary | null>(null);
+  const [multiCurrencyData, setMultiCurrencyData] = useState<MultiCurrencyBalanceSummary | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [settlementType, setSettlementType] = useState<'PAYMENT' | 'RECEIPT'>('PAYMENT');
+  const [hasMultipleCurrencies, setHasMultipleCurrencies] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('');
+  const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
   
   // Load group and balances data
   useEffect(() => {
@@ -91,13 +121,74 @@ export default function SettleUpPage() {
           setGroup(groupResponse.group);
         }
         
-        // Fetch balances
-        interface GroupBalancesResponse {
-          groupBalances: BalanceSummary;
+        // Fetch user's preferred currency
+        let preferredCurrency = 'PEN';
+        try {
+          const userResponse = await fetch('/api/user/preferences');
+          const userData = await userResponse.json();
+          if (userData.currency) {
+            preferredCurrency = userData.currency;
+          }
+        } catch (prefError) {
+          console.error('Error obteniendo preferencias del usuario:', prefError);
         }
-        const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
-        if (balancesResponse?.groupBalances) {
-          setBalances(balancesResponse.groupBalances);
+        
+        // Try to fetch multi-currency balances first
+        try {
+          interface GroupBalancesMultiCurrencyResponse {
+            groupBalancesMultiCurrency: MultiCurrencyBalanceSummary;
+          }
+          
+          const multiCurrencyResponse = await fetchGroupBalancesMultiCurrency(groupId) as GroupBalancesMultiCurrencyResponse;
+          
+          if (multiCurrencyResponse?.groupBalancesMultiCurrency) {
+            const { balancesByCurrency, balances } = multiCurrencyResponse.groupBalancesMultiCurrency;
+            
+            setMultiCurrencyData(multiCurrencyResponse.groupBalancesMultiCurrency);
+            
+            // Check if there are multiple currencies
+            const currencies = balancesByCurrency.map(b => b.currency);
+            setAvailableCurrencies(currencies);
+            setHasMultipleCurrencies(currencies.length > 1);
+            
+            // Set default selected currency (preferred currency if available, otherwise first one)
+            let defaultCurrency;
+            if (currencies.includes(preferredCurrency)) {
+              defaultCurrency = preferredCurrency;
+            } else if (currencies.length > 0) {
+              defaultCurrency = currencies[0];
+            } else {
+              defaultCurrency = preferredCurrency;
+            }
+            setSelectedCurrency(defaultCurrency);
+            
+            // Convert multi-currency data to single currency format for the selected currency
+            const singleCurrencyBalances = convertToSingleCurrencyBalances(balances, defaultCurrency);
+            const currencySummary = balancesByCurrency.find(b => b.currency === defaultCurrency);
+            
+            setBalances({
+              totalOwed: currencySummary?.totalOwed || 0,
+              totalOwing: currencySummary?.totalOwing || 0,
+              netBalance: currencySummary?.netBalance || 0,
+              currency: defaultCurrency,
+              balances: singleCurrencyBalances
+            });
+          }
+        } catch (multiCurrencyError) {
+          console.error('Error fetching multi-currency balances:', multiCurrencyError);
+          
+          // Fallback to single currency balances
+          interface GroupBalancesResponse {
+            groupBalances: BalanceSummary;
+          }
+          
+          const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
+          if (balancesResponse?.groupBalances) {
+            setBalances(balancesResponse.groupBalances);
+            setSelectedCurrency(balancesResponse.groupBalances.currency);
+            setAvailableCurrencies([balancesResponse.groupBalances.currency]);
+            setHasMultipleCurrencies(false);
+          }
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -109,6 +200,52 @@ export default function SettleUpPage() {
     
     loadData();
   }, [groupId, t]);
+  
+  // Helper function to convert multi-currency balances to single currency
+  const convertToSingleCurrencyBalances = (multiBalances: MultiCurrencyBalance[], currency: string): GroupBalance[] => {
+    return multiBalances
+      .map(balance => {
+        const currencyBalance = balance.balances.find(b => b.currency === currency);
+        if (!currencyBalance || currencyBalance.amount === 0) return null;
+        
+        // Usar tipo compatible con GroupBalance
+        const groupBalance: GroupBalance = {
+          userId: balance.userId,
+          name: balance.name,
+          email: balance.email,
+          image: balance.image,
+          amount: currencyBalance.amount,
+          currency: currency
+        };
+        
+        return groupBalance;
+      })
+      // Utilizar una asignación de tipo más directa
+      .filter((balance): balance is GroupBalance => balance !== null) as GroupBalance[];
+  };
+  
+  // Handle currency change
+  const handleCurrencyChange = (currency: string) => {
+    setSelectedCurrency(currency);
+    
+    if (multiCurrencyData) {
+      // Update balances for the new currency
+      const singleCurrencyBalances = convertToSingleCurrencyBalances(multiCurrencyData.balances, currency);
+      const currencySummary = multiCurrencyData.balancesByCurrency.find(b => b.currency === currency);
+      
+      setBalances({
+        totalOwed: currencySummary?.totalOwed || 0,
+        totalOwing: currencySummary?.totalOwing || 0,
+        netBalance: currencySummary?.netBalance || 0,
+        currency: currency,
+        balances: singleCurrencyBalances
+      });
+      
+      // Reset user and amount selections
+      setSelectedUserId('');
+      setAmount('');
+    }
+  };
   
   // Calculate default amount when user selected
   useEffect(() => {
@@ -166,7 +303,7 @@ export default function SettleUpPage() {
       // Create the settlement
       await createSettlement({
         amount: parseFloat(amount),
-        currency: balances?.currency || 'PEN',
+        currency: selectedCurrency,
         description: description || t('defaultDescription'),
         date: new Date(),
         groupId,
@@ -264,6 +401,28 @@ export default function SettleUpPage() {
           <CardDescription>
             {group.name} - {t('balanceSummary')}
           </CardDescription>
+          {hasMultipleCurrencies && (
+            <div className="mt-2">
+              <p className="text-sm text-muted-foreground mb-2">
+                {tGroups('balances.multiCurrencyDescription')}
+              </p>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="currency">{tGroups('payment.currency')}</Label>
+                <Select value={selectedCurrency} onValueChange={handleCurrencyChange}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCurrencies.map(currency => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -271,7 +430,11 @@ export default function SettleUpPage() {
               <h3 className="text-lg font-medium mb-4">{t('currentBalances')}</h3>
               
               {usersWithBalance.length === 0 ? (
-                <p className="text-muted-foreground">{t('noBalances')}</p>
+                <p className="text-muted-foreground">
+                  {hasMultipleCurrencies 
+                    ? tGroups('balances.noCurrencyBalancesYouOweThem') 
+                    : t('noBalances')}
+                </p>
               ) : (
                 <div className="space-y-3">
                   {usersWithBalance.map(balance => (
@@ -374,7 +537,7 @@ export default function SettleUpPage() {
                       className="rounded-r-none"
                     />
                     <div className="flex items-center justify-center px-3 border border-l-0 rounded-r-md bg-muted">
-                      {balances.currency}
+                      {selectedCurrency}
                     </div>
                   </div>
                 </div>

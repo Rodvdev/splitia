@@ -250,7 +250,8 @@
         "amount": "Monto",
         "balance": "Balance",
         "totalAmount": "Monto total",
-        "membersSelected": "miembros seleccionados"
+        "membersSelected": "miembros seleccionados",
+        "assignAll": "Asignar todo"
       },
       "splitWithGroup": {
         "label": "Dividir con un grupo",
@@ -450,6 +451,8 @@
       "noBalances": "No hay balances para mostrar",
       "noBalancesTheyOweYou": "Nadie te debe dinero actualmente",
       "noBalancesYouOweThem": "No debes dinero a nadie actualmente",
+      "multiCurrencyDescription": "Este grupo tiene transacciones en múltiples monedas. Los saldos se muestran separados por moneda.",
+      "noCurrencyBalancesYouOweThem": "No debes dinero en esta moneda actualmente",
       "tabs": {
         "all": "Todos",
         "theyOweYou": "Te deben",

@@ -230,7 +230,23 @@
         "title": "Prévia do saldo",
         "eachPersonPays": "Cada pessoa paga",
         "paidTheBill": "Pagou a conta",
-        "selectGroupToSeePreview": "Selecione um grupo para ver a prévia do saldo"
+        "selectGroupToSeePreview": "Selecione um grupo para ver a prévia do saldo",
+        "customDivision": "Divisão Personalizada",
+        "equalDivision": "Divisão Igual",
+        "switchTip": "Alternar entre divisão igual e divisão personalizada",
+        "remainingToAllocate": "Restante para alocar",
+        "fullyAllocated": "Totalmente alocado",
+        "remainingAmountTip": "O total deve ser igual ao valor da despesa",
+        "resetEqual": "Redefinir para Igual",
+        "distributeRemaining": "Distribuir Restante",
+        "autocomplete": "Autocompletar",
+        "selectAll": "Selecionar Todos",
+        "deselectAll": "Deselecionar Todos",
+        "amount": "Valor",
+        "balance": "Saldo",
+        "totalAmount": "Valor Total",
+        "membersSelected": "membros selecionados",
+        "assignAll": "Atribuir Todos"
       },
       "splitWithGroup": {
         "label": "Dividir com grupo",
@@ -401,6 +417,8 @@
       "noBalances": "Nenhum saldo para mostrar",
       "noBalancesTheyOweYou": "Ninguém te deve dinheiro atualmente",
       "noBalancesYouOweThem": "Você não deve dinheiro a ninguém atualmente",
+      "multiCurrencyDescription": "Este grupo tem transações em múltiplas moedas. Os saldos são exibidos separados por moeda.",
+      "noCurrencyBalancesYouOweThem": "Você não deve dinheiro nesta moeda atualmente",
       "tabs": {
         "all": "Todos",
         "theyOweYou": "Te devem",

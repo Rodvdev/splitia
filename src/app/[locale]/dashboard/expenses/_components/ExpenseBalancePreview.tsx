@@ -32,42 +32,61 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   useEffect(() => {
     // Solo propagar cuando hay cambios significativos
     if (onCustomAmountsChange && isCustomDivision) {
-      onCustomAmountsChange(customAmounts);
+      try {
+        onCustomAmountsChange(customAmounts);
+      } catch (error) {
+        console.error("Error propagating custom amounts:", error);
+      }
     }
   }, [customAmounts, isCustomDivision, onCustomAmountsChange]);
 
   // Reset to equal division
   const resetToEqual = useCallback(() => {
-    const equalAmounts: { [key: string]: number } = {};
-    const totalAmount = parseFloat((sharePerPerson * selectedMembers.length).toFixed(2));
-    const correction = parseFloat((amount - totalAmount).toFixed(2));
-    selectedMembers.forEach((id) => {
-      equalAmounts[id] = sharePerPerson;
-    });
-    if (correction !== 0) {
-      // Assign the remaining cent to the first member
-      equalAmounts[selectedMembers[0]] += correction;
+    try {
+      const equalAmounts: { [key: string]: number } = {};
+      const equalShare = parseFloat((amount / selectedMembers.length).toFixed(2));
+      const totalWithEqual = parseFloat((equalShare * selectedMembers.length).toFixed(2));
+      const correction = parseFloat((amount - totalWithEqual).toFixed(2));
+      
+      selectedMembers.forEach((id) => {
+        equalAmounts[id] = equalShare;
+      });
+      
+      if (correction !== 0 && selectedMembers.length > 0) {
+        // Assign the remaining cent to the first member
+        equalAmounts[selectedMembers[0]] += correction;
+      }
+      
+      setCustomAmounts(equalAmounts);
+      
+      // Propagar este cambio inmediatamente
+      if (onCustomAmountsChange) {
+        onCustomAmountsChange(equalAmounts);
+      }
+    } catch (error) {
+      console.error("Error in resetToEqual:", error);
     }
-    setCustomAmounts(equalAmounts);
-    
-    // Propagar este cambio inmediatamente
-    if (onCustomAmountsChange) {
-      onCustomAmountsChange(equalAmounts);
-    }
-  }, [sharePerPerson, selectedMembers, amount, onCustomAmountsChange]);
+  }, [amount, selectedMembers, onCustomAmountsChange]);
 
   // Initialize the component with default equal division
   useEffect(() => {
-    // Initialize custom amounts with equal shares immediately when component mounts
-    // or when key factors change (amount, members)
-    resetToEqual();
-    
-    // Reset to equal division whenever these key factors change
-  }, [amount, selectedMembers.length, sharePerPerson, resetToEqual]);
+    try {
+      // Si no hay miembros, no hacer nada
+      if (!selectedMembers.length) return;
+      
+      // Initialize custom amounts with equal shares when component mounts
+      // or when key factors change (amount, members)
+      resetToEqual();
+      
+      // Reset to equal division whenever these key factors change
+    } catch (error) {
+      console.error("Error initializing equal division:", error);
+    }
+  }, [amount, selectedMembers.length, resetToEqual]);
 
   // Initialize custom amounts when switching to custom mode
   useEffect(() => {
-    if (isCustomDivision) {
+    if (isCustomDivision && selectedMembers.length > 0) {
       // Only set custom amounts if they're not already set
       const hasUnsetMembers = selectedMembers.some(id => customAmounts[id] === undefined);
       if (hasUnsetMembers) {
@@ -78,11 +97,16 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   
   // Recalculate total allocated and remaining amount
   useEffect(() => {
-    if (isCustomDivision) {
-      const total = Object.entries(customAmounts)
-        .filter(([id]) => selectedMembers.includes(id))
-        .reduce((sum, [, amt]) => sum + amt, 0);
-      setRemainingAmount(parseFloat((amount - total).toFixed(2)));
+    if (isCustomDivision && selectedMembers.length > 0) {
+      try {
+        const total = Object.entries(customAmounts)
+          .filter(([id]) => selectedMembers.includes(id))
+          .reduce((sum, [, amt]) => sum + amt, 0);
+        setRemainingAmount(parseFloat((amount - total).toFixed(2)));
+      } catch (error) {
+        console.error("Error calculating remaining amount:", error);
+        setRemainingAmount(0);
+      }
     } else {
       setRemainingAmount(0); // No remaining amount in equal division
     }
@@ -90,26 +114,44 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
 
   // Handle member selection
   const toggleMemberSelection = useCallback((memberId: string) => {
-    setSelectedMembers(prevSelected => {
-      // If removing, delete from customAmounts
-      if (prevSelected.includes(memberId)) {
+    try {
+      // Copia en memoria los valores actuales para no depender de los estados anteriores
+      let newSelected = [...selectedMembers];
+      const isRemoving = newSelected.includes(memberId);
+      const equalShare = selectedMembers.length > 0 
+        ? parseFloat((amount / selectedMembers.length).toFixed(2)) 
+        : 0;
+      
+      if (isRemoving) {
+        // Si estamos quitando, filtramos el miembro
+        newSelected = newSelected.filter(id => id !== memberId);
+        // Actualizar en una sola operación
+        setSelectedMembers(newSelected);
+        
+        // Actualizamos customAmounts en una operación separada
         setCustomAmounts(prev => {
           const updated = { ...prev };
           delete updated[memberId];
           return updated;
         });
-        return prevSelected.filter(id => id !== memberId);
+      } else {
+        // Si estamos añadiendo, añadimos el ID
+        newSelected.push(memberId);
+        // Actualizar en una sola operación
+        setSelectedMembers(newSelected);
+        
+        // Actualizamos customAmounts en una operación separada
+        setTimeout(() => {
+          setCustomAmounts(prev => ({
+            ...prev,
+            [memberId]: equalShare
+          }));
+        }, 0);
       }
-      // If adding, set initial custom amount
-      else {
-        setCustomAmounts(prev => ({
-          ...prev,
-          [memberId]: sharePerPerson
-        }));
-        return [...prevSelected, memberId];
-      }
-    });
-  }, [sharePerPerson]);
+    } catch (error) {
+      console.error("Error toggling member selection:", error);
+    }
+  }, [selectedMembers, amount]);
 
   // Handle custom amount change
   const handleCustomAmountChange = useCallback((memberId: string, value: string) => {
@@ -223,15 +265,47 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
 
   // Select or deselect all members
   const toggleAllMembers = useCallback(() => {
+    let newSelected: string[];
+    
     if (selectedMembers.length === groupMembers.length) {
       // Deselect all except payer
-      const newSelected = paidById ? [paidById] : [];
-      setSelectedMembers(newSelected);
+      newSelected = paidById ? [paidById] : [];
     } else {
       // Select all
-      setSelectedMembers(groupMembers.map(m => m.id));
+      newSelected = groupMembers.map(m => m.id);
     }
-  }, [groupMembers, paidById, selectedMembers]);
+    
+    // Primero, actualizar los miembros seleccionados
+    setSelectedMembers(newSelected);
+    
+    // Luego, actualizar los montos personalizados para que coincidan con los miembros seleccionados
+    setTimeout(() => {
+      setCustomAmounts(prev => {
+        const updated = { ...prev };
+        
+        // Limpiamos los amounts para los miembros que ya no están seleccionados
+        Object.keys(updated).forEach(id => {
+          if (!newSelected.includes(id)) {
+            delete updated[id];
+          }
+        });
+        
+        // Calculamos la parte igual para cada miembro seleccionado
+        const equalShare = newSelected.length > 0 
+          ? parseFloat((amount / newSelected.length).toFixed(2)) 
+          : 0;
+        
+        // Agregamos amounts para los nuevos miembros seleccionados
+        newSelected.forEach(id => {
+          if (!updated[id]) {
+            updated[id] = equalShare;
+          }
+        });
+        
+        return updated;
+      });
+    }, 0);
+  }, [selectedMembers, groupMembers, paidById, amount]);
 
   // Calculate what each person owes/gets - use memoization to avoid recalculations
   const balances = useMemo(() => groupMembers.map(member => {

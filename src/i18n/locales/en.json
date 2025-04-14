@@ -243,13 +243,13 @@
         "resetEqual": "Reset to Equal",
         "distributeRemaining": "Distribute Remaining",
         "autocomplete": "Autocomplete",
-        "assignAll": "Assign All",
         "selectAll": "Select All",
         "deselectAll": "Deselect All",
         "amount": "Amount",
         "balance": "Balance",
         "totalAmount": "Total amount",
-        "membersSelected": "members selected"
+        "membersSelected": "members selected",
+        "assignAll": "Assign all"
       },
       "splitWithGroup": {
         "label": "Split with group",

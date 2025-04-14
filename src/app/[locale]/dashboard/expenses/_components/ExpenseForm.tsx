@@ -365,7 +365,29 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
   // Update selected members when group members change
   React.useEffect(() => {
     if (groupMembers.length > 0) {
-      setSelectedMembers(groupMembers.map(member => member.id));
+      // Crear una copia de los IDs de miembros
+      const memberIds = [...groupMembers.map(member => member.id)];
+      
+      // Actualizar los miembros seleccionados en una sola operación
+      setSelectedMembers(memberIds);
+      
+      // Inicializar los montos personalizados para los nuevos miembros
+      if (amount > 0) {
+        const sharePerPerson = parseFloat((amount / memberIds.length).toFixed(2));
+        
+        setTimeout(() => {
+          setCustomAmounts(prev => {
+            const newAmounts = { ...prev };
+            memberIds.forEach(id => {
+              // Solo inicializar si no existe ya
+              if (newAmounts[id] === undefined) {
+                newAmounts[id] = sharePerPerson;
+              }
+            });
+            return newAmounts;
+          });
+        }, 0);
+      }
     }
   }, [groupMembers]);
 

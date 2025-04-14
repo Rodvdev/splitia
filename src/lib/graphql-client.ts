@@ -21,8 +21,45 @@ export async function getAuthenticatedClient() {
   // In the browser, use fetch to get the session
   if (typeof window !== 'undefined') {
     try {
-      const response = await fetch('/api/auth/session');
-      session = await response.json();
+      // Attempt to fetch session with retry logic
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch('/api/auth/session');
+          
+          // Check if response is OK before trying to parse JSON
+          if (!response.ok) {
+            const text = await response.text();
+            if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+              console.error('Received HTML instead of JSON from session endpoint. Status:', response.status);
+              
+              // If this is our last attempt, redirect to login
+              if (attempts === maxAttempts - 1) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired or invalid. Redirecting to login.');
+              }
+            } else {
+              console.error('Session fetch failed with status:', response.status, text);
+            }
+            // Increment attempts and try again after a short delay
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 500));
+            continue;
+          }
+          
+          session = await response.json();
+          break; // Success, exit the retry loop
+        } catch (innerError) {
+          console.error(`Session fetch attempt ${attempts + 1} failed:`, innerError);
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw innerError; // Re-throw if we've exhausted our attempts
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
     } catch (error) {
       console.error('Error fetching session:', error);
       throw new Error('Failed to authenticate: Could not fetch session');
@@ -43,6 +80,10 @@ export async function getAuthenticatedClient() {
   };
   
   if (!session?.user?.id) {
+    // Redirect to login in browser environment
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+    }
     throw new Error('Failed to authenticate: No active session found');
   }
 
@@ -53,6 +94,10 @@ export async function getAuthenticatedClient() {
   if (session.accessToken) {
     headers['Authorization'] = `Bearer ${session.accessToken}`;
   } else {
+    // Redirect to login in browser environment
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+    }
     throw new Error('Failed to authenticate: No access token found');
   }
   
@@ -552,6 +597,19 @@ export async function fetchGroup(id: string): Promise<{ group: {
     return await client.request(query, { id });
   } catch (error) {
     console.error('Error fetching group:', error);
+    
+    // Check if the error response contains HTML (which indicates a server error or auth issue)
+    if (error instanceof Error && 
+        (error.message.includes('<!DOCTYPE') || error.message.includes('<html'))) {
+      console.error('Received HTML response instead of JSON. This is likely an authentication issue.');
+      // Redirect to login or handle session expiration
+      if (typeof window !== 'undefined') {
+        // Only redirect in browser environment
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        return { group: null };
+      }
+    }
+    
     throw error;
   }
 }
@@ -813,6 +871,19 @@ export async function fetchGroupBalances(groupId: string) {
     return await client.request(query, { groupId });
   } catch (error) {
     console.error('Error fetching group balances:', error);
+    
+    // Check if the error response contains HTML (which indicates a server error or auth issue)
+    if (error instanceof Error && 
+        (error.message.includes('<!DOCTYPE') || error.message.includes('<html'))) {
+      console.error('Received HTML response instead of JSON. This is likely an authentication issue.');
+      // Redirect to login or handle session expiration
+      if (typeof window !== 'undefined') {
+        // Only redirect in browser environment
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        return null;
+      }
+    }
+    
     throw error;
   }
 }
