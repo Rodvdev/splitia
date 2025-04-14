@@ -124,13 +124,7 @@ interface CategoriesResponse {
   categories: Category[];
 }
 
-export const ExpenseForm = React.memo(function ExpenseFormInner({
-  initialData,
-  onSubmit,
-  onCancel,
-  isSubmitting = false,
-  isEditing = false,
-}: ExpenseFormProps) {
+export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit, onCancel, isSubmitting, isEditing }) => {
   const t = useTranslations('expenses.form');
   const [groups, setGroups] = React.useState<Group[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
@@ -363,6 +357,14 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
       form.setValue('settlementStatus', 'PENDING');
     }
   }, [isSettlement, settlementType, form]);
+
+  // Watch the selected members for the balance preview
+  const [selectedMembers, setSelectedMembers] = useState<string[]>(groupMembers.map(member => member.id));
+
+  // Update selected members when group members change
+  React.useEffect(() => {
+    setSelectedMembers(groupMembers.map(member => member.id));
+  }, [groupMembers]);
 
   return (
     <Form {...form}>
@@ -644,6 +646,8 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
                     currency={currency}
                     groupMembers={groupMembers}
                     paidById={selectedPaidById}
+                    selectedMembers={selectedMembers}
+                    setSelectedMembers={setSelectedMembers}
                   />
                 ) : selectedGroupId && selectedGroupId !== 'new' ? (
                   <Card className="mt-4">
@@ -965,4 +969,4 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
       </form>
     </Form>
   );
-}); 
+}; 
