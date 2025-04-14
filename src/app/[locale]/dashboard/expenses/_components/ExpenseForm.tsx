@@ -181,25 +181,20 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
     },
   });
 
-  // Actualiza la moneda cuando se carga el perfil o cambia la preferencia
-  React.useEffect(() => {
-    // Si tenemos una moneda de perfil, usarla siempre que sea posible
-    if (profile?.currency && profile.currency !== form.getValues('currency')) {
-      console.log('Actualizando moneda a la del perfil:', profile.currency);
-      form.setValue('currency', profile.currency);
-    } else if (!profile?.currency && preferredCurrency && preferredCurrency !== form.getValues('currency')) {
-      console.log('Actualizando moneda a la preferida:', preferredCurrency);
-      form.setValue('currency', preferredCurrency);
-    }
-  }, [profile, preferredCurrency, form]);
-
-  // Apply form values only on mount, not on every render
+  // Ensure currency is set correctly and only once
   const formValuesApplied = React.useRef(false);
   React.useEffect(() => {
-    if (!formValuesApplied.current && initialData) {
+    if (!formValuesApplied.current) {
       formValuesApplied.current = true;
+      if (profile?.currency && profile.currency !== form.getValues('currency')) {
+        console.log('Setting currency to profile currency:', profile.currency);
+        form.setValue('currency', profile.currency);
+      } else if (!profile?.currency && preferredCurrency && preferredCurrency !== form.getValues('currency')) {
+        console.log('Setting currency to preferred currency:', preferredCurrency);
+        form.setValue('currency', preferredCurrency);
+      }
     }
-  }, [initialData, form]);
+  }, [profile, preferredCurrency, form]);
 
   // Watch the isGroupExpense field to conditionally show group selection
   const isGroupExpense = form.watch('isGroupExpense');
@@ -219,6 +214,22 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
   const currency = form.watch('currency');
   const selectedPaidById = form.watch('paidById');
   
+  // Check for groupId in parameters and set default values
+  React.useEffect(() => {
+    if (initialData?.groupId) {
+      form.setValue('isGroupExpense', true);
+      form.setValue('groupId', initialData.groupId);
+      console.log('Group ID from params:', initialData.groupId);
+      // Set default payer to the authenticated user
+      form.setValue('paidById', profileRef.current?.id || '');
+    } else {
+      // Handle case where no groupId is present
+      form.setValue('isGroupExpense', false);
+      form.setValue('groupId', '');
+      form.setValue('paidById', profileRef.current?.id || '');
+    }
+  }, [initialData, form, profileRef]);
+
   // Fetch user groups when component mounts or when isGroupExpense becomes true
   React.useEffect(() => {
     if (isGroupExpense) {
@@ -245,17 +256,6 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
       loadGroups();
     }
   }, [isGroupExpense, initialData, form]);
-
-  // When initialData includes groupId, make sure isGroupExpense is also set to true
-  React.useEffect(() => {
-    if (initialData?.groupId) {
-      // Make sure the group expense toggle is on
-      form.setValue('isGroupExpense', true);
-      
-      // Ensure the groupId is set in the form
-      form.setValue('groupId', initialData.groupId);
-    }
-  }, [initialData, form]);
 
   // Fetch categories when component mounts
   React.useEffect(() => {

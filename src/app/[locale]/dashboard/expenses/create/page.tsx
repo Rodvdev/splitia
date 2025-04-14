@@ -60,6 +60,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
 
   // Solo actualizar los datos iniciales si no existen
   useEffect(() => {
+    console.log('useEffect triggered: initializedRef.current =', initializedRef.current, 'initialData =', initialData);
     if (!initializedRef.current && !initialData) {
       initializedRef.current = true;
       
@@ -87,6 +88,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
         ...formData,
         date: formData.date.toISOString()
       }));
+      console.log('Form initialized with data:', formData);
     } else if (!initialData && !isProfileLoading && !isPreferencesLoading) {
       // Intentar recuperar de localStorage si no hay datos en el estado global
       const savedData = localStorage.getItem('expense_form_data');
@@ -98,6 +100,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
           }
           globalFormState.setState(parsedData);
           setInitialData(parsedData);
+          console.log('Retrieved form data from localStorage:', parsedData);
         } catch (e) {
           console.error('Error parsing saved form data:', e);
         }
@@ -168,6 +171,7 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
   };
   
   const handleCancel = () => {
+    console.log('Cancelling form, clearing global state and localStorage');
     // Limpiar el estado global y localStorage al cancelar
     globalFormState.setState(null);
     localStorage.removeItem('expense_form_data');
