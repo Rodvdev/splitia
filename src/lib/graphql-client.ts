@@ -860,7 +860,7 @@ export async function recordPayment({
 }
 
 // Fetch settlements for a group
-export async function fetchSettlements(groupId: string, userId?: string, status?: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED') {
+export async function fetchSettlements(groupId: string, userId?: string, status?: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED') {
   const query = `
     query GetSettlements($groupId: ID!, $userId: ID, $status: SettlementStatus) {
       settlements(groupId: $groupId, userId: $userId, status: $status) {
@@ -951,7 +951,8 @@ export async function createSettlement(data: {
   try {
     // Use authenticated client
     const client = await getAuthenticatedClient();
-    return await client.request(mutation, { data: formattedData });
+    const response = await client.request(mutation, { data: formattedData });
+    return response;
   } catch (error) {
     console.error('Error creating settlement:', error);
     throw error;
@@ -959,7 +960,7 @@ export async function createSettlement(data: {
 }
 
 // Update settlement status
-export async function updateSettlementStatus(settlementId: string, status: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED') {
+export async function updateSettlementStatus(settlementId: string, status: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED') {
   const mutation = `
     mutation UpdateSettlementStatus($settlementId: ID!, $status: SettlementStatus!) {
       updateSettlementStatus(settlementId: $settlementId, status: $status) {

@@ -430,6 +430,7 @@ export default function GroupPage() {
           <SettlementsTab 
             groupId={groupId} 
             currentUserId={currentUserId || ''}
+            onSettlementUpdate={loadBalances}
           />
         </TabsContent>
         

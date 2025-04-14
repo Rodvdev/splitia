@@ -34,6 +34,7 @@ import { fetchSettlements, confirmSettlement, updateSettlementStatus } from '@/l
 interface SettlementsTabProps {
   groupId: string;
   currentUserId: string;
+  onSettlementUpdate?: () => void;
 }
 
 interface Settlement {
@@ -42,7 +43,7 @@ interface Settlement {
   currency: string;
   date: string;
   description?: string;
-  settlementStatus: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED';
+  settlementStatus: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
   settlementType: 'PAYMENT' | 'RECEIPT';
   initiatedBy: {
     id: string;
@@ -56,13 +57,13 @@ interface Settlement {
   };
 }
 
-export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) {
+export function SettlementsTab({ groupId, currentUserId, onSettlementUpdate }: SettlementsTabProps) {
   const router = useRouter();
   const t = useTranslations('settlements');
   
   const [isLoading, setIsLoading] = useState(true);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
-  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED'>('ALL');
   const [processingId, setProcessingId] = useState<string | null>(null);
   
   // Fetch settlements when component mounts
@@ -70,13 +71,15 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
     const loadSettlements = async () => {
       setIsLoading(true);
       try {
-        const status = filter === 'ALL' ? undefined : filter === 'PENDING' ? 'PENDING' : 'CONFIRMED';
+        const status = filter === 'ALL' ? undefined : 
+                      filter === 'PENDING' ? 'PENDING' : 
+                      filter === 'COMPLETED' ? 'COMPLETED' : 'CONFIRMED';
         
         interface SettlementsResponse {
           settlements: Settlement[];
         }
         
-        const response = await fetchSettlements(groupId, undefined, status as 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED' | undefined) as SettlementsResponse;
+        const response = await fetchSettlements(groupId, undefined, status as 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | undefined) as SettlementsResponse;
         if (response?.settlements) {
           setSettlements(response.settlements);
         }
@@ -127,6 +130,17 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
     );
   };
   
+  // Check if the current user can mark this settlement as completed
+  const canComplete = (settlement: Settlement) => {
+    return (
+      settlement.settlementStatus === 'CONFIRMED' &&
+      (
+        (settlement.initiatedBy.id === currentUserId) ||
+        (settlement.settledWithUser.id === currentUserId)
+      )
+    );
+  };
+  
   // Confirm settlement
   const handleConfirm = async (settlementId: string) => {
     setProcessingId(settlementId);
@@ -139,6 +153,11 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
       ));
       
       toast.success(t('confirmSuccess'));
+      
+      // Notify parent component to refresh balances
+      if (onSettlementUpdate) {
+        onSettlementUpdate();
+      }
     } catch (error) {
       console.error('Error confirming settlement:', error);
       toast.error(t('errors.confirmFailed'));
@@ -148,7 +167,7 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
   };
   
   // Update settlement status
-  const handleUpdateStatus = async (settlementId: string, status: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED') => {
+  const handleUpdateStatus = async (settlementId: string, status: 'PENDING' | 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED') => {
     setProcessingId(settlementId);
     try {
       await updateSettlementStatus(settlementId, status);
@@ -159,6 +178,11 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
       ));
       
       toast.success(t('statusUpdateSuccess'));
+      
+      // Notify parent component to refresh balances if status is CONFIRMED or COMPLETED
+      if ((status === 'CONFIRMED' || status === 'COMPLETED') && onSettlementUpdate) {
+        onSettlementUpdate();
+      }
     } catch (error) {
       console.error('Error updating settlement status:', error);
       toast.error(t('errors.statusUpdateFailed'));
@@ -181,7 +205,7 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <Select
           value={filter}
-          onValueChange={(value) => setFilter(value as 'ALL' | 'PENDING' | 'CONFIRMED')}
+          onValueChange={(value) => setFilter(value as 'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED')}
         >
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder={t('filterPlaceholder')} />
@@ -190,6 +214,7 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
             <SelectItem value="ALL">{t('filters.all')}</SelectItem>
             <SelectItem value="PENDING">{t('filters.pending')}</SelectItem>
             <SelectItem value="CONFIRMED">{t('filters.confirmed')}</SelectItem>
+            <SelectItem value="COMPLETED">{t('filters.completed')}</SelectItem>
           </SelectContent>
         </Select>
         
@@ -218,6 +243,10 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
                   ? 'bg-green-500' 
                   : settlement.settlementStatus === 'PENDING_CONFIRMATION'
                   ? 'bg-orange-500'
+                  : settlement.settlementStatus === 'COMPLETED'
+                  ? 'bg-purple-500'
+                  : settlement.settlementStatus === 'CANCELLED'
+                  ? 'bg-red-500'
                   : 'bg-blue-500'
               }`} />
               
@@ -239,10 +268,12 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
                   
                   <Badge 
                     variant={
-                      settlement.settlementStatus === 'CONFIRMED' 
+                      settlement.settlementStatus === 'CONFIRMED' || settlement.settlementStatus === 'COMPLETED'
                         ? 'default' 
                         : settlement.settlementStatus === 'PENDING_CONFIRMATION'
                         ? 'outline'
+                        : settlement.settlementStatus === 'CANCELLED'
+                        ? 'destructive'
                         : 'secondary'
                     }
                     className={
@@ -250,10 +281,17 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
                         ? 'bg-green-500' 
                         : settlement.settlementStatus === 'PENDING_CONFIRMATION'
                         ? 'border-orange-500 text-orange-500'
+                        : settlement.settlementStatus === 'COMPLETED'
+                        ? 'bg-purple-500'
+                        : settlement.settlementStatus === 'CANCELLED'
+                        ? 'bg-red-500'
                         : 'bg-blue-500'
                     }
                   >
                     {settlement.settlementStatus === 'CONFIRMED' && (
+                      <Check className="mr-1 h-3 w-3" />
+                    )}
+                    {settlement.settlementStatus === 'COMPLETED' && (
                       <Check className="mr-1 h-3 w-3" />
                     )}
                     {settlement.settlementStatus === 'PENDING_CONFIRMATION' && (
@@ -336,6 +374,24 @@ export function SettlementsTab({ groupId, currentUserId }: SettlementsTabProps) 
                       <Clock className="mr-2 h-4 w-4" />
                     )}
                     {t('actions.requestConfirmation')}
+                  </Button>
+                )}
+                
+                {/* Show complete button for confirmed settlements */}
+                {canComplete(settlement) && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => handleUpdateStatus(settlement.id, 'COMPLETED')}
+                    disabled={!!processingId}
+                    className="w-full bg-green-600 hover:bg-green-700 mt-2"
+                  >
+                    {processingId === settlement.id ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
+                    {t('actions.markCompleted')}
                   </Button>
                 )}
               </CardFooter>

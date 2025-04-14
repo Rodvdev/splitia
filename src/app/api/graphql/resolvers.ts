@@ -909,6 +909,20 @@ export const resolvers = {
             },
           },
         });
+        
+        // Get all settlements for the group
+        const settlements = await prisma.settlement.findMany({
+          where: { 
+            groupId,
+            settlementStatus: {
+              in: ['CONFIRMED', 'COMPLETED']
+            } 
+          },
+          include: {
+            initiatedBy: true,
+            settledWithUser: true
+          }
+        });
 
         // Default currency (use the first expense's currency or a default)
         const currency = expenses.length > 0 ? expenses[0].currency : 'PEN';
@@ -986,6 +1000,45 @@ export const resolvers = {
           });
         });
 
+        // Process settlements to adjust balances
+        settlements.forEach((settlement: {
+          initiatedById: string;
+          settledWithUserId: string;
+          amount: number;
+          settlementType: string;
+        }) => {
+          const { initiatedById, settledWithUserId, amount, settlementType } = settlement;
+          
+          // Determine the effect of the settlement based on its type and the parties involved
+          if (initiatedById === userId) {
+            // Current user initiated the settlement
+            const otherUserBalance = balanceMap.get(settledWithUserId);
+            if (otherUserBalance) {
+              if (settlementType === 'PAYMENT') {
+                // Current user paid the other user - DEBE REDUCIR la deuda
+                otherUserBalance.amount += amount; // Corregido: + en lugar de -
+              } else if (settlementType === 'RECEIPT') {
+                // Current user received payment from the other user
+                otherUserBalance.amount -= amount; // Corregido: - en lugar de +
+              }
+            }
+          } else if (settledWithUserId === userId) {
+            // Current user is the recipient of the settlement
+            const otherUserBalance = balanceMap.get(initiatedById);
+            if (otherUserBalance) {
+              if (settlementType === 'PAYMENT') {
+                // Current user received payment from the other user
+                otherUserBalance.amount -= amount; // Corregido: - en lugar de +
+              } else if (settlementType === 'RECEIPT') {
+                // Current user paid the other user - DEBE REDUCIR la deuda
+                otherUserBalance.amount += amount; // Corregido: + en lugar de -
+              }
+            }
+          } else {
+            // Settlement between two other users - no need to process as they don't affect current user's balances
+          }
+        });
+
         // Convert the map to an array of balances
         const balances = Array.from(balanceMap.entries()).map(([userId, data]) => ({
           userId,
@@ -1039,7 +1092,7 @@ export const resolvers = {
       
       // Check if user is a member of the group
       const userInGroup = await prisma.groupUser.findFirst({
-        where: {
+          where: { 
           userId: userId,
           groupId: args.groupId
         }
@@ -1659,7 +1712,7 @@ export const resolvers = {
       const membership = await prisma.groupUser.findFirst({
         where: {
           userId,
-          groupId,
+            groupId,
           role: GroupRole.ADMIN,
         },
       });
@@ -2752,6 +2805,9 @@ export const resolvers = {
         // Get the settlement
         const settlement = await prisma.settlement.findUnique({
           where: { id: settlementId },
+          include: {
+            group: true
+          }
         });
 
         if (!settlement) {
@@ -2824,6 +2880,9 @@ export const resolvers = {
       // Get the settlement
       const settlement = await prisma.settlement.findUnique({
         where: { id: settlementId },
+        include: {
+          group: true
+        }
       });
       
       if (!settlement) {
@@ -2847,7 +2906,7 @@ export const resolvers = {
       }
       
       // Update the settlement to confirmed status
-      return prisma.settlement.update({
+      const updatedSettlement = await prisma.settlement.update({
         where: { id: settlementId },
         data: { 
           settlementStatus: 'CONFIRMED'
@@ -2858,6 +2917,44 @@ export const resolvers = {
           group: true
         }
       });
+      
+      // Crear un gasto correspondiente al settlement
+      const paidById = settlement.settlementType === SettlementType.PAYMENT 
+        ? settlement.initiatedById 
+        : settlement.settledWithUserId;
+      
+      const receiverId = settlement.settlementType === SettlementType.PAYMENT
+        ? settlement.settledWithUserId
+        : settlement.initiatedById;
+      
+      const description = settlement.description || 'Settlement between users';
+      
+      // Para un settlement, creamos un expense con un share negativo
+      // El signo negativo es importante para que se reste de la deuda correctamente
+      await prisma.expense.create({
+        data: {
+          amount: settlement.amount,
+          description: `${description} (Settlement)`,
+          date: settlement.date,
+          currency: settlement.currency,
+          paidById: paidById,
+          groupId: settlement.groupId,
+          isSettlement: true,
+          settlement: {
+            connect: { id: settlementId }
+          },
+          // En lugar de un share positivo, usamos uno negativo para ajustar el balance correctamente
+          shares: {
+            create: [{
+              amount: -settlement.amount,  // Usamos un monto negativo para reducir la deuda
+              type: 'FIXED',
+              userId: receiverId
+            }]
+          }
+        }
+      });
+      
+      return updatedSettlement;
     },
 
     async createGroupWithConversation(

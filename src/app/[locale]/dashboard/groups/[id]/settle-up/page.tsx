@@ -148,6 +148,11 @@ export default function SettleUpPage() {
     setIsSubmitting(true);
     
     try {
+      // Determinar el estado inicial - las liquidaciones tipo PAYMENT deben comenzar como PENDING_CONFIRMATION
+      // para que la otra persona pueda confirmar que recibió el pago
+      const initialStatus = settlementType === 'PAYMENT' ? 'PENDING_CONFIRMATION' : 'PENDING';
+      
+      // Crear la liquidación
       await createSettlement({
         amount: parseFloat(amount),
         currency: balances?.currency || 'PEN',
@@ -156,11 +161,15 @@ export default function SettleUpPage() {
         groupId,
         settledWithUserId: selectedUserId,
         settlementType,
-        settlementStatus: 'PENDING',
+        settlementStatus: initialStatus,
       });
       
       toast.success(t('createSuccess'));
       router.push(`/dashboard/groups/${groupId}`);
+      
+      // Añadir un pequeño retraso para permitir que el servidor procese la liquidación
+      // antes de que la página del grupo intente cargar los balances
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Error creating settlement:', error);
       toast.error(t('errors.createFailed'));

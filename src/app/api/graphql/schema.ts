@@ -100,6 +100,8 @@ export const typeDefs = gql`
     PENDING
     PENDING_CONFIRMATION
     CONFIRMED
+    COMPLETED
+    CANCELLED
   }
 
   enum SettlementType {
