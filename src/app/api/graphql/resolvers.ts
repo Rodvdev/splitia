@@ -2940,9 +2940,7 @@ export const resolvers = {
           paidById: paidById,
           groupId: settlement.groupId,
           isSettlement: true,
-          settlement: {
-            connect: { id: settlementId }
-          },
+          settlementId: settlementId,
           // En lugar de un share positivo, usamos uno negativo para ajustar el balance correctamente
           shares: {
             create: [{

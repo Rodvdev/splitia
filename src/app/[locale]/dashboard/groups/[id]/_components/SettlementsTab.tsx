@@ -119,7 +119,7 @@ export function SettlementsTab({ groupId, currentUserId, onSettlementUpdate }: S
   const canComplete = (settlement: Settlement) => {
     return (
       settlement.settlementStatus === 'CONFIRMED' &&
-      settlement.initiatedBy.id === currentUserId
+      settlement.settledWithUser.id === currentUserId
     );
   };
   
