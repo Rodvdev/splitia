@@ -112,6 +112,7 @@ interface User {
   email?: string;
   image?: string;
   role?: string;
+  currency?: string;
 }
 
 // Interface for the GraphQL response
@@ -181,20 +182,26 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
     },
   });
 
+  // Debugging: Log currency value
+  React.useEffect(() => {
+    console.log('Current currency value:', form.getValues('currency'));
+  }, [form]);
+
   // Ensure currency is set correctly and only once
   const formValuesApplied = React.useRef(false);
   React.useEffect(() => {
-    if (!formValuesApplied.current) {
+    if (profileRef.current && !formValuesApplied.current) {
       formValuesApplied.current = true;
-      if (profile?.currency && profile.currency !== form.getValues('currency')) {
-        console.log('Setting currency to profile currency:', profile.currency);
-        form.setValue('currency', profile.currency);
-      } else if (!profile?.currency && preferredCurrency && preferredCurrency !== form.getValues('currency')) {
-        console.log('Setting currency to preferred currency:', preferredCurrency);
-        form.setValue('currency', preferredCurrency);
-      }
+      // Set default currency
+      const currencyToSet = profileRef.current.currency || preferredCurrency || 'USD';
+      console.log('Setting default currency:', currencyToSet);
+      form.setValue('currency', currencyToSet);
+
+      // Set default payer to the authenticated user
+      console.log('Setting default payer to user ID:', profileRef.current.id);
+      form.setValue('paidById', profileRef.current.id);
     }
-  }, [profile, preferredCurrency, form]);
+  }, [profileRef, preferredCurrency, form]);
 
   // Watch the isGroupExpense field to conditionally show group selection
   const isGroupExpense = form.watch('isGroupExpense');
