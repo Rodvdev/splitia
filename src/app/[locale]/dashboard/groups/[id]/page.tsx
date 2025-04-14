@@ -11,6 +11,7 @@ import {
   Settings,
   Trash2,
   Receipt,
+  ArrowRightLeft,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -39,12 +40,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { fetchGroup, deleteGroup, changeGroupMemberRole, removeGroupMember } from '@/lib/graphql-client';
+import { fetchGroup, deleteGroup, changeGroupMemberRole, removeGroupMember, fetchGroupBalances } from '@/lib/graphql-client';
 import { toast } from 'sonner';
 import { GroupMembers } from './_components/GroupMembers';
 import { GroupExpenses } from './_components/GroupExpenses';
 import { GroupBalances } from './_components/GroupBalances';
 import { SettlementsTab } from './_components/SettlementsTab';
+import { formatCurrency } from '@/lib/format';
 
 interface GroupMember {
   id: string;
@@ -62,6 +64,26 @@ interface Group {
   members: GroupMember[];
 }
 
+interface GroupBalanceSummary {
+  totalOwed: number;
+  totalOwing: number;
+  netBalance: number;
+  currency: string;
+}
+
+interface GroupBalancesResponse {
+  groupBalances: GroupBalanceSummary & {
+    balances: Array<{
+      userId: string;
+      name: string;
+      email?: string;
+      image?: string;
+      amount: number;
+      currency: string;
+    }>;
+  };
+}
+
 export default function GroupPage() {
   // Get params directly using useParams hook
   const params = useParams();
@@ -73,6 +95,7 @@ export default function GroupPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [balanceSummary, setBalanceSummary] = useState<GroupBalanceSummary | null>(null);
   
   // Fetch group data when component mounts
   useEffect(() => {
@@ -87,6 +110,13 @@ export default function GroupPage() {
         }
         
         setGroup(response.group);
+
+        // Fetch balances
+        const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
+        if (balancesResponse?.groupBalances) {
+          const { totalOwed, totalOwing, netBalance, currency } = balancesResponse.groupBalances;
+          setBalanceSummary({ totalOwed, totalOwing, netBalance, currency });
+        }
       } catch (error) {
         console.error('Failed to load group:', error);
         toast.error(t('errors.fetchFailed'));
@@ -321,26 +351,26 @@ export default function GroupPage() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Users className="mr-2 h-4 w-4" />
-            <span>{t('view.memberCount', { count: group.members.length })}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Users className="mr-2 h-4 w-4" />
+              <span>{t('view.memberCount', { count: group.members.length })}</span>
+            </div>
+            {balanceSummary && (
+              <div className={`flex items-center text-sm ${balanceSummary.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                <span>{t('balances.netBalance')}: {formatCurrency(balanceSummary.netBalance, balanceSummary.currency)}</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Group Action Buttons */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+ 
         <Button 
-          variant="outline" 
-          className="flex flex-col h-auto py-4 gap-2"
-          onClick={handleInvite}
-        >
-          <UserPlus className="h-5 w-5" />
-          <span className="text-xs font-medium">{t('actions.inviteMembers')}</span>
-        </Button>
-
-        <Button 
-          variant="outline" 
+          variant="default" 
           className="flex flex-col h-auto py-4 gap-2"
           onClick={() => router.push(`/dashboard/expenses/create?groupId=${group.id}`)}
         >
@@ -349,16 +379,7 @@ export default function GroupPage() {
         </Button>
 
         <Button 
-          variant="outline" 
-          className="flex flex-col h-auto py-4 gap-2"
-          onClick={handleSettings}
-        >
-          <Settings className="h-5 w-5" />
-          <span className="text-xs font-medium">{t('actions.groupSettings')}</span>
-        </Button>
-
-        <Button 
-          variant="outline" 
+          variant="default" 
           className="flex flex-col h-auto py-4 gap-2 border-dashed"
           onClick={() => router.push(`/dashboard/groups/${group.id}/settle-up`)}
         >

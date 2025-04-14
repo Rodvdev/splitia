@@ -47,7 +47,6 @@ interface GroupBalancesResponse {
   groupBalances: {
     totalOwed: number;
     totalOwing: number;
-    netBalance: number;
     currency: string;
     balances: Balance[];
   }
@@ -65,7 +64,6 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
   const [currency, setCurrency] = useState('PEN');
   const [totalOwed, setTotalOwed] = useState(0);
   const [totalOwing, setTotalOwing] = useState(0);
-  const [netBalance, setNetBalance] = useState(0);
   
   // Cargar balances del grupo desde la API
   useEffect(() => {
@@ -76,14 +74,13 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
         const response = await fetchGroupBalances(groupId) as GroupBalancesResponse;
         
         if (response && response.groupBalances) {
-          const { balances, totalOwed, totalOwing, netBalance, currency } = response.groupBalances;
+          const { balances, totalOwed, totalOwing, currency } = response.groupBalances;
           
           // El backend ya debería filtrar a los usuarios con rol ASSISTANT,
           // pero por seguridad aseguramos que no aparezcan en la interfaz
           setBalances(balances);
           setTotalOwed(totalOwed);
           setTotalOwing(totalOwing);
-          setNetBalance(netBalance);
           setCurrency(currency);
         }
       } catch (error) {
@@ -126,12 +123,11 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
       // Cargar los balances actualizados
       const response = await fetchGroupBalances(groupId) as GroupBalancesResponse;
       if (response && response.groupBalances) {
-        const { balances, totalOwed, totalOwing, netBalance, currency } = response.groupBalances;
+        const { balances, totalOwed, totalOwing, currency } = response.groupBalances;
         
         setBalances(balances);
         setTotalOwed(totalOwed);
         setTotalOwing(totalOwing);
-        setNetBalance(netBalance);
         setCurrency(currency);
       }
       
@@ -170,7 +166,7 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
         ) : (
           <>
             {/* Resumen de saldos */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
                 <div className="text-green-500 font-medium mb-1 flex items-center">
                   <TrendingUp className="h-4 w-4 mr-1" />
@@ -188,15 +184,6 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
                 </div>
                 <div className="text-lg font-bold">
                   {formatCurrency(totalOwing, currency)}
-                </div>
-              </div>
-              
-              <div className={`${netBalance >= 0 ? 'bg-blue-50 dark:bg-blue-950' : 'bg-amber-50 dark:bg-amber-950'} p-4 rounded-lg`}>
-                <div className={`${netBalance >= 0 ? 'text-blue-500' : 'text-amber-500'} font-medium mb-1`}>
-                  {t('balances.netBalance')}
-                </div>
-                <div className="text-lg font-bold">
-                  {formatCurrency(netBalance, currency)}
                 </div>
               </div>
             </div>
