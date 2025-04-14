@@ -88,12 +88,37 @@ export const typeDefs = gql`
     currency: String!
   }
 
+  type GroupBalanceByCurrency {
+    currency: String!
+    amount: Float!
+  }
+
+  type GroupBalanceMultiCurrency {
+    userId: ID!
+    name: String!
+    email: String
+    image: String
+    balances: [GroupBalanceByCurrency!]!
+  }
+
   type GroupBalanceSummary {
     totalOwed: Float!
     totalOwing: Float!
     netBalance: Float!
     currency: String!
     balances: [GroupBalance!]!
+  }
+
+  type GroupBalanceMultiCurrencySummary {
+    balancesByCurrency: [CurrencyBalanceSummary!]!
+    balances: [GroupBalanceMultiCurrency!]!
+  }
+
+  type CurrencyBalanceSummary {
+    currency: String!
+    totalOwed: Float!
+    totalOwing: Float!
+    netBalance: Float!
   }
 
   enum SettlementStatus {
@@ -248,6 +273,7 @@ export const typeDefs = gql`
     userGroups: [Group!]!
     group(id: ID!): Group
     groupBalances(groupId: ID!): GroupBalanceSummary!
+    groupBalancesMultiCurrency(groupId: ID!): GroupBalanceMultiCurrencySummary!
     conversations: [Conversation!]!
     conversation(id: ID!): Conversation
     messages(conversationId: ID!, limit: Int, offset: Int): [Message!]!

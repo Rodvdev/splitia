@@ -1016,4 +1016,46 @@ export async function confirmSettlement(settlementId: string) {
     console.error('Error confirming settlement:', error);
     throw error;
   }
+}
+
+// Helper function to fetch group balances with multi-currency support
+export async function fetchGroupBalancesMultiCurrency(groupId: string) {
+  const query = `
+    query GetGroupBalancesMultiCurrency($groupId: ID!) {
+      groupBalancesMultiCurrency(groupId: $groupId) {
+        balancesByCurrency {
+          currency
+          totalOwed
+          totalOwing
+          netBalance
+        }
+        balances {
+          userId
+          name
+          email
+          image
+          balances {
+            currency
+            amount
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    // Use authenticated client to ensure session token is sent
+    const client = await getAuthenticatedClient();
+    return await client.request(query, { groupId });
+  } catch (error) {
+    console.error('Error fetching multi-currency group balances:', error);
+    
+    // Check if it's an authentication error
+    if (error instanceof Error && error.message.includes('Failed to authenticate')) {
+      throw new Error('Please sign in to view group balances');
+    }
+    
+    // Handle other types of errors
+    throw new Error('Failed to fetch group balances. Please try again later.');
+  }
 } 

@@ -1140,6 +1140,254 @@ export const resolvers = {
         }
       });
     },
+
+    // Get group balances with multi-currency support
+    groupBalancesMultiCurrency: async (_parent: unknown, { groupId }: { groupId: string }, context: Context) => {
+      const session = await getServerSession(context);
+      
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Verify the user is a member of the group
+      const membership = await prisma.groupUser.findFirst({
+        where: {
+          userId,
+          groupId,
+        },
+      });
+
+      if (!membership) {
+        throw new GraphQLError('Group not found or access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      try {
+        // Get all group members
+        const group = await prisma.group.findUnique({
+          where: { id: groupId },
+          include: {
+            members: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        if (!group) {
+          throw new GraphQLError('Group not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Get all expenses for the group
+        const expenses = await prisma.expense.findMany({
+          where: { groupId },
+          include: {
+            paidBy: true,
+            shares: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+        
+        // Get all settlements for the group
+        const settlements = await prisma.settlement.findMany({
+          where: { 
+            groupId,
+            settlementStatus: {
+              in: ['CONFIRMED', 'COMPLETED']
+            } 
+          },
+          include: {
+            initiatedBy: true,
+            settledWithUser: true
+          }
+        });
+
+        // Create a nested map for each member and their balances in different currencies
+        // Map<userId, Map<currency, amount>>
+        const balancesByCurrencyAndUser = new Map<string, Map<string, number>>();
+        
+        // Filter out ASSISTANT members and initialize balances for regular members
+        group.members.forEach((member: { 
+          role: string; 
+          userId: string; 
+          user: { 
+            name: string | null; 
+            email: string; 
+            image: string | null; 
+          }; 
+        }) => {
+          // Skip AI Assistants and the current user
+          if (member.role !== 'ASSISTANT' && member.userId !== userId) {
+            balancesByCurrencyAndUser.set(member.userId, new Map<string, number>());
+          }
+        });
+
+        // Process all expenses with explicit typing and separate by currency
+        (expenses as Array<{
+          paidBy: { id: string };
+          currency: string;
+          shares: Array<{
+            user?: { id: string };
+            amount: number;
+          }>
+        }>).forEach(expense => {
+          if (!expense.paidBy || !expense.shares) return;
+          
+          const paidById = expense.paidBy.id;
+          const currency = expense.currency;
+          
+          // Calculate each member's share
+          expense.shares.forEach(share => {
+            if (share.user) {
+              const memberId = share.user.id;
+              const shareAmount = share.amount;
+
+              // Skip if it's the current user's share or an ASSISTANT role
+              if ((memberId === userId && paidById === userId) || 
+                  group.members.some((m: { userId: string; role: string }) => m.userId === memberId && m.role === 'ASSISTANT')) {
+                return; // Skip current user's share or AI Assistant
+              }
+
+              // If current user paid
+              if (paidById === userId && memberId !== userId) {
+                const memberBalances = balancesByCurrencyAndUser.get(memberId);
+                if (memberBalances) {
+                  // Other member owes current user this share amount in this currency
+                  const currentBalance = memberBalances.get(currency) || 0;
+                  memberBalances.set(currency, currentBalance + shareAmount);
+                }
+              } 
+              // If current user is paying a share
+              else if (memberId === userId && paidById !== userId) {
+                const payerBalances = balancesByCurrencyAndUser.get(paidById);
+                if (payerBalances) {
+                  // Current user owes payer this share amount in this currency
+                  const currentBalance = payerBalances.get(currency) || 0;
+                  payerBalances.set(currency, currentBalance - shareAmount);
+                }
+              }
+            }
+          });
+        });
+
+        // Process settlements to adjust balances, respecting currencies
+        settlements.forEach((settlement: {
+          initiatedById: string;
+          settledWithUserId: string;
+          amount: number;
+          currency: string;
+          settlementType: string;
+        }) => {
+          const { initiatedById, settledWithUserId, amount, settlementType, currency } = settlement;
+          
+          // Determine the effect of the settlement based on its type and the parties involved
+          if (initiatedById === userId) {
+            // Current user initiated the settlement
+            const otherUserBalances = balancesByCurrencyAndUser.get(settledWithUserId);
+            if (otherUserBalances) {
+              const currentBalance = otherUserBalances.get(currency) || 0;
+              if (settlementType === 'PAYMENT') {
+                // Current user paid the other user
+                otherUserBalances.set(currency, currentBalance + amount);
+              } else if (settlementType === 'RECEIPT') {
+                // Current user received payment from the other user
+                otherUserBalances.set(currency, currentBalance - amount);
+              }
+            }
+          } else if (settledWithUserId === userId) {
+            // Current user is the recipient of the settlement
+            const otherUserBalances = balancesByCurrencyAndUser.get(initiatedById);
+            if (otherUserBalances) {
+              const currentBalance = otherUserBalances.get(currency) || 0;
+              if (settlementType === 'PAYMENT') {
+                // Current user received payment from the other user
+                otherUserBalances.set(currency, currentBalance - amount);
+              } else if (settlementType === 'RECEIPT') {
+                // Current user paid the other user
+                otherUserBalances.set(currency, currentBalance + amount);
+              }
+            }
+          }
+        });
+
+        // Structure the response
+        // First, gather unique currencies
+        const allCurrencies = new Set<string>();
+        balancesByCurrencyAndUser.forEach(currencyMap => {
+          currencyMap.forEach((_, currency) => {
+            allCurrencies.add(currency);
+          });
+        });
+
+        // Create currency summary data
+        const currencySummaries = Array.from(allCurrencies).map(currency => {
+          let totalOwed = 0;
+          let totalOwing = 0;
+
+          balancesByCurrencyAndUser.forEach(currencyMap => {
+            const amount = currencyMap.get(currency) || 0;
+            if (amount > 0) {
+              totalOwed += amount;
+            } else if (amount < 0) {
+              totalOwing += amount;
+            }
+          });
+
+          return {
+            currency,
+            totalOwed,
+            totalOwing: Math.abs(totalOwing),
+            netBalance: totalOwed + totalOwing
+          };
+        });
+
+        // Create user balance data
+        const userBalances = Array.from(balancesByCurrencyAndUser.entries()).map(([userId, currencyMap]) => {
+          // Get user data
+          const member = group.members.find((m: { userId: string }) => m.userId === userId);
+          
+          // Format balances per currency
+          const balances = Array.from(allCurrencies).map(currency => ({
+            currency,
+            amount: currencyMap.get(currency) || 0
+          })).filter(b => b.amount !== 0); // Only include non-zero balances
+          
+          return {
+            userId,
+            name: member?.user.name || '',
+            email: member?.user.email || '',
+            image: member?.user.image,
+            balances
+          };
+        });
+
+        return {
+          balancesByCurrency: currencySummaries,
+          balances: userBalances
+        };
+      } catch (error) {
+        console.error('Error calculating multi-currency group balances:', error);
+        throw new GraphQLError('Failed to calculate multi-currency group balances', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
   },
 
   Mutation: {
@@ -2784,6 +3032,83 @@ export const resolvers = {
           },
         });
 
+        // Get the group with its conversation ID
+        const group = await prisma.group.findUnique({
+          where: { id: args.data.groupId },
+          select: { 
+            conversationId: true,
+            name: true
+          }
+        });
+
+        // Get the names of both users involved in the settlement
+        const initiatedByUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true }
+        });
+
+        const settledWithUser = await prisma.user.findUnique({
+          where: { id: args.data.toUserId },
+          select: { name: true }
+        });
+
+        // If the group has a conversation, add a message about the settlement
+        if (group && group.conversationId) {
+          // Format the amount with the currency
+          const formattedAmount = `${args.data.amount.toFixed(2)} ${args.data.currency}`;
+          
+          // Create a human-friendly message based on the settlement type and status
+          let messageContent = '';
+          const initiatorName = initiatedByUser?.name || 'Someone';
+          const recipientName = settledWithUser?.name || 'someone';
+          const description = args.data.description 
+            ? ` for "${args.data.description}"` 
+            : '';
+            
+          if (args.data.settlementType === SettlementType.PAYMENT) {
+            if (args.data.settlementStatus === SettlementStatus.PENDING) {
+              messageContent = `💸 ${initiatorName} has recorded a pending payment of ${formattedAmount} to ${recipientName}${description}.`;
+            } else if (args.data.settlementStatus === SettlementStatus.PENDING_CONFIRMATION) {
+              messageContent = `✅ ${initiatorName} has marked a payment of ${formattedAmount} to ${recipientName} as paid${description}. Waiting for confirmation.`;
+            } else if (args.data.settlementStatus === SettlementStatus.CONFIRMED) {
+              messageContent = `✅✅ ${initiatorName} and ${recipientName} have confirmed a payment of ${formattedAmount}${description}.`;
+            }
+          } else if (args.data.settlementType === SettlementType.RECEIPT) {
+            if (args.data.settlementStatus === SettlementStatus.PENDING) {
+              messageContent = `💰 ${initiatorName} has recorded a pending receipt of ${formattedAmount} from ${recipientName}${description}.`;
+            } else if (args.data.settlementStatus === SettlementStatus.PENDING_CONFIRMATION) {
+              messageContent = `✅ ${initiatorName} has marked a receipt of ${formattedAmount} from ${recipientName} as received${description}. Waiting for confirmation.`;
+            } else if (args.data.settlementStatus === SettlementStatus.CONFIRMED) {
+              messageContent = `✅✅ ${initiatorName} and ${recipientName} have confirmed a transfer of ${formattedAmount}${description}.`;
+            }
+          }
+
+          // Add a date to the message if it's not today
+          const today = new Date();
+          const settlementDate = new Date(args.data.date);
+          if (settlementDate.toDateString() !== today.toDateString()) {
+            const formattedDate = settlementDate.toLocaleDateString(undefined, { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric' 
+            });
+            messageContent += ` (Date: ${formattedDate})`;
+          }
+
+          // Add a settlement link to the message
+          messageContent += `\n\nView details in the Settlements tab.`;
+
+          // Create the message in the group conversation
+          await prisma.message.create({
+            data: {
+              content: messageContent,
+              conversationId: group.conversationId,
+              senderId: userId,
+              isAI: false, // This is a system message but coming from a real user action
+            },
+          });
+        }
+
         return settlement;
       } catch (error: unknown) {
         console.error('Error creating settlement:', error);
@@ -2826,7 +3151,9 @@ export const resolvers = {
         const settlement = await prisma.settlement.findUnique({
           where: { id: settlementId },
           include: {
-            group: true
+            group: true,
+            initiatedBy: true,
+            settledWithUser: true
           }
         });
 
@@ -2850,6 +3177,12 @@ export const resolvers = {
           });
         }
 
+        // Get current user name for the message
+        const currentUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true }
+        });
+
         // Update the settlement status
         const updatedSettlement = await prisma.settlement.update({
           where: { id: settlementId },
@@ -2867,6 +3200,60 @@ export const resolvers = {
             group: true,
           },
         });
+
+        // Get the group with its conversation ID
+        const group = await prisma.group.findUnique({
+          where: { id: settlement.groupId },
+          select: { 
+            conversationId: true,
+            name: true
+          }
+        });
+
+        // If the group has a conversation, add a message about the status update
+        if (group && group.conversationId) {
+          // Format the amount with the currency
+          const formattedAmount = `${settlement.amount.toFixed(2)} ${settlement.currency}`;
+          
+          // Create a human-friendly message based on the status update
+          let messageContent = '';
+          const initiatorName = settlement.initiatedBy?.name || 'Someone';
+          const recipientName = settlement.settledWithUser?.name || 'someone';
+          const userName = currentUser?.name || 'Someone';
+          const description = settlement.description 
+            ? ` for "${settlement.description}"` 
+            : '';
+          
+          if (status === SettlementStatus.PENDING_CONFIRMATION) {
+            if (settlement.settlementType === 'PAYMENT') {
+              messageContent = `✅ ${userName} has marked a payment of ${formattedAmount} to ${recipientName} as paid${description}. Waiting for confirmation.`;
+            } else {
+              messageContent = `✅ ${userName} has marked a receipt of ${formattedAmount} from ${recipientName} as received${description}. Waiting for confirmation.`;
+            }
+          } else if (status === SettlementStatus.CONFIRMED) {
+            messageContent = `✅✅ The payment of ${formattedAmount} between ${initiatorName} and ${recipientName}${description} has been confirmed.`;
+          } else if (status === SettlementStatus.COMPLETED) {
+            messageContent = `🎉 The payment of ${formattedAmount} between ${initiatorName} and ${recipientName}${description} has been completed.`;
+          } else if (status === SettlementStatus.CANCELLED) {
+            messageContent = `❌ ${userName} has cancelled the payment of ${formattedAmount} between ${initiatorName} and ${recipientName}${description}.`;
+          }
+
+          // Add a settlement link to the message
+          messageContent += `\n\nView details in the Settlements tab.`;
+
+          // Only create a message if we have content
+          if (messageContent) {
+            // Create the message in the group conversation
+            await prisma.message.create({
+              data: {
+                content: messageContent,
+                conversationId: group.conversationId,
+                senderId: userId,
+                isAI: false,
+              },
+            });
+          }
+        }
 
         return updatedSettlement;
       } catch (error: unknown) {
@@ -2901,7 +3288,9 @@ export const resolvers = {
       const settlement = await prisma.settlement.findUnique({
         where: { id: settlementId },
         include: {
-          group: true
+          group: true,
+          initiatedBy: true,
+          settledWithUser: true
         }
       });
       
@@ -2920,22 +3309,26 @@ export const resolvers = {
         );
       
       if (!canConfirm) {
-        throw new GraphQLError('User cannot confirm this settlement', {
+        throw new GraphQLError('Not authorized to confirm this settlement', {
           extensions: { code: 'FORBIDDEN' },
         });
       }
       
-      // Update the settlement to confirmed status
-      const updatedSettlement = await prisma.settlement.update({
+      // Get current user name for the message
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true }
+      });
+      
+      // Update the settlement status to CONFIRMED
+      const confirmedSettlement = await prisma.settlement.update({
         where: { id: settlementId },
-        data: { 
-          settlementStatus: 'CONFIRMED'
-        },
+        data: { settlementStatus: SettlementStatus.CONFIRMED },
         include: {
           initiatedBy: true,
           settledWithUser: true,
-          group: true
-        }
+          group: true,
+        },
       });
       
       // Crear un gasto correspondiente al settlement
@@ -2972,7 +3365,50 @@ export const resolvers = {
         }
       });
       
-      return updatedSettlement;
+      // Get the group with its conversation ID
+      const group = await prisma.group.findUnique({
+        where: { id: settlement.groupId },
+        select: { 
+          conversationId: true,
+          name: true
+        }
+      });
+      
+      // If the group has a conversation, add a message about the confirmation
+      if (group && group.conversationId) {
+        // Format the amount with the currency
+        const formattedAmount = `${settlement.amount.toFixed(2)} ${settlement.currency}`;
+        
+        // Create a human-friendly message about the confirmation
+        const initiatorName = settlement.initiatedBy?.name || 'Someone';
+        const recipientName = settlement.settledWithUser?.name || 'someone';
+        const userName = currentUser?.name || 'Someone';
+        const descriptionText = settlement.description 
+          ? ` for "${settlement.description}"` 
+          : '';
+        
+        let messageContent = '';
+        if (settlement.settlementType === 'PAYMENT') {
+          messageContent = `✅✅ ${userName} has confirmed receiving a payment of ${formattedAmount} from ${initiatorName}${descriptionText}.`;
+        } else {
+          messageContent = `✅✅ ${userName} has confirmed sending a payment of ${formattedAmount} to ${recipientName}${descriptionText}.`;
+        }
+        
+        // Add a settlement link to the message
+        messageContent += `\n\nView details in the Settlements tab.`;
+        
+        // Create the message in the group conversation
+        await prisma.message.create({
+          data: {
+            content: messageContent,
+            conversationId: group.conversationId,
+            senderId: userId,
+            isAI: false,
+          },
+        });
+      }
+      
+      return confirmedSettlement;
     },
 
     async createGroupWithConversation(
