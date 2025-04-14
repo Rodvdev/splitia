@@ -173,7 +173,7 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
       isPaid: initialData?.isPaid !== undefined ? initialData.isPaid : true,
       isGroupExpense: initialData?.isGroupExpense !== undefined ? initialData.isGroupExpense : false,
       groupId: initialData?.groupId || '',
-      paidById: initialData?.paidById || '',
+      paidById: initialData?.paidById || profileRef.current?.id || '',
       isSettlement: initialData?.isSettlement || false,
       settlementStatus: initialData?.settlementStatus || 'PENDING',
       settlementType: initialData?.settlementType || 'PAYMENT',
