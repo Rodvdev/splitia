@@ -766,7 +766,8 @@
     "filters": {
       "all": "Todas",
       "pending": "Pendientes",
-      "confirmed": "Confirmadas"
+      "confirmed": "Confirmadas",
+      "completed": "Completadas"
     },
     "status": {
       "pending": "Pendiente",
@@ -793,7 +794,9 @@
       "confirm": "Confirmar",
       "newSettlement": "Nueva Liquidación",
       "createFirst": "Crear primera liquidación",
-      "requestConfirmation": "Solicitar confirmación"
+      "requestConfirmation": "Solicitar confirmación",
+      "markAsPaid": "Marcar como pagado",
+      "markCompleted": "Marcar como completado"
     },
     "errors": {
       "loadFailed": "Error al cargar los datos",

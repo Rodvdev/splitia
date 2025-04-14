@@ -117,6 +117,11 @@ export default function SettleUpPage() {
       if (userBalance) {
         // Use absolute value as the direction is determined by settlementType
         setAmount(Math.abs(userBalance.amount).toFixed(2));
+        
+        // Set the settlement type based on the balance
+        // If user has positive balance (they owe us money), we need to RECEIPT (collect payment)
+        // If user has negative balance (we owe them), we need to PAYMENT (make payment)
+        setSettlementType(userBalance.amount > 0 ? 'RECEIPT' : 'PAYMENT');
       }
     }
   }, [selectedUserId, balances]);
@@ -148,11 +153,17 @@ export default function SettleUpPage() {
     setIsSubmitting(true);
     
     try {
-      // Determinar el estado inicial - las liquidaciones tipo PAYMENT deben comenzar como PENDING_CONFIRMATION
-      // para que la otra persona pueda confirmar que recibió el pago
+      // Determine the initial status based on the settlement type
+      // For PAYMENT: The current user is initiating a payment to another user
+      // For RECEIPT: The current user is recording that they received money from another user
+      
+      // When marking a payment (I'm paying someone else), set to PENDING_CONFIRMATION 
+      // so they can confirm they received the money
+      // When marking a receipt (I'm receiving from someone), set to PENDING
+      // because I'm already confirming I received it
       const initialStatus = settlementType === 'PAYMENT' ? 'PENDING_CONFIRMATION' : 'PENDING';
       
-      // Crear la liquidación
+      // Create the settlement
       await createSettlement({
         amount: parseFloat(amount),
         currency: balances?.currency || 'PEN',
@@ -167,8 +178,8 @@ export default function SettleUpPage() {
       toast.success(t('createSuccess'));
       router.push(`/dashboard/groups/${groupId}`);
       
-      // Añadir un pequeño retraso para permitir que el servidor procese la liquidación
-      // antes de que la página del grupo intente cargar los balances
+      // Add a small delay to allow the server to process the settlement
+      // before the group page tries to load the balances
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Error creating settlement:', error);
@@ -293,11 +304,11 @@ export default function SettleUpPage() {
                 <div className="space-y-2">
                   <Label htmlFor="settlementType">{t('fields.type')}</Label>
                   <Select
-                    defaultValue="PAYMENT"
+                    value={settlementType}
                     onValueChange={(value) => setSettlementType(value as 'PAYMENT' | 'RECEIPT')}
                     disabled={isSubmitting}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder={t('fields.selectType')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -320,10 +331,11 @@ export default function SettleUpPage() {
                 <div className="space-y-2">
                   <Label htmlFor="userId">{t('fields.user')}</Label>
                   <Select
+                    value={selectedUserId}
                     onValueChange={setSelectedUserId}
                     disabled={isSubmitting || usersWithBalance.length === 0}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder={t('fields.selectUser')} />
                     </SelectTrigger>
                     <SelectContent>

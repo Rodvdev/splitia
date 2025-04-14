@@ -14,11 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { 
-  Avatar, 
-  AvatarFallback, 
-  AvatarImage 
-} from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
@@ -94,16 +89,6 @@ export function SettlementsTab({ groupId, currentUserId, onSettlementUpdate }: S
     loadSettlements();
   }, [groupId, filter, t]);
   
-  // Get initials for avatar
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-  
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -134,10 +119,7 @@ export function SettlementsTab({ groupId, currentUserId, onSettlementUpdate }: S
   const canComplete = (settlement: Settlement) => {
     return (
       settlement.settlementStatus === 'CONFIRMED' &&
-      (
-        (settlement.initiatedBy.id === currentUserId) ||
-        (settlement.settledWithUser.id === currentUserId)
-      )
+      settlement.initiatedBy.id === currentUserId
     );
   };
   
@@ -253,7 +235,7 @@ export function SettlementsTab({ groupId, currentUserId, onSettlementUpdate }: S
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-base flex items-center gap-2">
                       {settlement.settlementType === 'PAYMENT' ? (
                         <ArrowUp className="h-4 w-4 text-red-500" />
                       ) : (
@@ -303,35 +285,17 @@ export function SettlementsTab({ groupId, currentUserId, onSettlementUpdate }: S
               </CardHeader>
               
               <CardContent className="pb-2">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">
-                      {settlement.settlementType === 'PAYMENT' ? t('paidBy') : t('receivedBy')}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        {settlement.initiatedBy.image ? (
-                          <AvatarImage src={settlement.initiatedBy.image} alt={settlement.initiatedBy.name} />
-                        ) : null}
-                        <AvatarFallback className="text-xs">{getInitials(settlement.initiatedBy.name)}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{settlement.initiatedBy.name}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">
-                      {settlement.settlementType === 'PAYMENT' ? t('paidTo') : t('receivedFrom')}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        {settlement.settledWithUser.image ? (
-                          <AvatarImage src={settlement.settledWithUser.image} alt={settlement.settledWithUser.name} />
-                        ) : null}
-                        <AvatarFallback className="text-xs">{getInitials(settlement.settledWithUser.name)}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{settlement.settledWithUser.name}</span>
-                    </div>
+                    {settlement.settlementType === 'PAYMENT' ? (
+                      <p className="text-sm">
+                        <span className="font-medium">{settlement.initiatedBy.name}</span> pagó <span className="font-medium">{settlement.amount.toFixed(2)} {settlement.currency}</span> a <span className="font-medium">{settlement.settledWithUser.name}</span>
+                      </p>
+                    ) : (
+                      <p className="text-sm">
+                        <span className="font-medium">{settlement.initiatedBy.name}</span> recibió <span className="font-medium">{settlement.amount.toFixed(2)} {settlement.currency}</span> de <span className="font-medium">{settlement.settledWithUser.name}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 

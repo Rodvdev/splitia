@@ -761,7 +761,8 @@
     "filters": {
       "all": "All",
       "pending": "Pending",
-      "confirmed": "Confirmed"
+      "confirmed": "Confirmed",
+      "completed": "Completed"
     },
     "status": {
       "pending": "Pending",
@@ -788,7 +789,9 @@
       "confirm": "Confirm",
       "newSettlement": "New Settlement",
       "createFirst": "Create first settlement",
-      "requestConfirmation": "Request confirmation"
+      "requestConfirmation": "Request confirmation",
+      "markAsPaid": "Mark as paid",
+      "markCompleted": "Mark as completed"
     },
     "errors": {
       "loadFailed": "Failed to load data",

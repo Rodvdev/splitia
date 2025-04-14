@@ -745,7 +745,8 @@
     "filters": {
       "all": "Todos",
       "pending": "Pendentes",
-      "confirmed": "Confirmados"
+      "confirmed": "Confirmados",
+      "completed": "Concluídos"
     },
     "status": {
       "pending": "Pendente",
@@ -772,7 +773,9 @@
       "confirm": "Confirmar",
       "newSettlement": "Novo Acerto",
       "createFirst": "Criar primeiro acerto",
-      "requestConfirmation": "Solicitar confirmação"
+      "requestConfirmation": "Solicitar confirmação",
+      "markAsPaid": "Marcar como pago",
+      "markCompleted": "Marcar como concluído"
     },
     "errors": {
       "loadFailed": "Falha ao carregar dados",
