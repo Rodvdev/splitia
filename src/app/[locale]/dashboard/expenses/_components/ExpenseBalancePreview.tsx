@@ -33,13 +33,24 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   // Initialize custom amounts when switching to custom mode or when members change
   useEffect(() => {
     if (isCustomDivision) {
+      // Create a new object to avoid mutations
       const defaultAmounts: { [key: string]: number } = {};
       selectedMembers.forEach(id => {
+        // If amount already exists, keep it, otherwise set to equal share
         defaultAmounts[id] = customAmounts[id] !== undefined ? customAmounts[id] : sharePerPerson;
       });
-      setCustomAmounts(defaultAmounts);
+      
+      // Only update if values actually changed to prevent loops
+      const hasChanges = selectedMembers.some(id => 
+        customAmounts[id] === undefined || customAmounts[id] !== defaultAmounts[id]
+      );
+      
+      if (hasChanges) {
+        setCustomAmounts(defaultAmounts);
+      }
     }
-  }, [isCustomDivision, selectedMembers, sharePerPerson, customAmounts]);
+  // Removing customAmounts from dependencies to prevent loops
+  }, [isCustomDivision, selectedMembers, sharePerPerson]);
   
   // Recalculate total allocated and remaining amount
   useEffect(() => {
@@ -221,20 +232,29 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
             </CardDescription>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-muted-foreground">
-              {isCustomDivision ? t('customDivision') : t('equalDivision')}
-            </span>
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-md border">
+              <span className={`text-sm font-medium ${isCustomDivision ? 'opacity-40' : 'text-blue-600'}`}>
+                {t('equalDivision')}
+              </span>
+              <Switch
+                checked={isCustomDivision}
+                onCheckedChange={(value) => {
+                  // Usar la forma funcional para prevenir posibles loops
+                  setIsCustomDivision(value);
+                }}
+                className="mx-2"
+              />
+              <span className={`text-sm font-medium ${isCustomDivision ? 'text-blue-600' : 'opacity-40'}`}>
+                {t('customDivision')}
+              </span>
+            </div>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Switch
-                    checked={isCustomDivision}
-                    onCheckedChange={setIsCustomDivision}
-                    className="ml-2"
-                  />
+                  <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">{t('switchTip')}</p>
+                  <p className="text-xs max-w-[200px]">{t('switchTip')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -350,7 +370,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                   )}
                   {!isCustomDivision && (
                     <span className="w-20 text-right text-sm">
-                      {isCustomDivision && customAmounts[member.id] !== undefined ? customAmounts[member.id].toFixed(2) : sharePerPerson.toFixed(2)} {currency}
+                      {sharePerPerson.toFixed(2)} {currency}
                     </span>
                   )}
                   <span className={`w-20 text-sm font-medium ${
