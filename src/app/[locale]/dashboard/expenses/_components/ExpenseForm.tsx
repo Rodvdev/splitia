@@ -136,7 +136,8 @@ export function ExpenseForm({
   const [isLoadingCategories, setIsLoadingCategories] = React.useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = React.useState(false);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
-  const { profile } = useUserProfile();
+  const { profile, isLoading: isProfileLoading } = useUserProfile();
+  const [formIsReady, setFormIsReady] = useState(false);
   
   // Initialize form with React Hook Form
   const form = useForm<FormValues>({
@@ -160,15 +161,25 @@ export function ExpenseForm({
     },
   });
 
-  // Actualizar sólo el id de usuario cuando el perfil cambia, pero no la moneda
+  // Marcar el formulario como listo una vez que el perfil está cargado
   React.useEffect(() => {
-    if (profile?.id) {
-      const currentPaidById = form.getValues('paidById');
-      if (!currentPaidById) {
-        form.setValue('paidById', profile.id, { shouldDirty: false });
+    if ((initialData?.currency || profile?.currency) && !isProfileLoading) {
+      // Asegurarse de que la moneda esté configurada correctamente
+      if (profile?.currency && !initialData?.currency) {
+        form.setValue('currency', profile.currency, { shouldDirty: false });
       }
+      
+      // Establecer el ID del usuario si está disponible
+      if (profile?.id) {
+        const currentPaidById = form.getValues('paidById');
+        if (!currentPaidById) {
+          form.setValue('paidById', profile.id, { shouldDirty: false });
+        }
+      }
+      
+      setFormIsReady(true);
     }
-  }, [profile, form]);
+  }, [profile, isProfileLoading, form, initialData]);
 
   // Watch the isGroupExpense field to conditionally show group selection
   const isGroupExpense = form.watch('isGroupExpense');
@@ -326,6 +337,11 @@ export function ExpenseForm({
       form.setValue('settlementStatus', 'PENDING');
     }
   }, [isSettlement, settlementType, form]);
+
+  // Mostrar estado de carga mientras el formulario no está listo
+  if (isProfileLoading || !formIsReady) {
+    return <div className="p-6 flex justify-center">Loading currency preferences...</div>;
+  }
 
   return (
     <Form {...form}>

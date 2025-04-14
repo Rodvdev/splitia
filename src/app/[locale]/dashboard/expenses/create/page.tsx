@@ -35,13 +35,12 @@ function ExpenseFormWithParams() {
   
   // Get groupId from URL params and set initial form data
   useEffect(() => {
-    // Sólo actualizamos el initialData cuando el perfil está cargado o cambia
-    if (searchParams) {
+    if (profile && searchParams) {
       const groupId = searchParams.get('groupId');
       
-      // Set initial data with user's currency preference if available
+      // Set initial data with user's currency preference
       const formData: Partial<ExpenseFormData> = {
-        currency: profile?.currency || 'USD',
+        currency: profile.currency || 'USD',
       };
       
       if (groupId) {
@@ -49,7 +48,6 @@ function ExpenseFormWithParams() {
         formData.groupId = groupId;
       }
       
-      console.log('Setting initial form data with currency:', formData.currency);
       setInitialData(formData);
     }
   }, [searchParams, profile]);
@@ -107,7 +105,7 @@ function ExpenseFormWithParams() {
   };
   
   // Show loading state while currency is being loaded
-  if (isLoading) {
+  if (isLoading || !initialData) {
     return <div className="p-6 flex justify-center">Loading...</div>;
   }
   
