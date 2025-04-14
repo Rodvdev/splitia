@@ -329,11 +329,10 @@ export const ExpenseForm = React.memo(function ExpenseFormInner({
             
             setGroupMembers(filteredMembers);
             
-            // If current paidById is not in the filtered group members, reset it to the current user
-            const currentPaidById = form.getValues('paidById');
-            const memberIds = filteredMembers.map((member: User) => member.id);
-            
-            if (currentPaidById && !memberIds.includes(currentPaidById)) {
+            // Set default payer to the authenticated user if they are in the group
+            const currentUserInGroup = filteredMembers.some((member: User) => member.id === profileRef.current?.id);
+            if (currentUserInGroup) {
+              console.log('Setting default payer to user ID:', profileRef.current?.id);
               form.setValue('paidById', profileRef.current?.id || '');
             }
           }
