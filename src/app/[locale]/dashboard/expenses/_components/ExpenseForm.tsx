@@ -80,7 +80,7 @@ type FormValues = z.infer<typeof formSchema>;
 // Define props for the component
 interface ExpenseFormProps {
   initialData?: Partial<FormValues>;
-  onSubmit: (data: FormValues) => void;
+  onSubmit: (data: FormValues & { customShares?: Record<string, number> }) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
   isEditing?: boolean;
@@ -124,7 +124,7 @@ interface CategoriesResponse {
   categories: Category[];
 }
 
-export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit, onCancel, isSubmitting, isEditing }) => {
+export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isEditing }: ExpenseFormProps) => {
   const t = useTranslations('expenses.form');
   const [groups, setGroups] = React.useState<Group[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
@@ -359,16 +359,26 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
   }, [isSettlement, settlementType, form]);
 
   // Watch the selected members for the balance preview
-  const [selectedMembers, setSelectedMembers] = useState<string[]>(groupMembers.map(member => member.id));
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({});
 
   // Update selected members when group members change
   React.useEffect(() => {
-    setSelectedMembers(groupMembers.map(member => member.id));
+    if (groupMembers.length > 0) {
+      setSelectedMembers(groupMembers.map(member => member.id));
+    }
   }, [groupMembers]);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((data) => onSubmit(data as unknown as FormValues))} className="space-y-6">
+      <form onSubmit={form.handleSubmit((data) => {
+        // Agregar los custom shares a los datos del formulario antes de enviarlo
+        const formDataWithShares = {
+          ...data,
+          customShares: customAmounts
+        };
+        onSubmit(formDataWithShares as unknown as FormValues & { customShares?: Record<string, number> });
+      })} className="space-y-6">
         <div className="grid gap-4 grid-cols-1">
           {/* Essential Fields Section */}
           <div className="space-y-4">
@@ -664,12 +674,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSubmit,
                 {/* Balance preview - show as soon as we have an amount, even if not all group details are selected */}
                 {groupMembers.length > 0 ? (
                   <ExpenseBalancePreview
-                    amount={amount}
-                    currency={currency}
+                    amount={amount || 0}
+                    currency={currency || 'USD'}
                     groupMembers={groupMembers}
-                    paidById={selectedPaidById}
+                    paidById={selectedPaidById || ''}
                     selectedMembers={selectedMembers}
                     setSelectedMembers={setSelectedMembers}
+                    onCustomAmountsChange={setCustomAmounts}
                   />
                 ) : selectedGroupId && selectedGroupId !== 'new' ? (
                   <Card className="mt-4">

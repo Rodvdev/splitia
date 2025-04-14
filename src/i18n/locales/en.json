@@ -243,6 +243,7 @@
         "resetEqual": "Reset to Equal",
         "distributeRemaining": "Distribute Remaining",
         "autocomplete": "Autocomplete",
+        "assignAll": "Assign All",
         "selectAll": "Select All",
         "deselectAll": "Deselect All",
         "amount": "Amount",

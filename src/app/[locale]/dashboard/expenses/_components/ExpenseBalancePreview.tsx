@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
@@ -13,9 +13,10 @@ interface BalancePreviewProps {
   paidById?: string;
   selectedMembers: string[];
   setSelectedMembers: React.Dispatch<React.SetStateAction<string[]>>;
+  onCustomAmountsChange?: (amounts: Record<string, number>) => void;
 }
 
-export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById, selectedMembers, setSelectedMembers }: BalancePreviewProps) {
+export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById, selectedMembers, setSelectedMembers, onCustomAmountsChange }: BalancePreviewProps) {
   const t = useTranslations('expenses.form.balancePreview');
 
   // State to track custom amounts for each member
@@ -27,6 +28,14 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   const activeMembers = selectedMembers.length || 1; // Prevent division by zero
   const sharePerPerson = parseFloat((amount / activeMembers).toFixed(2));
   
+  // Propagar cambios en customAmounts hacia arriba
+  useEffect(() => {
+    // Solo propagar cuando hay cambios significativos
+    if (onCustomAmountsChange && isCustomDivision) {
+      onCustomAmountsChange(customAmounts);
+    }
+  }, [customAmounts, isCustomDivision, onCustomAmountsChange]);
+
   // Reset to equal division
   const resetToEqual = useCallback(() => {
     const equalAmounts: { [key: string]: number } = {};
@@ -40,7 +49,12 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
       equalAmounts[selectedMembers[0]] += correction;
     }
     setCustomAmounts(equalAmounts);
-  }, [sharePerPerson, selectedMembers, amount, setCustomAmounts]);
+    
+    // Propagar este cambio inmediatamente
+    if (onCustomAmountsChange) {
+      onCustomAmountsChange(equalAmounts);
+    }
+  }, [sharePerPerson, selectedMembers, amount, onCustomAmountsChange]);
 
   // Initialize the component with default equal division
   useEffect(() => {
@@ -75,7 +89,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   }, [customAmounts, selectedMembers, amount, isCustomDivision]);
 
   // Handle member selection
-  const toggleMemberSelection = (memberId: string) => {
+  const toggleMemberSelection = useCallback((memberId: string) => {
     setSelectedMembers(prevSelected => {
       // If removing, delete from customAmounts
       if (prevSelected.includes(memberId)) {
@@ -95,10 +109,10 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
         return [...prevSelected, memberId];
       }
     });
-  };
+  }, [sharePerPerson]);
 
   // Handle custom amount change
-  const handleCustomAmountChange = (memberId: string, value: string) => {
+  const handleCustomAmountChange = useCallback((memberId: string, value: string) => {
     const newAmount = parseFloat(value) || 0;
     
     // Update the custom amount for this member
@@ -115,24 +129,58 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
       
       return updated;
     });
-  };
+  }, [amount, selectedMembers]);
 
   // Distribute remaining amount equally among members
-  const distributeRemaining = () => {
+  const distributeRemaining = useCallback(() => {
     if (remainingAmount !== 0 && selectedMembers.length > 0) {
       const amountPerMember = remainingAmount / selectedMembers.length;
       setCustomAmounts(prev => {
         const updated = { ...prev };
         selectedMembers.forEach(id => {
-          updated[id] = (updated[id] || 0) + amountPerMember;
+          updated[id] = parseFloat(((updated[id] || 0) + amountPerMember).toFixed(2));
         });
         return updated;
       });
     }
-  };
+  }, [remainingAmount, selectedMembers]);
+
+  // Agregar opción para asignar todo a un solo miembro
+  const assignAllToMember = useCallback((memberId: string) => {
+    if (selectedMembers.includes(memberId)) {
+      // Crear una nueva distribución donde solo este miembro tiene el monto total
+      const newCustomAmounts = { ...customAmounts };
+      
+      // Establecer a 0 los montos de todos los demás miembros seleccionados
+      selectedMembers.forEach(id => {
+        if (id !== memberId) {
+          newCustomAmounts[id] = 0;
+        }
+      });
+      
+      // Asignar el monto total a este miembro
+      newCustomAmounts[memberId] = amount;
+      
+      // Actualizar el estado
+      setCustomAmounts(newCustomAmounts);
+      
+      // También establecer modo de división personalizada si no está activado
+      if (!isCustomDivision) {
+        setIsCustomDivision(true);
+      }
+      
+      // Actualizar el monto restante
+      setRemainingAmount(0);
+      
+      // Propagar este cambio inmediatamente
+      if (onCustomAmountsChange) {
+        onCustomAmountsChange(newCustomAmounts);
+      }
+    }
+  }, [amount, customAmounts, isCustomDivision, onCustomAmountsChange, selectedMembers]);
 
   // Autocomplete the last member's amount
-  const autocompleteLastMember = () => {
+  const autocompleteLastMember = useCallback(() => {
     if (remainingAmount !== 0 && selectedMembers.length > 0) {
       // Find members with no custom amount set
       const membersWithoutAmount = selectedMembers.filter(
@@ -156,10 +204,10 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
         }));
       }
     }
-  };
+  }, [remainingAmount, selectedMembers, customAmounts]);
 
   // Check if autocomplete should be shown
-  const shouldShowAutocomplete = () => {
+  const shouldShowAutocomplete = useCallback(() => {
     if (remainingAmount === 0 || !isCustomDivision) return false;
     
     // Count members with custom amounts set
@@ -171,10 +219,10 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
     return membersWithCustomAmount >= selectedMembers.length - 1 && 
            selectedMembers.length > 0 && 
            remainingAmount !== 0;
-  };
+  }, [remainingAmount, isCustomDivision, selectedMembers, customAmounts]);
 
   // Select or deselect all members
-  const toggleAllMembers = () => {
+  const toggleAllMembers = useCallback(() => {
     if (selectedMembers.length === groupMembers.length) {
       // Deselect all except payer
       const newSelected = paidById ? [paidById] : [];
@@ -183,10 +231,10 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
       // Select all
       setSelectedMembers(groupMembers.map(m => m.id));
     }
-  };
+  }, [groupMembers, paidById, selectedMembers]);
 
   // Calculate what each person owes/gets - use memoization to avoid recalculations
-  const balances = React.useMemo(() => groupMembers.map(member => {
+  const balances = useMemo(() => groupMembers.map(member => {
     if (!selectedMembers.includes(member.id)) {
       return { ...member, balance: 0 };
     }
@@ -217,8 +265,9 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
   }), [groupMembers, selectedMembers, isCustomDivision, customAmounts, sharePerPerson, paidById, amount]);
 
   // Check if this member should have autocomplete
-  const shouldShowAutocompleteForMember = (memberId: string) => {
-    if (!shouldShowAutocomplete() || !isCustomDivision) return false;
+  const shouldShowAutocompleteForMember = useCallback((memberId: string) => {
+    // No llamar directamente a shouldShowAutocomplete, usar sus condiciones directamente
+    if (remainingAmount === 0 || !isCustomDivision) return false;
     
     // Find members with no custom amount set or zero amount
     const membersWithoutAmount = selectedMembers.filter(
@@ -237,7 +286,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
     }
     
     return false;
-  };
+  }, [remainingAmount, isCustomDivision, selectedMembers, customAmounts]);
 
   return (
     <div className="mt-4 space-y-4">
@@ -409,21 +458,49 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                         disabled={!selectedMembers.includes(member.id)}
                       />
                       
-                      {shouldShowAutocompleteForMember(member.id) && (
+                      <div className="flex gap-1 ml-1">
+                        {shouldShowAutocompleteForMember(member.id) && (
+                          <div 
+                            onClick={autocompleteLastMember} 
+                            className="px-1.5 py-0.5 text-[10px] bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-700 dark:text-blue-400 rounded-md"
+                            title={t('autocomplete')}
+                          >
+                            <span className="hidden sm:inline">{t('autocomplete')}</span>
+                            <span className="sm:hidden">Auto</span>
+                          </div>
+                        )}
+                        
+                        {/* Botón para asignar todo a este miembro */}
+                        {selectedMembers.includes(member.id) && member.id !== paidById && (
+                          <div 
+                            onClick={() => assignAllToMember(member.id)} 
+                            className="px-1.5 py-0.5 text-[10px] bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 text-amber-700 dark:text-amber-400 rounded-md"
+                            title={t('assignAll')}
+                          >
+                            <span className="hidden sm:inline">{t('assignAll')}</span>
+                            <span className="sm:hidden">Todo</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <span className="w-16 sm:w-20 text-right text-xs">
+                        {sharePerPerson.toFixed(2)} {currency}
+                      </span>
+                      
+                      {/* Botón para asignar todo incluso en modo equal */}
+                      {selectedMembers.includes(member.id) && member.id !== paidById && (
                         <div 
-                          onClick={autocompleteLastMember} 
-                          className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-700 dark:text-blue-400 rounded-md"
-                          title={t('autocomplete')}
+                          onClick={() => assignAllToMember(member.id)} 
+                          className="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 text-amber-700 dark:text-amber-400 rounded-md"
+                          title={t('assignAll')}
                         >
-                          <span className="hidden sm:inline">{t('autocomplete')}</span>
-                          <span className="sm:hidden">Auto</span>
+                          <span className="hidden sm:inline">{t('assignAll')}</span>
+                          <span className="sm:hidden">Todo</span>
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <span className="w-16 sm:w-20 text-right text-xs">
-                      {sharePerPerson.toFixed(2)} {currency}
-                    </span>
                   )}
                   
                   <span className={`w-16 sm:w-20 text-xs font-medium ${

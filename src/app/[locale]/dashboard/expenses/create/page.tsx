@@ -45,6 +45,25 @@ interface ExpenseFormData {
   isGroupExpense: boolean;
   groupId?: string;
   paidById?: string;
+  customShares?: Record<string, number>;
+}
+
+// Define the expense input type para coincidir con graphql-client
+interface ExpenseInput {
+  amount: number;
+  description: string;
+  date: Date;
+  categoryId?: string;
+  currency: string;
+  location?: string;
+  notes?: string;
+  groupId?: string;
+  paidById?: string;
+  shares?: Array<{
+    userId: string;
+    amount: number;
+    type: 'EQUAL' | 'PERCENTAGE' | 'FIXED';
+  }>;
 }
 
 // Memorizar el componente para evitar re-renders
@@ -123,12 +142,12 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
   }, [profile, searchParams, initialData, preferences, isProfileLoading, isPreferencesLoading]);
   
   // Handle form submission with GraphQL
-  const handleSubmit = async (data: ExpenseFormData) => {
+  const handleSubmit = async (data: ExpenseFormData & { customShares?: Record<string, number> }) => {
     setIsSubmitting(true);
     
     try {
       // Map form data to GraphQL input format
-      const expenseInput = {
+      const expenseInput: ExpenseInput = {
         amount: data.amount,
         description: data.title,
         date: data.date,
@@ -141,6 +160,36 @@ const ExpenseFormContainer = React.memo(function ExpenseFormContainer() {
           : undefined,
         paidById: data.paidById
       };
+      
+      // Si hay customShares en los datos del formulario, las agregamos al input
+      if (data.customShares && Object.keys(data.customShares).length > 0) {
+        // Filtrar solo los miembros seleccionados
+        const selectedCustomShares = Object.entries(data.customShares)
+          .filter(([, amount]) => amount > 0)
+          .map(([userId, amount]) => ({
+            userId,
+            amount: Number(amount),
+            type: 'FIXED' as const
+          }));
+        
+        // Solo agregar shares si hay valores válidos
+        if (selectedCustomShares.length > 0) {
+          expenseInput.shares = selectedCustomShares;
+          
+          // Verificar que la suma de los shares sea igual al monto total
+          const sharesSum = selectedCustomShares.reduce((sum, share) => sum + share.amount, 0);
+          const roundedSharesSum = parseFloat(sharesSum.toFixed(2));
+          const roundedAmount = parseFloat(data.amount.toFixed(2));
+          
+          // Si hay una pequeña discrepancia de redondeo, ajustar el primer share
+          if (roundedSharesSum !== roundedAmount && selectedCustomShares.length > 0) {
+            const diff = roundedAmount - roundedSharesSum;
+            selectedCustomShares[0].amount = parseFloat((selectedCustomShares[0].amount + diff).toFixed(2));
+          }
+        }
+      }
+      
+      console.log('Sending expense input:', expenseInput);
       
       // Call the GraphQL API to create the expense
       await createExpense(expenseInput);
