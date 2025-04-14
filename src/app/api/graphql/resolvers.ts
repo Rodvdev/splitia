@@ -1146,7 +1146,7 @@ export const resolvers = {
         // Get the created expense that's linked to the settlement
         const expense = await prisma.expense.findFirst({
           where: { 
-            settlementId: settlement.settlement ? settlement.settlement.id : undefined 
+            settlementId: settlement ? settlement.id : undefined 
           },
           include: {
             paidBy: true,
