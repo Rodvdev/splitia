@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Plus, Receipt } from 'lucide-react';
@@ -64,7 +64,7 @@ export function GroupExpenses({ groupId, onExpenseCreated }: GroupExpensesProps)
   const [isLoading, setIsLoading] = useState(true);
   
   // Fetch expenses for this group
-  const loadExpenses = async () => {
+  const loadExpenses = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetchExpenses({ groupId }) as ExpensesResponse;
@@ -76,11 +76,11 @@ export function GroupExpenses({ groupId, onExpenseCreated }: GroupExpensesProps)
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [groupId]);
 
   useEffect(() => {
     loadExpenses();
-  }, [groupId]);
+  }, [groupId, loadExpenses]);
   
   // Handle clicking on an expense to view details
   const handleExpenseClick = (expenseId: string) => {
@@ -104,7 +104,7 @@ export function GroupExpenses({ groupId, onExpenseCreated }: GroupExpensesProps)
       loadExpenses();
       onExpenseCreated?.();
     }
-  }, [groupId, onExpenseCreated]);
+  }, [groupId, onExpenseCreated, loadExpenses]);
   
   // Format expense data for the ExpenseCard component
   const formatExpenseForCard = (expense: Expense) => {
