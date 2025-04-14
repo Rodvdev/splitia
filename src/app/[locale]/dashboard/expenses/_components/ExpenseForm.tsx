@@ -121,7 +121,7 @@ interface CategoriesResponse {
   categories: Category[];
 }
 
-export function ExpenseForm({
+export const ExpenseForm = React.memo(function ExpenseFormInner({
   initialData,
   onSubmit,
   onCancel,
@@ -137,8 +137,17 @@ export function ExpenseForm({
   const [isLoadingMembers, setIsLoadingMembers] = React.useState(false);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
   
-  // Prevent rerender issues by using the profile only when needed
+  // use profile in a way that doesn't cause re-renders
+  const profileRef = React.useRef<{
+    id: string;
+    name?: string;
+    email?: string;
+    currency?: string;
+  } | null>(null);
   const { profile } = useUserProfile();
+  if (profile) {
+    profileRef.current = profile;
+  }
   
   // Initialize form with React Hook Form
   const form = useForm<FormValues>({
@@ -296,7 +305,7 @@ export function ExpenseForm({
             const memberIds = filteredMembers.map((member: User) => member.id);
             
             if (currentPaidById && !memberIds.includes(currentPaidById)) {
-              form.setValue('paidById', profile?.id || '');
+              form.setValue('paidById', profileRef.current?.id || '');
             }
           }
         } catch (error) {
@@ -310,11 +319,11 @@ export function ExpenseForm({
     } else if (!isGroupExpense || selectedGroupId === 'new') {
       // Reset to only the current user if not a group expense
       setGroupMembers([]);
-      if (profile) {
-        form.setValue('paidById', profile.id);
+      if (profileRef.current) {
+        form.setValue('paidById', profileRef.current.id);
       }
     }
-  }, [selectedGroupId, isGroupExpense, form, profile]);
+  }, [selectedGroupId, isGroupExpense, form, profileRef]);
   
   // Handle settlement option changes
   React.useEffect(() => {
@@ -523,7 +532,7 @@ export function ExpenseForm({
                           >
                             <div className="flex items-center gap-2">
                               {member.name || member.email}
-                              {member.id === profile?.id && (
+                              {member.id === profileRef.current?.id && (
                                 <span className="text-xs text-muted-foreground ml-1">(you)</span>
                               )}
                             </div>
@@ -534,7 +543,7 @@ export function ExpenseForm({
                   ) : (
                     <Input 
                       type="text"
-                      value={profile?.name ?? 'You'}
+                      value={profileRef.current?.name ?? 'You'}
                       onChange={() => {}}
                       disabled
                       className="bg-muted"
@@ -619,7 +628,7 @@ export function ExpenseForm({
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-input h-6 w-11"
+                          className="h-6 w-12 border-2 border-muted-foreground/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"
                         />
                       </FormControl>
                     </div>
@@ -777,7 +786,7 @@ export function ExpenseForm({
                                   </FormControl>
                                   <SelectContent className="bg-white">
                                     {groupMembers
-                                      .filter(member => member.id !== profile?.id)
+                                      .filter(member => member.id !== profileRef.current?.id)
                                       .map((member) => (
                                         <SelectItem 
                                           key={member.id} 
@@ -943,4 +952,4 @@ export function ExpenseForm({
       </form>
     </Form>
   );
-} 
+}); 
