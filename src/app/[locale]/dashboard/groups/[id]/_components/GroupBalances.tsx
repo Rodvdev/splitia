@@ -113,12 +113,30 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
         let preferredCurrency = 'PEN'; // Default en caso de error
         try {
           const userResponse = await fetch('/api/user/preferences');
-          const userData = await userResponse.json();
-          if (userData.currency) {
-            preferredCurrency = userData.currency;
+          if (!userResponse.ok) {
+            console.warn('No se pudo obtener preferencias del usuario, usando moneda por defecto');
+          } else {
+            const contentType = userResponse.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const userData = await userResponse.json();
+              if (userData.currency) {
+                preferredCurrency = userData.currency;
+              }
+            } else {
+              console.warn('La respuesta no es JSON, usando moneda por defecto');
+            }
           }
         } catch (prefError) {
           console.error('Error obteniendo preferencias del usuario:', prefError);
+          // Intentar obtener la preferencia desde sessionStorage
+          try {
+            const storedCurrency = typeof window !== 'undefined' ? window.sessionStorage.getItem('preferredCurrency') : null;
+            if (storedCurrency) {
+              preferredCurrency = storedCurrency;
+            }
+          } catch (storageError) {
+            console.warn('No se pudo acceder al sessionStorage:', storageError);
+          }
         }
         
         // Intentamos cargar los balances con múltiples monedas primero
@@ -160,18 +178,26 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
           }
         } else {
           // Fallback a la API original si la multi-moneda no está disponible
-          const response = await fetchGroupBalances(groupId) as GroupBalancesResponse;
-          
-          if (response && response.groupBalances) {
-            const { balances, totalOwed, totalOwing, currency } = response.groupBalances;
+          try {
+            const response = await fetchGroupBalances(groupId) as GroupBalancesResponse;
             
-            setBalances(balances);
-            setTotalOwed(totalOwed);
-            setTotalOwing(totalOwing);
-            setSelectedCurrency(currency || preferredCurrency);
-            setHasMultipleCurrencies(false);
-          } else {
-            // Si no hay respuesta, establecemos la moneda preferida
+            if (response && response.groupBalances) {
+              const { balances, totalOwed, totalOwing, currency } = response.groupBalances;
+              
+              setBalances(balances);
+              setTotalOwed(totalOwed);
+              setTotalOwing(totalOwing);
+              setSelectedCurrency(currency || preferredCurrency);
+              setHasMultipleCurrencies(false);
+            } else {
+              // Si no hay respuesta, establecemos la moneda preferida
+              setSelectedCurrency(preferredCurrency);
+              setBalances([]);
+              setTotalOwed(0);
+              setTotalOwing(0);
+            }
+          } catch (fallbackError) {
+            console.error('Error al cargar balances estándar:', fallbackError);
             setSelectedCurrency(preferredCurrency);
             setBalances([]);
             setTotalOwed(0);
@@ -187,10 +213,10 @@ export function GroupBalances({ groupId, currentUserId }: GroupBalancesProps) {
           // Obtener la moneda preferida del usuario como respaldo
           let preferredCurrency = 'PEN';
           try {
-            const userResponse = await fetch('/api/user/preferences');
-            const userData = await userResponse.json();
-            if (userData.currency) {
-              preferredCurrency = userData.currency;
+            // Intentar obtener la preferencia desde sessionStorage en lugar de la API
+            const storedCurrency = typeof window !== 'undefined' ? window.sessionStorage.getItem('preferredCurrency') : null;
+            if (storedCurrency) {
+              preferredCurrency = storedCurrency;
             }
           } catch {} // Ignoramos errores aquí
           

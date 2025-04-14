@@ -40,7 +40,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { fetchGroup, deleteGroup, changeGroupMemberRole, removeGroupMember, fetchGroupBalances } from '@/lib/graphql-client';
+import { fetchGroup, deleteGroup, changeGroupMemberRole, removeGroupMember, fetchGroupBalances, fetchGroupBalancesMultiCurrency } from '@/lib/graphql-client';
 import { toast } from 'sonner';
 import { GroupMembers } from './_components/GroupMembers';
 import { GroupExpenses } from './_components/GroupExpenses';
@@ -71,6 +71,13 @@ interface GroupBalanceSummary {
   currency: string;
 }
 
+interface CurrencyBalance {
+  currency: string;
+  totalOwed: number;
+  totalOwing: number;
+  netBalance: number;
+}
+
 interface GroupBalancesResponse {
   groupBalances: GroupBalanceSummary & {
     balances: Array<{
@@ -80,6 +87,22 @@ interface GroupBalancesResponse {
       image?: string;
       amount: number;
       currency: string;
+    }>;
+  };
+}
+
+interface MultiCurrencyBalancesResponse {
+  groupBalancesMultiCurrency: {
+    balancesByCurrency: CurrencyBalance[];
+    balances: Array<{
+      userId: string;
+      name: string;
+      email?: string;
+      image?: string;
+      balances: Array<{
+        currency: string;
+        amount: number;
+      }>;
     }>;
   };
 }
@@ -96,14 +119,35 @@ export default function GroupPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [balanceSummary, setBalanceSummary] = useState<GroupBalanceSummary | null>(null);
+  const [currencyBalances, setCurrencyBalances] = useState<CurrencyBalance[]>([]);
   
   // Function to load balances
   const loadBalances = useCallback(async () => {
     try {
-      const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
-      if (balancesResponse?.groupBalances) {
-        const { totalOwed, totalOwing, netBalance, currency } = balancesResponse.groupBalances;
-        setBalanceSummary({ totalOwed, totalOwing, netBalance, currency });
+      // Primero intentamos obtener los balances multi-moneda
+      const multiCurrencyResponse = await fetchGroupBalancesMultiCurrency(groupId) as MultiCurrencyBalancesResponse;
+      
+      if (multiCurrencyResponse?.groupBalancesMultiCurrency?.balancesByCurrency) {
+        setCurrencyBalances(multiCurrencyResponse.groupBalancesMultiCurrency.balancesByCurrency);
+        
+        // Para mantener compatibilidad con el resto del código, también establecemos el balance de la primera moneda
+        if (multiCurrencyResponse.groupBalancesMultiCurrency.balancesByCurrency.length > 0) {
+          const primaryBalance = multiCurrencyResponse.groupBalancesMultiCurrency.balancesByCurrency[0];
+          setBalanceSummary({
+            totalOwed: primaryBalance.totalOwed,
+            totalOwing: primaryBalance.totalOwing,
+            netBalance: primaryBalance.netBalance,
+            currency: primaryBalance.currency
+          });
+        }
+      } else {
+        // Fallback al método anterior
+        const balancesResponse = await fetchGroupBalances(groupId) as GroupBalancesResponse;
+        if (balancesResponse?.groupBalances) {
+          const { totalOwed, totalOwing, netBalance, currency } = balancesResponse.groupBalances;
+          setBalanceSummary({ totalOwed, totalOwing, netBalance, currency });
+          setCurrencyBalances([{ totalOwed, totalOwing, netBalance, currency }]);
+        }
       }
     } catch (error) {
       console.error('Failed to load balances:', error);
@@ -369,7 +413,19 @@ export default function GroupPage() {
               <Users className="mr-2 h-4 w-4" />
               <span>{t('view.memberCount', { count: group.members.length })}</span>
             </div>
-            {balanceSummary && (
+            {currencyBalances.length > 0 ? (
+              <div className="flex flex-col items-end gap-1">
+                {currencyBalances.map((balance, index) => (
+                  <div 
+                    key={balance.currency}
+                    className={`flex items-center text-sm ${balance.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                  >
+                    {index === 0 && <ArrowRightLeft className="mr-2 h-4 w-4" />}
+                    <span>{index === 0 ? t('balances.netBalance') : ''}: {formatCurrency(balance.netBalance, balance.currency)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : balanceSummary && (
               <div className={`flex items-center text-sm ${balanceSummary.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 <ArrowRightLeft className="mr-2 h-4 w-4" />
                 <span>{t('balances.netBalance')}: {formatCurrency(balanceSummary.netBalance, balanceSummary.currency)}</span>
