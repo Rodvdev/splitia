@@ -90,7 +90,7 @@ export default function CreateGroupPage() {
       
       console.log('Group created successfully:', result);
       toast.success(t('createSuccess'));
-      router.push('/dashboard/groups');
+      router.push(`/dashboard/groups/${result.id}`);
     } catch (error) {
       console.error('Failed to create group:', error);
       

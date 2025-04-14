@@ -546,7 +546,23 @@ export async function createGroup(data: {
   name: string;
   description?: string;
   image?: string;
-}) {
+}): Promise<{
+  id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  members: Array<{
+    id: string;
+    name: string;
+    email?: string;
+    image?: string;
+    role: string;
+  }>;
+  conversation: {
+    id: string;
+    isGroupChat: boolean;
+  };
+}> {
   const mutation = `
     mutation CreateGroup($data: GroupInput!) {
       createGroup(data: $data) {
