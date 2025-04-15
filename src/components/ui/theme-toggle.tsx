@@ -47,28 +47,42 @@ export function ThemeToggle() {
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="dark:bg-slate-900 dark:border-slate-800">
-        <DropdownMenuItem onClick={() => handleThemeChange(ThemeMode.LIGHT)} className="flex justify-between dark:hover:bg-slate-800">
-          <div className="flex items-center">
-            <Sun className="mr-2 h-4 w-4 text-amber-500" />
-            <span className="dark:text-slate-200">{t('light')}</span>
-          </div>
-          {theme === ThemeMode.LIGHT && <Check className="h-4 w-4 dark:text-green-400" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleThemeChange(ThemeMode.DARK)} className="flex justify-between dark:hover:bg-slate-800">
-          <div className="flex items-center">
-            <Moon className="mr-2 h-4 w-4 dark:text-indigo-400" />
-            <span className="dark:text-slate-200">{t('dark')}</span>
-          </div>
-          {theme === ThemeMode.DARK && <Check className="h-4 w-4 dark:text-green-400" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleThemeChange(ThemeMode.SYSTEM)} className="flex justify-between dark:hover:bg-slate-800">
-          <div className="flex items-center">
-            <Monitor className="mr-2 h-4 w-4 dark:text-slate-400" />
-            <span className="dark:text-slate-200">{t('system')}</span>
-          </div>
-          {theme === ThemeMode.SYSTEM && <Check className="h-4 w-4 dark:text-green-400" />}
-        </DropdownMenuItem>
+      <DropdownMenuContent 
+        align="end" 
+        className="bg-white dark:bg-gradient-to-b dark:from-slate-800 dark:to-slate-900 shadow-lg dark:shadow-indigo-900/20 border dark:border-slate-700 rounded-xl overflow-hidden backdrop-blur-sm dark:backdrop-blur-md"
+      >
+        <div className="p-2 space-y-1">
+          <DropdownMenuItem 
+            onClick={() => handleThemeChange(ThemeMode.LIGHT)} 
+            className="flex justify-between rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+          >
+            <div className="flex items-center">
+              <Sun className="mr-2 h-4 w-4 text-amber-500" />
+              <span className="dark:text-slate-100">{t('light')}</span>
+            </div>
+            {theme === ThemeMode.LIGHT && <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => handleThemeChange(ThemeMode.DARK)} 
+            className="flex justify-between rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+          >
+            <div className="flex items-center">
+              <Moon className="mr-2 h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+              <span className="dark:text-slate-100">{t('dark')}</span>
+            </div>
+            {theme === ThemeMode.DARK && <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => handleThemeChange(ThemeMode.SYSTEM)} 
+            className="flex justify-between rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+          >
+            <div className="flex items-center">
+              <Monitor className="mr-2 h-4 w-4 text-gray-600 dark:text-slate-400" />
+              <span className="dark:text-slate-100">{t('system')}</span>
+            </div>
+            {theme === ThemeMode.SYSTEM && <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+          </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
