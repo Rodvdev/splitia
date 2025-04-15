@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -32,6 +32,14 @@ export const metadata: Metadata = {
   description: "A simple expense splitting application for groups with internationalization and multi-currency support",
   keywords: ["expense tracker", "bill splitting", "group expenses", "finance app"],
   authors: [{ name: "Splitia Team" }],
+};
+
+// Define viewport configuration
+export const viewport: Viewport = {
+  colorScheme: 'light dark',
+  themeColor: '#0f172a',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 // Define supported locales for static generation
