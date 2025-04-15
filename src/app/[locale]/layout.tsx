@@ -9,13 +9,15 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
+type RootLayoutProps = {
+  children: React.ReactNode;
+  params: { locale: string };
+}
+
 export default function RootLayout({
   children,
-  params = {}
-}: {
-  children: React.ReactNode;
-  params?: { locale?: string };
-}) {
+  params
+}: RootLayoutProps) {
   return (
     <ClientLayout params={params}>
       {children}

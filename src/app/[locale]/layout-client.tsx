@@ -29,14 +29,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+type ClientLayoutProps = {
+  children: React.ReactNode;
+  params: { locale: string };
+}
+
 // Use the Next.js provided type instead of defining our own
 export default function RootLayout({
   children,
-  params = {}
-}: {
-  children: React.ReactNode;
-  params?: { locale?: string };
-}) {
+  params
+}: ClientLayoutProps) {
   // Set default locale if not provided
   const locale = (params.locale || 'en') as keyof typeof messages;
   

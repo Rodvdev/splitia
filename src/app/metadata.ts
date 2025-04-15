@@ -5,8 +5,6 @@ export const metadata: Metadata = {
   description: "A simple expense splitting application for groups with internationalization and multi-currency support",
   keywords: ["expense tracker", "bill splitting", "group expenses", "finance app"],
   authors: [{ name: "Splitia Team" }],
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f172a' }
-  ],
+  colorScheme: 'light dark',
+  themeColor: '#0f172a',
 }; 
