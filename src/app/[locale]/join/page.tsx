@@ -144,7 +144,7 @@ function JoinGroupContent() {
       if (exists) {
         // User exists, redirect to login with callbackUrl to return here
         const callbackUrl = encodeURIComponent(`/join?token=${token}${requireEmail ? '&requireEmail=true' : ''}`);
-        router.push(`/sign-in?callbackUrl=${callbackUrl}&email=${encodeURIComponent(email)}`);
+        router.push(`/login?callbackUrl=${callbackUrl}&email=${encodeURIComponent(email)}`);
       } else {
         // User doesn't exist, redirect to registration with callbackUrl to return here
         const callbackUrl = encodeURIComponent(`/join?token=${token}${requireEmail ? '&requireEmail=true' : ''}`);

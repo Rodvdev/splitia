@@ -59,7 +59,8 @@
     "verificationInstructions": "Clique no link no e-mail para verificar sua conta e entrar",
     "noEmailReceived": "Não recebeu um e-mail?",
     "checkSpam": "Verifique sua pasta de spam ou tente novamente",
-    "backToSignIn": "Voltar para o Login"
+    "backToSignIn": "Voltar para o Login",
+    "signInRequired": "Login necessário"
   },
   "dashboard": {
     "recentActivity": "Atividade Recente",

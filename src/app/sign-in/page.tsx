@@ -32,7 +32,7 @@ function SignInForm() {
         password,
       });
 
-      // If NextAuth sign-in fails
+      // If NextAuth login fails
       if (result?.error) {
         // Fall back to server-side auth as a backup
         const { error: serverError } = await signInUser(email, password);

@@ -135,33 +135,10 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     fetchUserPreferences();
   }, [isAuthenticated]);
 
-  // Apply theme when it changes
+  // Save theme to localStorage when it changes
   useEffect(() => {
-    const root = window.document.documentElement;
-    
     // Save to localStorage
     localStorage.setItem('theme', theme);
-    
-    // Remove old class
-    root.classList.remove('light', 'dark');
-    
-    // Apply theme based on selection
-    if (theme === ThemeMode.SYSTEM) {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-      
-      // Listen for system theme changes
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e: MediaQueryListEvent) => {
-        root.classList.remove('light', 'dark');
-        root.classList.add(e.matches ? 'dark' : 'light');
-      };
-      
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } else {
-      root.classList.add(theme === ThemeMode.DARK ? 'dark' : 'light');
-    }
   }, [theme]);
 
   // Función para actualizar las preferencias del usuario

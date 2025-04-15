@@ -108,9 +108,14 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen relative bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Grid pattern background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+      </div>
+      
       {/* Header */}
-      <header className="border-b p-4 flex items-center justify-between bg-white dark:bg-gray-950">
+      <header className="border-b p-4 flex items-center justify-between bg-white/80 backdrop-blur-md dark:bg-gray-950/80 relative z-10">
         <h1 className="text-xl font-bold">{t('chat.title')} - Splitia</h1>
         <Button 
           variant="ghost" 
@@ -124,13 +129,13 @@ export default function ChatPage() {
       </header>
       
       {/* Chat Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 relative z-10">
         {messages.map((message) => (
           <div 
             key={message.id} 
             className={cn(
               "flex items-start gap-3 max-w-3xl mx-auto",
-              message.role === 'assistant' ? "bg-muted/50 p-4 rounded-lg" : ""
+              message.role === 'assistant' ? "bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm p-4 rounded-lg shadow-sm" : ""
             )}
           >
             <div className={cn(
@@ -151,7 +156,7 @@ export default function ChatPage() {
         ))}
         
         {isLoading && (
-          <div className="flex items-start gap-3 max-w-3xl mx-auto bg-muted/50 p-4 rounded-lg">
+          <div className="flex items-start gap-3 max-w-3xl mx-auto bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm p-4 rounded-lg shadow-sm">
             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Bot className="h-5 w-5" />
             </div>
@@ -174,7 +179,7 @@ export default function ChatPage() {
       </div>
       
       {/* Input Area */}
-      <div className="border-t p-4 bg-background">
+      <div className="border-t p-4 bg-white/80 backdrop-blur-md dark:bg-gray-950/80">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
           <div className="relative">
             <Textarea
@@ -184,7 +189,7 @@ export default function ChatPage() {
               onKeyDown={handleKeyDown}
               placeholder={t('chat.messageInput')}
               rows={1}
-              className="pr-20 resize-none min-h-[56px] max-h-[200px] overflow-y-auto"
+              className="pr-20 resize-none min-h-[56px] max-h-[200px] overflow-y-auto bg-white/90 dark:bg-gray-900/90"
             />
             <Button 
               size="sm" 

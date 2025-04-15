@@ -7,9 +7,11 @@ import {
   LayoutDashboard,
   MessageSquare,
   Users,
-  Settings,
+  Wallet,
+  Receipt,
   Menu,
   X,
+  LogIn
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -41,28 +43,38 @@ export default function ChatLayout({
     return `/${userLocale}${path}`;
   };
 
-  // Navigation items
+  // Navigation items with icons (all disabled except chat)
   const navItems = [
     {
-      href: '/',
-      label: t('navigation.home'),
+      href: '/dashboard',
+      label: t('navigation.dashboard'),
       icon: <LayoutDashboard className="h-5 w-5" />,
+      disabled: true
+    },
+    {
+      href: '/dashboard/expenses',
+      label: t('navigation.expenses'),
+      icon: <Receipt className="h-5 w-5" />,
+      disabled: true
+    },
+    {
+      href: '/dashboard/groups',
+      label: t('navigation.groups'),
+      icon: <Users className="h-5 w-5" />,
+      disabled: true
+    },
+    {
+      href: '/dashboard/budget',
+      label: t('navigation.budget'),
+      icon: <Wallet className="h-5 w-5" />,
+      disabled: true
     },
     {
       href: '/chat',
       label: t('chat.title'),
       icon: <MessageSquare className="h-5 w-5" />,
-    },
-    {
-      href: '/chat/groups',
-      label: t('navigation.groups'),
-      icon: <Users className="h-5 w-5" />,
-    },
-    {
-      href: '/settings',
-      label: t('navigation.settings'),
-      icon: <Settings className="h-5 w-5" />,
-    },
+      disabled: false
+    }
   ];
 
   const toggleMobileNav = () => {
@@ -73,10 +85,16 @@ export default function ChatLayout({
     setIsMobileNavOpen(false);
   };
 
-  const handleNavigation = (href: string, e: React.MouseEvent) => {
+  const handleNavigation = (href: string, disabled: boolean, e: React.MouseEvent) => {
     e.preventDefault();
-    router.push(getLocalizedPath(href));
-    closeMobileNav();
+    if (!disabled) {
+      router.push(getLocalizedPath(href));
+      closeMobileNav();
+    }
+  };
+
+  const handleLogin = () => {
+    router.push(getLocalizedPath('/login'));
   };
 
   const renderNavItems = () => (
@@ -86,16 +104,24 @@ export default function ChatLayout({
           <a
             href={item.href}
             className={cn(
-              "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+              item.disabled
+                ? "opacity-60 cursor-not-allowed"
+                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               pathname?.endsWith(item.href) || 
               (item.href === '/chat' && pathname === getLocalizedPath('/chat'))
                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : ""
             )}
-            onClick={(e) => handleNavigation(item.href, e)}
+            onClick={(e) => handleNavigation(item.href, item.disabled, e)}
           >
             {item.icon}
             <span className="ml-3">{item.label}</span>
+            {item.disabled && (
+              <span className="ml-auto text-xs text-muted-foreground">
+                {t('auth.signInRequired')}
+              </span>
+            )}
           </a>
         </li>
       ))}
@@ -125,8 +151,17 @@ export default function ChatLayout({
         <nav className="flex-1 overflow-y-auto p-4">
           {renderNavItems()}
         </nav>
-        <div className="p-4 border-t">
+        <div className="p-4 border-t flex justify-between items-center">
           <ThemeToggle />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLogin}
+            className="ml-auto flex items-center gap-2"
+          >
+            <LogIn className="h-4 w-4" />
+            {t('auth.signIn')}
+          </Button>
         </div>
       </aside>
 
@@ -166,17 +201,38 @@ export default function ChatLayout({
         <nav className="flex-1 overflow-y-auto p-4">
           {renderNavItems()}
         </nav>
-        <div className="p-4 border-t">
+        <div className="p-4 border-t flex justify-between items-center">
           <ThemeToggle />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLogin}
+            className="ml-auto flex items-center gap-2"
+          >
+            <LogIn className="h-4 w-4" />
+            {t('auth.signIn')}
+          </Button>
         </div>
       </aside>
 
-      {/* Main content wrapper */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Main content wrapper with grid background */}
+      <div className="flex flex-1 flex-col overflow-hidden relative bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+        {/* Grid pattern background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+        </div>
+        
         {/* Mobile header */}
-        <header className="md:hidden border-b p-4 flex items-center justify-between">
+        <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 bg-white/80 backdrop-blur-md dark:bg-gray-950/80">
           <h1 className="text-xl font-bold">Splitia</h1>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleLogin}
+            >
+              <LogIn className="w-5 h-5" />
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -188,7 +244,7 @@ export default function ChatLayout({
         </header>
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto relative z-10">
           {children}
         </main>
       </div>

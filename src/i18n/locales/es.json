@@ -65,7 +65,12 @@
     "checkSpam": "Revisa tu carpeta de spam o inténtalo de nuevo",
     "backToSignIn": "Volver a Iniciar Sesión",
     "login": "Iniciar Sesión",
-    "signup": "Registrarse"
+    "signup": "Registrarse",
+    "signInRequired": "Iniciar sesión requerido",
+    "signInDescription": "Ingresa tus credenciales para continuar",
+    "signupInfoText": "Únete a Splitia y comienza a dividir gastos con amigos y familiares",
+    "loginInfoText": "Accede a tu cuenta para gestionar tus gastos compartidos de forma sencilla",
+    "welcomeBack": "Bienvenido de nuevo"
   },
   "hero": {
     "title": "Simplifica tus finanzas compartidas con",

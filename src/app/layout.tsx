@@ -51,7 +51,7 @@ export default function RootLayout({
   const locale = (params.locale || 'en') as keyof typeof messages;
   
   return (
-    <html lang={locale} className="light" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers locale={locale} messages={messages[locale]}>
           {children}

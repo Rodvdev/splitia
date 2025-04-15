@@ -100,7 +100,7 @@ export default function CreateGroupPage() {
             error.message.includes('UNAUTHENTICATED')) {
           toast.error(t('authError') || 'Authentication failed. Please log in again.');
           // Optionally redirect to login
-          // router.push('/sign-in');
+          // router.push('/login');
         } else if (error.message.includes('Failed to create group')) {
           toast.error(error.message);
         } else if (error.message.includes('Network Error')) {

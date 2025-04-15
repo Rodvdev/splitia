@@ -104,7 +104,7 @@ function AuthStateManager({ children }: { children: ReactNode }) {
         console.error('Error clearing server cookies:', error);
       }
       
-      router.push('/sign-in');
+      router.push('/login');
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {

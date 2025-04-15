@@ -108,7 +108,7 @@ export default function DashboardPage() {
         const session = await getSession();
         
         if (!session) {
-          router.push('/sign-in');
+          router.push('/login');
           return;
         }
         
@@ -142,7 +142,7 @@ export default function DashboardPage() {
     try {
       const session = await getSession();
       if (!session) {
-        router.push('/sign-in');
+        router.push('/login');
         return;
       }
 
@@ -155,7 +155,7 @@ export default function DashboardPage() {
         console.error('Error fetching expenses:', error);
         const graphqlError = error as GraphQLError;
         if (graphqlError?.response?.status === 400 || graphqlError?.response?.status === 401) {
-          router.push('/sign-in');
+          router.push('/login');
           return;
         }
         setError('No se pudieron cargar los gastos. Por favor, intenta de nuevo más tarde.');
@@ -170,14 +170,14 @@ export default function DashboardPage() {
         console.error('Error fetching groups:', error);
         const graphqlError = error as GraphQLError;
         if (graphqlError?.response?.status === 400 || graphqlError?.response?.status === 401) {
-          router.push('/sign-in');
+          router.push('/login');
           return;
         }
         toast.error(tErrors('fetchGroups') || 'Error al cargar los grupos');
       }
     } catch (error) {
       console.error('General error:', error);
-      router.push('/sign-in');
+      router.push('/login');
     } finally {
       setIsLoadingExpenses(false);
       setIsLoadingGroups(false);

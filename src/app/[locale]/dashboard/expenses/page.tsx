@@ -132,7 +132,7 @@ export default function ExpensesPage() {
           setError(t('error.authError') || 'Authentication error. Please log in again.');
           
           // Optional: Redirect to login
-          // router.push('/sign-in');
+          // router.push('/login');
         } else {
           setError(t('error.loadError') || 'Failed to load expenses. Please try again.');
         }

@@ -49,7 +49,7 @@ export default function UserProfileDisplay({ showDetails = true }: UserProfileDi
         const session = await getSession();
         
         if (!session) {
-          router.push('/sign-in');
+          router.push('/login');
           return;
         }
         

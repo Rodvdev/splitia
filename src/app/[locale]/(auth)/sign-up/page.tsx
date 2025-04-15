@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { createUser } from '@/lib/auth/server-actions';
 import { signIn } from 'next-auth/react';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
-
+import { cn } from '@/lib/utils';
 // Componente interno que usa useSearchParams
 function SignUpForm() {
   const t = useTranslations();
@@ -110,7 +110,7 @@ function SignUpForm() {
         
       } catch (signInError) {
         console.error('NextAuth sign in error:', signInError);
-        // Continue even if NextAuth sign-in fails as we have the server-side session
+        // Continue even if NextAuth login fails as we have the server-side session
         setTimeout(() => {
           router.push(callbackUrl);
         }, 1500);
@@ -125,8 +125,7 @@ function SignUpForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="max-w-md w-full space-y-8 bg-card rounded-2xl p-8 shadow-md">
+      <div className={cn("max-w-md w-full space-y-8 bg-card text-card-foreground rounded-2xl p-8 shadow-md")}>
         <div className="text-center">
           <h1 className="text-3xl font-bold">{t('app.name')}</h1>
           <p className="mt-2 text-muted-foreground">{t('auth.createAccount')}</p>
@@ -164,7 +163,7 @@ function SignUpForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                 placeholder={t('auth.namePlaceholder')}
               />
             </div>
@@ -182,7 +181,7 @@ function SignUpForm() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                 placeholder={t('auth.lastNamePlaceholder')}
               />
             </div>
@@ -200,7 +199,7 @@ function SignUpForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                 placeholder="email@example.com"
                 disabled={!!emailParam} // Disable if email is provided in URL
               />
@@ -218,7 +217,7 @@ function SignUpForm() {
                   id="currency"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                 >
                   {currencies.map((curr) => (
                     <option key={curr.value} value={curr.value}>
@@ -239,7 +238,7 @@ function SignUpForm() {
                   id="language"
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                 >
                   {languages.map((lang) => (
                     <option key={lang.value} value={lang.value}>
@@ -264,13 +263,13 @@ function SignUpForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary pr-10"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent pr-10 bg-background text-foreground"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -291,13 +290,13 @@ function SignUpForm() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary pr-10"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent pr-10 bg-background text-foreground"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -310,6 +309,7 @@ function SignUpForm() {
             disabled={isLoading}
             className="w-full bg-primary text-primary-foreground py-3 rounded-full font-medium transition-colors hover:opacity-90 disabled:opacity-50"
           >
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin inline" /> : null}
             {isLoading ? t('common.loading') : t('auth.signUp')}
           </button>
         </form>
@@ -317,13 +317,13 @@ function SignUpForm() {
         <div className="mt-4 text-center">
           <p className="text-sm">
             {t('auth.haveAccount')}{' '}
-            <Link href="/sign-in" className="text-primary hover:underline">
+            <Link href="/login" className="text-primary hover:underline">
               {t('auth.signIn')}
             </Link>
           </p>
         </div>
       </div>
-    </div>
+
   );
 }
 

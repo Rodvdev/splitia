@@ -28,7 +28,7 @@ export default function VerificationPage() {
         
         <div className="pt-4">
           <Link 
-            href="/sign-in" 
+            href="/login" 
             className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90"
           >
             {t('auth.backToSignIn')}

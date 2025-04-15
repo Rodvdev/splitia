@@ -74,7 +74,7 @@ export default function GroupsPage() {
           // Handle auth error - could redirect to login or show a specific message
           console.error('Authentication error when fetching groups');
           // Could redirect to login page if needed
-          // router.push('/sign-in');
+          // router.push('/login');
         }
       } finally {
         setIsLoading(false);

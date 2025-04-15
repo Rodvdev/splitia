@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { NextIntlClientProvider } from 'next-intl';
 import { UserPreferencesProvider } from '@/components/user/user-preferences-provider';
+import { ThemeProvider } from 'next-themes';
 
 type ProvidersProps = {
   children: ReactNode;
@@ -18,11 +19,17 @@ export function Providers({ children, locale, messages }: ProvidersProps) {
       messages={messages}
       timeZone="UTC"
     >
-      <AuthProvider>
-        <UserPreferencesProvider>
-          {children}
-        </UserPreferencesProvider>
-      </AuthProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+      >
+        <AuthProvider>
+          <UserPreferencesProvider>
+            {children}
+          </UserPreferencesProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </NextIntlClientProvider>
   );
 } 
