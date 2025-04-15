@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CreditCard, SplitSquareVertical, Users } from 'lucide-react';
 import { useLocale } from '@/i18n/client';
-import Image from 'next/image';
 
 export function HeroSection() {
   const router = useRouter();
@@ -57,14 +56,14 @@ export function HeroSection() {
           <div className="flex-1 relative">
             <div className="relative z-10 w-full max-w-lg mx-auto">
               <div className="aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700">
-                <Image 
-                  src="https://placehold.co/800x600/e2e8f0/475569?text=Splitia+Dashboard"
-                  alt={t('hero.previewAlt')}
-                  width={800}
-                  height={600}
-                  className="object-cover w-full h-full"
-                  priority
-                />
+                <div className="w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-800">
+                  <div className="text-center p-6">
+                    <div className="text-primary text-4xl font-bold mb-2">Splitia</div>
+                    <p className="text-slate-600 dark:text-slate-300">
+                      {t('hero.previewAlt')}
+                    </p>
+                  </div>
+                </div>
               </div>
               
               <div className="absolute -bottom-4 -right-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 w-40">
