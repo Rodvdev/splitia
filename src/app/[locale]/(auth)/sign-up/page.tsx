@@ -125,7 +125,7 @@ function SignUpForm() {
   }
 
   return (
-      <div className={cn("max-w-md w-full space-y-8 bg-card text-card-foreground rounded-2xl p-8 shadow-md")}>
+      <div className={cn("bg-white/95 dark:bg-gray-800/95 backdrop-blur-md p-8 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700")}>
         <div className="text-center">
           <h1 className="text-3xl font-bold">{t('app.name')}</h1>
           <p className="mt-2 text-muted-foreground">{t('auth.createAccount')}</p>

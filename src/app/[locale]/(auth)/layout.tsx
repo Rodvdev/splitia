@@ -2,11 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { ArrowLeft, Users, SplitSquareVertical, CreditCard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Users, SplitSquareVertical, CreditCard } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 export default function AuthLayout({
@@ -16,7 +15,6 @@ export default function AuthLayout({
 }) {
   const t = useTranslations();
   const pathname = usePathname();
-  const router = useRouter();
   const [userLocale, setUserLocale] = useState<string>('');
   
   // Extract locale from pathname
@@ -37,48 +35,9 @@ export default function AuthLayout({
   const isLoginPage = pathname?.includes('/login');
   const isSignUpPage = pathname?.includes('/sign-up');
   
-  const goBack = () => {
-    router.push(getLocalizedPath('/'));
-  };
-
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-950">
-      {/* Header */}
-      <header className="relative z-10 py-4 px-6 flex items-center justify-between bg-transparent">
-        <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={goBack}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <Link href={getLocalizedPath('/')} className="flex items-center">
-            <span className="text-2xl font-bold dark:text-white">Splitia</span>
-          </Link>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          {isLoginPage && (
-            <Link 
-              href={getLocalizedPath('/sign-up')} 
-              className="text-sm font-medium hover:underline hidden md:inline-block dark:text-gray-300"
-            >
-              {t('auth.noAccount')} {t('auth.signUp')}
-            </Link>
-          )}
-          {isSignUpPage && (
-            <Link 
-              href={getLocalizedPath('/login')} 
-              className="text-sm font-medium hover:underline hidden md:inline-block dark:text-gray-300"
-            >
-              {t('auth.hasAccount')} {t('auth.signIn')}
-            </Link>
-          )}
-        </div>
-      </header>
+
       
       {/* Main content - split layout (directly in the screen) */}
       <main className="flex-1 flex flex-col md:flex-row">

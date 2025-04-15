@@ -38,7 +38,7 @@ export function HeroSection() {
                 {t('hero.getStarted')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button size="lg" variant="outline" onClick={() => router.push(`/${locale}/about`)} className="dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
+              <Button size="lg" variant="outline" onClick={() => router.push(`/${locale}/about`)} className="dark:bg-transparent dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
                 {t('hero.learnMore')}
               </Button>
             </div>
