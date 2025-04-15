@@ -107,10 +107,10 @@ export default function ChatLayout({
               "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors",
               item.disabled
                 ? "opacity-60 cursor-not-allowed"
-                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-gray-800 dark:hover:text-gray-200",
+                : "hover:bg-muted hover:text-foreground dark:hover:bg-gray-800 dark:hover:text-gray-200",
               pathname?.endsWith(item.href) || 
               (item.href === '/chat' && pathname === getLocalizedPath('/chat'))
-                ? "bg-sidebar-primary text-sidebar-primary-foreground dark:bg-gray-800 dark:text-white"
+                ? "bg-muted text-foreground dark:bg-gray-800 dark:text-white"
                 : ""
             )}
             onClick={(e) => handleNavigation(item.href, item.disabled, e)}
@@ -118,7 +118,7 @@ export default function ChatLayout({
             {item.icon}
             <span className="ml-3">{item.label}</span>
             {item.disabled && (
-              <span className="ml-auto text-xs text-muted-foreground">
+              <span className="ml-auto text-xs text-muted-foreground dark:text-gray-400">
                 {t('auth.signInRequired')}
               </span>
             )}
@@ -131,9 +131,9 @@ export default function ChatLayout({
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar dark:bg-gray-950 dark:border-gray-800 text-sidebar-foreground">
+      <aside className="hidden md:flex w-64 flex-col border-r bg-background dark:bg-gray-900 dark:border-gray-800 text-foreground dark:text-gray-100">
         <div className="p-6">
-          <Link href={getLocalizedPath('/')} className="text-2xl font-bold text-sidebar-foreground">
+          <Link href={getLocalizedPath('/')} className="text-2xl font-bold text-foreground dark:text-gray-100">
             Splitia
           </Link>
         </div>
@@ -143,8 +143,8 @@ export default function ChatLayout({
               <span className="text-primary-foreground font-medium">S</span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium">{t('chat.aiAssistant')}</p>
-              <p className="text-xs text-muted-foreground">{t('chat.aiAssistantHelp')}</p>
+              <p className="text-sm font-medium text-foreground dark:text-gray-100">{t('chat.aiAssistant')}</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-400">{t('chat.aiAssistantHelp')}</p>
             </div>
           </div>
         </div>
@@ -154,10 +154,10 @@ export default function ChatLayout({
         <div className="p-4 border-t dark:border-gray-800 flex justify-between items-center">
           <ThemeToggle />
           <Button 
-            variant="outline"
+            variant="secondary"
             size="sm" 
             onClick={handleLogin}
-            className="ml-auto flex items-center gap-2 border-secondary text-secondary-foreground hover:bg-secondary/10 dark:border-secondary dark:text-secondary dark:hover:text-secondary-foreground dark:hover:bg-secondary/20"
+            className="ml-auto flex items-center gap-2"
           >
             <LogIn className="h-4 w-4" />
             {t('auth.signIn')}
@@ -175,16 +175,16 @@ export default function ChatLayout({
 
       {/* Mobile Sidebar - Content */}
       <aside className={cn(
-        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-white dark:bg-gray-950 dark:border-gray-800 text-sidebar-foreground transition-transform duration-300 ease-in-out shadow-lg",
+        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-background dark:bg-gray-900 dark:border-gray-800 text-foreground dark:text-gray-100 transition-transform duration-300 ease-in-out shadow-lg",
         isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 flex justify-between items-center">
-          <Link href={getLocalizedPath('/')} className="text-2xl font-bold text-sidebar-foreground">
+          <Link href={getLocalizedPath('/')} className="text-2xl font-bold text-foreground dark:text-gray-100">
             Splitia
           </Link>
           <button 
             onClick={closeMobileNav}
-            className="p-1 rounded-lg hover:bg-sidebar-accent dark:hover:bg-gray-800"
+            className="p-1 rounded-lg hover:bg-muted dark:hover:bg-gray-800 text-foreground dark:text-gray-100"
           >
             <X className="h-5 w-5" />
           </button>
@@ -194,8 +194,8 @@ export default function ChatLayout({
             <span className="text-primary-foreground font-medium">S</span>
           </div>
           <div className="ml-3">
-            <p className="text-sm font-medium">{t('chat.aiAssistant')}</p>
-            <p className="text-xs text-muted-foreground">{t('chat.aiAssistantHelp')}</p>
+            <p className="text-sm font-medium text-foreground dark:text-gray-100">{t('chat.aiAssistant')}</p>
+            <p className="text-xs text-muted-foreground dark:text-gray-400">{t('chat.aiAssistantHelp')}</p>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto p-4">
@@ -204,10 +204,10 @@ export default function ChatLayout({
         <div className="p-4 border-t dark:border-gray-800 flex justify-between items-center">
           <ThemeToggle />
           <Button 
-            variant="outline"
+            variant="secondary"
             size="sm" 
             onClick={handleLogin}
-            className="ml-auto flex items-center gap-2 border-secondary text-secondary-foreground hover:bg-secondary/10 dark:border-secondary dark:text-secondary dark:hover:text-secondary-foreground dark:hover:bg-secondary/20"
+            className="ml-auto flex items-center gap-2"
           >
             <LogIn className="h-4 w-4" />
             {t('auth.signIn')}
@@ -223,14 +223,13 @@ export default function ChatLayout({
         </div>
         
         {/* Mobile header */}
-        <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 bg-white/80 backdrop-blur-md dark:bg-gray-950/80">
-          <h1 className="text-xl font-bold">Splitia</h1>
+        <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 bg-background/80 backdrop-blur-md dark:bg-gray-900/80 dark:border-gray-800">
+          <h1 className="text-xl font-bold text-foreground dark:text-gray-100">Splitia</h1>
           <div className="flex items-center gap-3">
             <Button 
-              variant="outline"
+              variant="secondary"
               size="icon" 
               onClick={handleLogin}
-              className="border-secondary text-secondary-foreground hover:bg-secondary/10 dark:border-secondary dark:text-secondary dark:hover:text-secondary-foreground dark:hover:bg-secondary/20"
             >
               <LogIn className="w-5 h-5" />
             </Button>
