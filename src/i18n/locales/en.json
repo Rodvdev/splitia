@@ -63,7 +63,9 @@
     "verificationInstructions": "Click the link in the email to verify your account and sign in",
     "noEmailReceived": "Didn't receive an email?",
     "checkSpam": "Check your spam folder or try again",
-    "backToSignIn": "Back to Sign In"
+    "backToSignIn": "Back to Sign In",
+    "login": "Login",
+    "signup": "Sign Up"
   },
   "dashboard": {
     "recentActivity": "Recent Activity",
@@ -88,7 +90,10 @@
     "budget": "Budget",
     "settings": "Settings",
     "chat": "Chat",
-    "profile": "Profile"
+    "profile": "Profile",
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About"
   },
   "expenses": {
     "title": "Expenses",
@@ -848,5 +853,107 @@
       "notFound": "Settlement not found",
       "notFoundDescription": "The settlement you're looking for doesn't exist or you don't have access"
     }
+  },
+  "hero": {
+    "title": "Simplify your shared finances with",
+    "subtitle": "The easiest way to split expenses with friends, family, or roommates. Say goodbye to complicated spreadsheets and confusing payments.",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More",
+    "feature1": "Unlimited groups",
+    "feature2": "Smart splitting",
+    "feature3": "Multi-currency",
+    "previewAlt": "Dashboard preview",
+    "statTitle": "Time saved",
+    "statDesc": "in shared expense management"
+  },
+  "features": {
+    "title": "Everything you need to manage shared expenses",
+    "subtitle": "Splitia offers powerful tools to make expense splitting simple and stress-free.",
+    "group": {
+      "title": "Group Expenses",
+      "description": "Create groups for trips, shared households, or any common expense with multiple people."
+    },
+    "personal": {
+      "title": "Personal Finances", 
+      "description": "Keep track of your own expenses and understand where your money is going."
+    },
+    "budget": {
+      "title": "Budget Management",
+      "description": "Set monthly spending limits and track your progress."
+    },
+    "currency": {
+      "title": "Multiple Currencies",
+      "description": "Support for multiple currencies with automatic conversion for international trips."
+    },
+    "chat": {
+      "title": "Integrated Chat",
+      "description": "Communicate directly with group members within the app."
+    },
+    "ai": {
+      "title": "AI Assistant",
+      "description": "Get personalized financial insights and recommendations based on your spending patterns."
+    }
+  },
+  "how": {
+    "title": "How it works",
+    "subtitle": "Splitting expenses has never been easier. Get started in three simple steps.",
+    "step1": {
+      "title": "Create a group",
+      "description": "Invite friends, family, or roommates to a shared expense group."
+    },
+    "step2": {
+      "title": "Log expenses",
+      "description": "Add expenses as they happen, specifying who paid and how to split it."
+    },
+    "step3": {
+      "title": "Settle up",
+      "description": "See updated balances and settle debts easily when you're ready."
+    }
+  },
+  "testimonials": {
+    "title": "What our users say",
+    "subtitle": "Thousands of people trust Splitia to manage their shared expenses.",
+    "quote1": "Splitia has completely simplified how my roommates and I handle shared expenses. No more arguments about who owes what!",
+    "quote2": "I use Splitia for all my business trips. The multi-currency feature is perfect when I travel internationally.",
+    "quote3": "As a frequent backpacker, Splitia has saved me from so many awkward money situations with other travelers. It's a must-have for any group trip."
+  },
+  "pricing": {
+    "title": "Simple, transparent plans",
+    "subtitle": "Choose the plan that best fits your needs.",
+    "month": "month",
+    "popular": "POPULAR",
+    "free": {
+      "title": "Free",
+      "feature1": "Up to 5 active groups",
+      "feature2": "Unlimited expense history",
+      "feature3": "Basic splitting features",
+      "cta": "Get started free"
+    },
+    "premium": {
+      "title": "Premium",
+      "feature1": "Unlimited groups",
+      "feature2": "AI expense management assistant",
+      "feature3": "Advanced financial reports",
+      "feature4": "Priority customer support",
+      "cta": "Get Premium"
+    }
+  },
+  "cta": {
+    "title": "Start splitting expenses today",
+    "subtitle": "Join thousands of users who trust Splitia for their shared finances.",
+    "button": "Sign up free"
+  },
+  "footer": {
+    "tagline": "The easiest way to split expenses with friends, family, or roommates.",
+    "product": "Product",
+    "features": "Features",
+    "pricing": "Pricing",
+    "company": "Company",
+    "about": "About",
+    "contact": "Contact",
+    "legal": "Legal",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "rights": "All rights reserved."
   }
 } 

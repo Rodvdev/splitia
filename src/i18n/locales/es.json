@@ -63,23 +63,21 @@
     "verificationInstructions": "Haz clic en el enlace del correo electrónico para verificar tu cuenta e iniciar sesión",
     "noEmailReceived": "¿No recibiste un correo electrónico?",
     "checkSpam": "Revisa tu carpeta de spam o inténtalo de nuevo",
-    "backToSignIn": "Volver a Iniciar Sesión"
+    "backToSignIn": "Volver a Iniciar Sesión",
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse"
   },
-  "dashboard": {
-    "recentActivity": "Actividad Reciente",
-    "viewAll": "Ver Todo",
-    "empty": "No hay datos disponibles",
-    "totalExpenses": "Gastos Totales",
-    "description": "Resumen de tus gastos y grupos",
-    "title": "SPLIT",
-    "tagline": "Administra tus gastos y grupos",
-    "expenses": "Gastos",
-    "groups": "Grupos",
-    "budget": "Presupuesto",
-    "chat": "Chat",
-    "settings": "Configuración",
-    "manageGroups": "Administrar Grupos",
-    "changeSettings": "Cambiar Configuración"
+  "hero": {
+    "title": "Simplifica tus finanzas compartidas con",
+    "subtitle": "La forma más sencilla de dividir gastos con amigos, familia o compañeros. Dile adiós a las complicadas hojas de cálculo y a los pagos confusos.",
+    "getStarted": "Comenzar ahora",
+    "learnMore": "Saber más",
+    "feature1": "Grupos ilimitados",
+    "feature2": "División inteligente",
+    "feature3": "Multi-moneda",
+    "previewAlt": "Vista previa del tablero",
+    "statTitle": "Ahorro de tiempo",
+    "statDesc": "en gestión de gastos compartidos"
   },
   "navigation": {
     "dashboard": "Comienza a dividir",
@@ -88,7 +86,100 @@
     "budget": "Presupuesto",
     "settings": "Configuración",
     "chat": "Chat",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "features": "Características",
+    "pricing": "Precios",
+    "about": "Acerca de"
+  },
+  "features": {
+    "title": "Todo lo que necesitas para gestionar gastos compartidos",
+    "subtitle": "Splitia ofrece herramientas poderosas para hacer que dividir gastos sea simple y sin estrés.",
+    "group": {
+      "title": "Gastos Grupales",
+      "description": "Crea grupos para viajes, hogares compartidos o cualquier gasto común con múltiples personas."
+    },
+    "personal": {
+      "title": "Finanzas Personales", 
+      "description": "Mantén un registro de tus propios gastos y entiende dónde va tu dinero."
+    },
+    "budget": {
+      "title": "Gestión de Presupuestos",
+      "description": "Establece límites de gastos mensuales y realiza un seguimiento de tu progreso."
+    },
+    "currency": {
+      "title": "Múltiples Monedas",
+      "description": "Soporte para varias monedas con conversión automática para viajes internacionales."
+    },
+    "chat": {
+      "title": "Chat Integrado",
+      "description": "Comunícate directamente con los miembros del grupo dentro de la aplicación."
+    },
+    "ai": {
+      "title": "Asistente IA",
+      "description": "Obtén perspectivas financieras personalizadas y recomendaciones basadas en tus patrones de gasto."
+    }
+  },
+  "how": {
+    "title": "Cómo funciona",
+    "subtitle": "Dividir gastos nunca ha sido tan sencillo. Comienza en tres simples pasos.",
+    "step1": {
+      "title": "Crea un grupo",
+      "description": "Invita a amigos, familia o compañeros a un grupo compartido para gastos."
+    },
+    "step2": {
+      "title": "Registra gastos",
+      "description": "Añade gastos a medida que ocurren, especificando quién pagó y cómo dividirlo."
+    },
+    "step3": {
+      "title": "Salda cuentas",
+      "description": "Ve los balances actualizados y salda deudas con facilidad cuando estés listo."
+    }
+  },
+  "testimonials": {
+    "title": "Lo que dicen nuestros usuarios",
+    "subtitle": "Miles de personas confían en Splitia para gestionar sus gastos compartidos.",
+    "quote1": "Splitia ha simplificado completamente la forma en que mis compañeros de piso y yo manejamos los gastos compartidos. ¡Ya no hay discusiones sobre quién debe qué!",
+    "quote2": "Uso Splitia para todos mis viajes de negocios. La función multimoneda es perfecta cuando viajo internacionalmente.",
+    "quote3": "Como mochilera frecuente, Splitia me ha salvado de tantas situaciones incómodas sobre dinero con otros viajeros. Es imprescindible para cualquier viaje grupal."
+  },
+  "pricing": {
+    "title": "Planes simples y transparentes",
+    "subtitle": "Elige el plan que mejor se adapte a tus necesidades.",
+    "month": "mes",
+    "popular": "POPULAR",
+    "free": {
+      "title": "Gratuito",
+      "feature1": "Hasta 5 grupos activos",
+      "feature2": "Historial de gastos ilimitado",
+      "feature3": "Funciones básicas de división",
+      "cta": "Comenzar gratis"
+    },
+    "premium": {
+      "title": "Premium",
+      "feature1": "Grupos ilimitados",
+      "feature2": "Asistente IA para gestión de gastos",
+      "feature3": "Informes financieros avanzados",
+      "feature4": "Prioridad en soporte al cliente",
+      "cta": "Obtener Premium"
+    }
+  },
+  "cta": {
+    "title": "Comienza a dividir gastos hoy mismo",
+    "subtitle": "Únete a miles de usuarios que confían en Splitia para sus finanzas compartidas.",
+    "button": "Registrarse gratis"
+  },
+  "footer": {
+    "tagline": "La forma más sencilla de dividir gastos con amigos, familia o compañeros.",
+    "product": "Producto",
+    "features": "Características",
+    "pricing": "Precios",
+    "company": "Compañía",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "legal": "Legal",
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "rights": "Todos los derechos reservados."
   },
   "expenses": {
     "title": "Gastos",

@@ -1,35 +1,62 @@
-import { locales } from '@/i18n/config';
-import { NextIntlClientProvider } from 'next-intl';
-import LocaleClientLayout from '@/components/locale/locale-client-layout';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "@/app/globals.css";
+import { Providers } from "@/app/providers";
+import { locales } from "@/i18n/config";
+
+// Import language messages
 import en from '@/i18n/locales/en.json';
 import es from '@/i18n/locales/es.json';
 import pt from '@/i18n/locales/pt.json';
 
-const messages = { en, es, pt };
+// Define messages by locale
+const messages = {
+  en,
+  es,
+  pt
+};
 
+// Define font configuration
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Splitia - Expense Splitting Made Easy",
+  description: "A simple expense splitting application for groups with internationalization and multi-currency support",
+  keywords: ["expense tracker", "bill splitting", "group expenses", "finance app"],
+  authors: [{ name: "Splitia Team" }],
+};
+
+// Define supported locales for static generation
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({
+// Use the Next.js provided type instead of defining our own
+export default function RootLayout({
   children,
-  params,
+  params = {}
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
+  params?: { locale?: string };
 }) {
-  const { locale } = await params;
-  const localeKey = locale as keyof typeof messages;
-
+  // Set default locale if not provided
+  const locale = (params.locale || 'en') as keyof typeof messages;
+  
   return (
-    <NextIntlClientProvider
-      locale={localeKey}
-      messages={messages[localeKey]}
-      timeZone="UTC"
-    >
-      <LocaleClientLayout params={{ locale }}>
-        {children}
-      </LocaleClientLayout>
-    </NextIntlClientProvider>
+    <html lang={locale} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Providers locale={locale} messages={messages[locale]}>
+          {children}
+        </Providers>
+      </body>
+    </html>
   );
 }
