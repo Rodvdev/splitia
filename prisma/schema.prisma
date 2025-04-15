@@ -15,56 +15,56 @@ datasource db {
 
 // User model
 model User {
-  id            String         @id @default(cuid())
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  name          String         
-  lastName      String
-  phoneNumber   String?        // Optional phone number
-  email         String         @unique
-  password      String         // Added for Next-Auth credentials
-  externalId    String?        @unique // For Supabase authentication
-  image         String?
-  currency      String         @default("PEN") // Default currency
-  language      String         @default("es") // Default language
+  id                   String                    @id @default(cuid())
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  name                 String
+  lastName             String
+  phoneNumber          String? // Optional phone number
+  email                String                    @unique
+  password             String // Added for Next-Auth credentials
+  externalId           String?                   @unique // For Supabase authentication
+  image                String?
+  currency             String                    @default("PEN") // Default currency
+  language             String                    @default("es") // Default language
   // Relations
-  groups        GroupUser[]
-  expenses      Expense[]
-  expenseShares ExpenseShare[]
-  budgets       Budget[]
-  sentMessages  Message[]      @relation("SentMessages")
-  conversations ConversationParticipant[]
-  messageSeen   MessageSeen[]
-  categories    CustomCategory[]
-  preferences   UserPreference?
-  createdGroups Group[]        @relation("CreatedGroups")
+  groups               GroupUser[]
+  expenses             Expense[]
+  expenseShares        ExpenseShare[]
+  budgets              Budget[]
+  sentMessages         Message[]                 @relation("SentMessages")
+  conversations        ConversationParticipant[]
+  messageSeen          MessageSeen[]
+  categories           CustomCategory[]
+  preferences          UserPreference?
+  createdGroups        Group[]                   @relation("CreatedGroups")
   // Group invitations the user has created
-  createdInvitations GroupInvitation[] @relation("CreatedInvitations")
+  createdInvitations   GroupInvitation[]         @relation("CreatedInvitations")
   // Group invitations the user has been invited through
-  receivedInvitations GroupInvitation[] @relation("ReceivedInvitations")
+  receivedInvitations  GroupInvitation[]         @relation("ReceivedInvitations")
   // Settlements initiated by this user
-  initiatedSettlements Settlement[] @relation("InitiatedSettlements")
+  initiatedSettlements Settlement[]              @relation("InitiatedSettlements")
   // Settlements where this user is the counterparty
-  receivedSettlements Settlement[] @relation("ReceivedSettlements")
+  receivedSettlements  Settlement[]              @relation("ReceivedSettlements")
 }
 
 // Group model
 model Group {
-  id            String         @id @default(cuid())
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  name          String
-  description   String?
-  image         String?
+  id             String            @id @default(cuid())
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  name           String
+  description    String?
+  image          String?
   // Relations
-  members       GroupUser[]
-  expenses      Expense[]
-  conversation  Conversation?  @relation("GroupConversation", fields: [conversationId], references: [id], onDelete: Cascade)
-  conversationId String?       @unique
-  invitations   GroupInvitation[]
-  createdBy     User           @relation("CreatedGroups", fields: [createdById], references: [id])
-  createdById   String
-  settlements   Settlement[]
+  members        GroupUser[]
+  expenses       Expense[]
+  conversation   Conversation?     @relation("GroupConversation", fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String?           @unique
+  invitations    GroupInvitation[]
+  createdBy      User              @relation("CreatedGroups", fields: [createdById], references: [id])
+  createdById    String
+  settlements    Settlement[]
 }
 
 // GroupUser model (for many-to-many relationship between User and Group)
@@ -84,39 +84,39 @@ model GroupUser {
 
 // Expense model
 model Expense {
-  id          String         @id @default(cuid())
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  amount      Float
-  description String
-  date        DateTime
-  categoryId  String?
-  currency    String         @default("USD")
-  location    String?
-  notes       String?
-  isSettlement Boolean       @default(false)
+  id           String          @id @default(cuid())
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  amount       Float
+  description  String
+  date         DateTime
+  categoryId   String?
+  currency     String          @default("USD")
+  location     String?
+  notes        String?
+  isSettlement Boolean         @default(false)
   // Relations
-  paidBy      User           @relation(fields: [paidById], references: [id])
-  paidById    String
-  group       Group?         @relation(fields: [groupId], references: [id])
-  groupId     String?
-  shares      ExpenseShare[]
-  category    CustomCategory? @relation(fields: [categoryId], references: [id])
-  settlement  Settlement?    @relation(fields: [settlementId], references: [id])
-  settlementId String?       @unique
+  paidBy       User            @relation(fields: [paidById], references: [id])
+  paidById     String
+  group        Group?          @relation(fields: [groupId], references: [id])
+  groupId      String?
+  shares       ExpenseShare[]
+  category     CustomCategory? @relation(fields: [categoryId], references: [id])
+  settlement   Settlement?     @relation(fields: [settlementId], references: [id])
+  settlementId String?         @unique
 }
 
 // ExpenseShare model
 model ExpenseShare {
-  id        String     @id @default(cuid())
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   amount    Float
-  type      ShareType  @default(EQUAL)
+  type      ShareType @default(EQUAL)
   // Relations
-  expense   Expense    @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expense   Expense   @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   expenseId String
-  user      User       @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
   userId    String
 
   @@unique([expenseId, userId])
@@ -124,17 +124,17 @@ model ExpenseShare {
 
 // Budget model
 model Budget {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  amount    Float
-  month     Int
-  year      Int
-  currency  String   @default("USD")
+  id         String          @id @default(cuid())
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  amount     Float
+  month      Int
+  year       Int
+  currency   String          @default("USD")
   // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  category  CustomCategory? @relation(fields: [categoryId], references: [id])
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  category   CustomCategory? @relation(fields: [categoryId], references: [id])
   categoryId String?
 
   @@unique([userId, month, year, categoryId])
@@ -159,16 +159,16 @@ model CustomCategory {
 
 // Conversation model
 model Conversation {
-  id            String                    @id @default(cuid())
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-  isGroupChat   Boolean                   @default(false)
-  name          String?                   // Optional name for non-group chats
+  id           String                    @id @default(cuid())
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  isGroupChat  Boolean                   @default(false)
+  name         String? // Optional name for non-group chats
   // Relations
-  participants  ConversationParticipant[]
-  messages      Message[]
-  group         Group?                    @relation("GroupConversation")
-  groupId       String?                   @unique
+  participants ConversationParticipant[]
+  messages     Message[]
+  group        Group?                    @relation("GroupConversation")
+  groupId      String?                   @unique
 }
 
 // ConversationParticipant model
@@ -219,63 +219,63 @@ model AIAction {
   createdAt   DateTime     @default(now())
   action      AIActionType
   description String
-  prompt      String       // The user's original prompt
-  result      String       // JSON string of the action result
-  metadata    String?      // Additional JSON metadata
+  prompt      String // The user's original prompt
+  result      String // JSON string of the action result
+  metadata    String? // Additional JSON metadata
 }
 
 // UserPreference model for internationalization and other preferences
 model UserPreference {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  theme       String   @default("light") // UI theme
-  dateFormat  String   @default("MM/DD/YYYY") // Date format preference
-  timeFormat  String   @default("12h") // 12h or 24h
-  notifications Boolean @default(true) // Whether the user wants to receive notifications
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  theme         ThemeMode @default(SYSTEM) // UI theme mode (light, dark, system)
+  dateFormat    String    @default("MM/DD/YYYY") // Date format preference
+  timeFormat    String    @default("12h") // 12h or 24h
+  notifications Boolean   @default(true) // Whether the user wants to receive notifications
   // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String   @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String    @unique
 }
 
 // GroupInvitation model for invitations
 model GroupInvitation {
-  id          String    @id @default(cuid())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  token       String    @unique // Unique token for the invitation link
-  expiresAt   DateTime?
-  usedAt      DateTime?
-  maxUses     Int?      // Maximum number of uses (null = unlimited)
-  useCount    Int       @default(0) // Current use count
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  token         String    @unique // Unique token for the invitation link
+  expiresAt     DateTime?
+  usedAt        DateTime?
+  maxUses       Int? // Maximum number of uses (null = unlimited)
+  useCount      Int       @default(0) // Current use count
   // Relations
-  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId     String
-  creator     User      @relation("CreatedInvitations", fields: [creatorId], references: [id])
-  creatorId   String
-  invitedUser User?     @relation("ReceivedInvitations", fields: [invitedUserId], references: [id])
+  group         Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId       String
+  creator       User      @relation("CreatedInvitations", fields: [creatorId], references: [id])
+  creatorId     String
+  invitedUser   User?     @relation("ReceivedInvitations", fields: [invitedUserId], references: [id])
   invitedUserId String?
 }
 
 // Settlement model
 model Settlement {
-  id              String           @id @default(cuid())
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  amount          Float
-  currency        String           @default("USD")
-  description     String?
-  date            DateTime
-  settlementStatus SettlementStatus @default(PENDING)
-  settlementType   SettlementType   @default(PAYMENT)
+  id                String           @id @default(cuid())
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  amount            Float
+  currency          String           @default("USD")
+  description       String?
+  date              DateTime
+  settlementStatus  SettlementStatus @default(PENDING)
+  settlementType    SettlementType   @default(PAYMENT)
   // Relations
-  initiatedBy     User             @relation("InitiatedSettlements", fields: [initiatedById], references: [id])
-  initiatedById   String
-  settledWithUser User             @relation("ReceivedSettlements", fields: [settledWithUserId], references: [id])
+  initiatedBy       User             @relation("InitiatedSettlements", fields: [initiatedById], references: [id])
+  initiatedById     String
+  settledWithUser   User             @relation("ReceivedSettlements", fields: [settledWithUserId], references: [id])
   settledWithUserId String
-  group           Group            @relation(fields: [groupId], references: [id])
-  groupId         String
-  expense         Expense?
+  group             Group            @relation(fields: [groupId], references: [id])
+  groupId           String
+  expense           Expense?
 }
 
 // Enums
@@ -310,4 +310,11 @@ enum AIActionType {
   EXPENSE_UPDATE
   GROUP_CREATE
   PAYMENT_RECORD
+}
+
+// Theme mode enum
+enum ThemeMode {
+  LIGHT
+  DARK
+  SYSTEM
 }

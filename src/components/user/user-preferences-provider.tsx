@@ -3,11 +3,18 @@
 import React, { ReactNode, createContext, useState, useContext, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 
+// Define ThemeMode enum to match Prisma's enum
+enum ThemeMode {
+  LIGHT = 'LIGHT',
+  DARK = 'DARK',
+  SYSTEM = 'SYSTEM'
+}
+
 // Define los tipos para las preferencias del usuario
 export interface UserPreferences {
   currency: string;
   language: string;
-  theme?: string;
+  theme: ThemeMode;
   // Se pueden agregar más preferencias según sea necesario
 }
 
@@ -17,13 +24,15 @@ interface UserPreferencesContextType {
   isLoading: boolean;
   error: string | null;
   updatePreferences: (newPreferences: Partial<UserPreferences>) => Promise<boolean>;
+  theme: ThemeMode;
+  setTheme: (theme: ThemeMode) => void;
 }
 
 // Valores por defecto
 const defaultPreferences: UserPreferences = {
   currency: 'USD',
   language: 'es',
-  theme: 'light'
+  theme: ThemeMode.SYSTEM
 };
 
 // Crear el contexto
@@ -32,6 +41,8 @@ const UserPreferencesContext = createContext<UserPreferencesContextType>({
   isLoading: true,
   error: null,
   updatePreferences: async () => false,
+  theme: ThemeMode.SYSTEM,
+  setTheme: () => {}
 });
 
 // Hook para usar el contexto
@@ -43,6 +54,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<ThemeMode>(ThemeMode.SYSTEM);
 
   // Evitar re-cargar las preferencias si ya las tenemos
   const initializedRef = useRef(false);
@@ -72,16 +84,23 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         
         if (data.user) {
+          // Get theme from user preferences
+          const userTheme = data.user.preferences?.theme;
+          if (userTheme && Object.values(ThemeMode).includes(userTheme as ThemeMode)) {
+            setTheme(userTheme as ThemeMode);
+          }
+          
           // Actualizar el estado con las preferencias del usuario
           setPreferences({
             currency: data.user.currency || defaultPreferences.currency,
             language: data.user.language || defaultPreferences.language,
-            theme: data.user.theme || defaultPreferences.theme
+            theme: userTheme || defaultPreferences.theme
           });
           
           // También almacenar en localStorage para acceso rápido
           localStorage.setItem('userPreferredCurrency', data.user.currency || defaultPreferences.currency);
           localStorage.setItem('userPreferredLanguage', data.user.language || defaultPreferences.language);
+          localStorage.setItem('theme', userTheme || defaultPreferences.theme);
           
           // Marcar como inicializado
           initializedRef.current = true;
@@ -93,12 +112,19 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         // Intentar cargar desde localStorage si la API falla
         const storedCurrency = localStorage.getItem('userPreferredCurrency');
         const storedLanguage = localStorage.getItem('userPreferredLanguage');
+        const storedTheme = localStorage.getItem('theme');
         
-        if (storedCurrency || storedLanguage) {
+        if (storedCurrency || storedLanguage || storedTheme) {
+          // Update theme if available
+          if (storedTheme && Object.values(ThemeMode).includes(storedTheme as ThemeMode)) {
+            setTheme(storedTheme as ThemeMode);
+          }
+          
           setPreferences({
             ...preferences,
             currency: storedCurrency || preferences.currency,
-            language: storedLanguage || preferences.language
+            language: storedLanguage || preferences.language,
+            theme: (storedTheme as ThemeMode) || preferences.theme
           });
         }
       } finally {
@@ -107,7 +133,36 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     };
     
     fetchUserPreferences();
-  }, [isAuthenticated, preferences]);
+  }, [isAuthenticated]);
+
+  // Apply theme when it changes
+  useEffect(() => {
+    const root = window.document.documentElement;
+    
+    // Save to localStorage
+    localStorage.setItem('theme', theme);
+    
+    // Remove old class
+    root.classList.remove('light', 'dark');
+    
+    // Apply theme based on selection
+    if (theme === ThemeMode.SYSTEM) {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
+      
+      // Listen for system theme changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        root.classList.remove('light', 'dark');
+        root.classList.add(e.matches ? 'dark' : 'light');
+      };
+      
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    } else {
+      root.classList.add(theme === ThemeMode.DARK ? 'dark' : 'light');
+    }
+  }, [theme]);
 
   // Función para actualizar las preferencias del usuario
   const updatePreferences = async (newPreferences: Partial<UserPreferences>): Promise<boolean> => {
@@ -116,6 +171,11 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // If theme is changing, update it locally first for immediate feedback
+      if (newPreferences.theme) {
+        setTheme(newPreferences.theme);
+      }
       
       // Llamar a la API para actualizar las preferencias
       const response = await fetch('/api/profile/update', {
@@ -146,6 +206,9 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         if (newPreferences.language) {
           localStorage.setItem('userPreferredLanguage', newPreferences.language);
         }
+        if (newPreferences.theme) {
+          localStorage.setItem('theme', newPreferences.theme);
+        }
         
         return true;
       }
@@ -159,6 +222,16 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
+  
+  // Handle theme change
+  const handleThemeChange = (newTheme: ThemeMode) => {
+    setTheme(newTheme);
+    
+    // Update preferences if authenticated
+    if (isAuthenticated) {
+      updatePreferences({ theme: newTheme });
+    }
+  };
 
   return (
     <UserPreferencesContext.Provider
@@ -166,7 +239,9 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         preferences,
         isLoading,
         error,
-        updatePreferences
+        updatePreferences,
+        theme,
+        setTheme: handleThemeChange
       }}
     >
       {children}
