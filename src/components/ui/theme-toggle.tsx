@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useUserPreferences } from '@/components/user/user-preferences-provider';
 import { useTranslations } from 'next-intl';
+import { Check } from 'lucide-react';
 
 // Match the ThemeMode enum from Prisma
 enum ThemeMode {
@@ -27,17 +28,26 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme(ThemeMode.LIGHT)}>
-          <Sun className="mr-2 h-4 w-4" />
-          <span>{t('light')}</span>
+        <DropdownMenuItem onClick={() => setTheme(ThemeMode.LIGHT)} className="flex justify-between">
+          <div className="flex items-center">
+            <Sun className="mr-2 h-4 w-4" />
+            <span>{t('light')}</span>
+          </div>
+          {theme === ThemeMode.LIGHT && <Check className="h-4 w-4" />}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme(ThemeMode.DARK)}>
-          <Moon className="mr-2 h-4 w-4" />
-          <span>{t('dark')}</span>
+        <DropdownMenuItem onClick={() => setTheme(ThemeMode.DARK)} className="flex justify-between">
+          <div className="flex items-center">
+            <Moon className="mr-2 h-4 w-4" />
+            <span>{t('dark')}</span>
+          </div>
+          {theme === ThemeMode.DARK && <Check className="h-4 w-4" />}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme(ThemeMode.SYSTEM)}>
-          <Monitor className="mr-2 h-4 w-4" />
-          <span>{t('system')}</span>
+        <DropdownMenuItem onClick={() => setTheme(ThemeMode.SYSTEM)} className="flex justify-between">
+          <div className="flex items-center">
+            <Monitor className="mr-2 h-4 w-4" />
+            <span>{t('system')}</span>
+          </div>
+          {theme === ThemeMode.SYSTEM && <Check className="h-4 w-4" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
