@@ -157,7 +157,7 @@ export default function ChatLayout({
             variant="outline"
             size="sm" 
             onClick={handleLogin}
-            className="ml-auto flex items-center gap-2 border-secondary text-secondary-foreground hover:bg-secondary/10"
+            className="ml-auto flex items-center gap-2 border-secondary text-secondary-foreground hover:bg-secondary/10 dark:border-secondary dark:text-secondary dark:hover:text-secondary-foreground dark:hover:bg-secondary/20"
           >
             <LogIn className="h-4 w-4" />
             {t('auth.signIn')}
@@ -207,7 +207,7 @@ export default function ChatLayout({
             variant="outline"
             size="sm" 
             onClick={handleLogin}
-            className="ml-auto flex items-center gap-2 border-secondary text-secondary-foreground hover:bg-secondary/10"
+            className="ml-auto flex items-center gap-2 border-secondary text-secondary-foreground hover:bg-secondary/10 dark:border-secondary dark:text-secondary dark:hover:text-secondary-foreground dark:hover:bg-secondary/20"
           >
             <LogIn className="h-4 w-4" />
             {t('auth.signIn')}
@@ -230,7 +230,7 @@ export default function ChatLayout({
               variant="outline"
               size="icon" 
               onClick={handleLogin}
-              className="border-secondary text-secondary-foreground hover:bg-secondary/10"
+              className="border-secondary text-secondary-foreground hover:bg-secondary/10 dark:border-secondary dark:text-secondary dark:hover:text-secondary-foreground dark:hover:bg-secondary/20"
             >
               <LogIn className="w-5 h-5" />
             </Button>
