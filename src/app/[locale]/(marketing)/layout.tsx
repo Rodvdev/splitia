@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { FooterThemeSelector } from '@/components/ui/footer-theme-selector';
 
 interface MarketingLayoutProps {
   children: React.ReactNode;
@@ -117,6 +118,8 @@ export default function MarketingLayout({ children }: MarketingLayoutProps) {
                 </Link>
               </li>
             </ul>
+            
+            <FooterThemeSelector />
           </div>
         </div>
         
