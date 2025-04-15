@@ -93,7 +93,8 @@
     "profile": "Profile",
     "features": "Features",
     "pricing": "Pricing",
-    "about": "About"
+    "about": "About",
+    "home": "Home"
   },
   "expenses": {
     "title": "Expenses",
@@ -521,7 +522,9 @@
     "typing": "typing...",
     "seen": "Seen",
     "assistant": "AI Assistant",
-    "description": "Message with group members and friends",
+    "aiAssistant": "Splitia Assistant",
+    "aiAssistantHelp": "Ask me anything about using Splitia",
+    "description": "Messages with group members and friends",
     "noMessages": "No messages yet",
     "noConversations": "No conversations yet",
     "newMessage": "New Message",
@@ -529,7 +532,7 @@
     "createChat": "Create Chat",
     "createGroupChat": "Create Group Chat",
     "searchContacts": "Search Contacts",
-    "searchContactsPlaceholder": "Search by name or email...",
+    "searchContactsPlaceholder": "Type a name or email...",
     "today": "Today",
     "yesterday": "Yesterday",
     "messageInput": "Type a message...",

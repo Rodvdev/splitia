@@ -84,7 +84,11 @@
     "budget": "Orçamento",
     "settings": "Configurações",
     "chat": "Chat",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "features": "Recursos",
+    "pricing": "Preços",
+    "about": "Sobre",
+    "home": "Início"
   },
   "expenses": {
     "title": "Despesas",
@@ -514,6 +518,8 @@
     "typing": "digitando...",
     "seen": "Visto",
     "assistant": "Assistente IA",
+    "aiAssistant": "Assistente Splitia",
+    "aiAssistantHelp": "Pergunte-me qualquer coisa sobre o Splitia",
     "description": "Mensagens com membros do grupo e amigos",
     "noMessages": "Ainda não há mensagens",
     "noConversations": "Ainda não há conversas",

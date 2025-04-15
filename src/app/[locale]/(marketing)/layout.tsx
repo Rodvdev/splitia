@@ -20,7 +20,7 @@ export default function MarketingLayout({ children }: MarketingLayoutProps) {
   };
 
   const handleSignup = () => {
-    router.push(`/${locale}/sign-up`);
+    router.push(`/${locale}/chat`);
   };
 
   return (

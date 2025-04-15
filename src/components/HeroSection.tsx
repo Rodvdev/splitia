@@ -29,7 +29,7 @@ export function HeroSection() {
             </p>
             
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button size="lg" onClick={() => router.push(`/${locale}/sign-up`)}>
+              <Button size="lg" onClick={() => router.push(`/${locale}/chat`)}>
                 {t('hero.getStarted')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -58,7 +58,7 @@ export function HeroSection() {
             <div className="relative z-10 w-full max-w-lg mx-auto">
               <div className="aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700">
                 <Image 
-                  src="/dashboard-preview.png" 
+                  src="https://placehold.co/800x600/e2e8f0/475569?text=Splitia+Dashboard"
                   alt={t('hero.previewAlt')}
                   width={800}
                   height={600}
