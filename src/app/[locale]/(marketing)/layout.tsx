@@ -4,6 +4,7 @@ import { useLocale } from '@/i18n/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface MarketingLayoutProps {
   children: React.ReactNode;
@@ -47,6 +48,7 @@ export default function MarketingLayout({ children }: MarketingLayoutProps) {
         </div>
         
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Button variant="ghost" onClick={handleLogin}>{t('auth.login')}</Button>
           <Button onClick={handleSignup}>{t('auth.signup')}</Button>
         </div>
