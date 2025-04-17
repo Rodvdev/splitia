@@ -39,7 +39,7 @@
 - **Primary:** bg-primary text-primary-foreground hover:bg-primary/90
 - **Secondary:** bg-secondary text-secondary-foreground hover:bg-secondary/90
 - **Outline:** border border-input bg-background hover:bg-accent hover:text-accent-foreground
-- **Ghost:** hover:bg-accent hover:text-accent-foreground
+- **Ghost:** hover:bg-accent `hover:text-accent-foreground
 - **Destructive:** bg-destructive text-destructive-foreground hover:bg-destructive/90
 - **Link:** text-primary underline-offset-4 hover:underline
 - **Sizes:** xs, sm, md (default), lg, xl
