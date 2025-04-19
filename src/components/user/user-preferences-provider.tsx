@@ -78,7 +78,10 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         const response = await fetch('/api/profile/get');
         
         if (!response.ok) {
-          throw new Error('Failed to fetch user preferences');
+          console.error(`Failed to fetch preferences: ${response.status} ${response.statusText}`);
+          // Load from localStorage instead of throwing an error
+          loadFromLocalStorage();
+          return;
         }
         
         const data = await response.json();
@@ -110,23 +113,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred');
         
         // Intentar cargar desde localStorage si la API falla
-        const storedCurrency = localStorage.getItem('userPreferredCurrency');
-        const storedLanguage = localStorage.getItem('userPreferredLanguage');
-        const storedTheme = localStorage.getItem('theme');
-        
-        if (storedCurrency || storedLanguage || storedTheme) {
-          // Update theme if available
-          if (storedTheme && Object.values(ThemeMode).includes(storedTheme as ThemeMode)) {
-            setTheme(storedTheme as ThemeMode);
-          }
-          
-          setPreferences({
-            ...preferences,
-            currency: storedCurrency || preferences.currency,
-            language: storedLanguage || preferences.language,
-            theme: (storedTheme as ThemeMode) || preferences.theme
-          });
-        }
+        loadFromLocalStorage();
       } finally {
         setIsLoading(false);
       }
@@ -140,6 +127,27 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     // Save to localStorage
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Helper function to load from localStorage
+  const loadFromLocalStorage = () => {
+    const storedCurrency = localStorage.getItem('userPreferredCurrency');
+    const storedLanguage = localStorage.getItem('userPreferredLanguage');
+    const storedTheme = localStorage.getItem('theme');
+    
+    if (storedCurrency || storedLanguage || storedTheme) {
+      // Update theme if available
+      if (storedTheme && Object.values(ThemeMode).includes(storedTheme as ThemeMode)) {
+        setTheme(storedTheme as ThemeMode);
+      }
+      
+      setPreferences({
+        ...preferences,
+        currency: storedCurrency || preferences.currency,
+        language: storedLanguage || preferences.language,
+        theme: (storedTheme as ThemeMode) || preferences.theme
+      });
+    }
+  };
 
   // Función para actualizar las preferencias del usuario
   const updatePreferences = async (newPreferences: Partial<UserPreferences>): Promise<boolean> => {

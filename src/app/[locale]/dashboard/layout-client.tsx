@@ -25,13 +25,14 @@ type ClientLayoutProps = {
 
 export default function DashboardClientLayout({
   children,
+  params
 }: ClientLayoutProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useProfile();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [userLocale, setUserLocale] = useState<string>('');
+  const [userLocale, setUserLocale] = useState<string>(params.locale);
   
   // Set user's preferred locale from profile
   useEffect(() => {
