@@ -5,7 +5,6 @@ import "@/app/globals.css";
 import { Providers } from "@/app/providers";
 import { Header } from "@/app/components/Header";
 import { Footer } from "@/app/components/Footer";
-import { useTranslations } from "next-intl";
 
 // Import language messages
 import en from '@/i18n/locales/en.json';
