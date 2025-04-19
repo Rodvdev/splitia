@@ -1,5 +1,5 @@
 import { locales } from "@/i18n/config";
-import ClientLayout from "./layout-client";
+import ClientLayout from "@/app/[locale]/dashboard/layout-client";
 import type { Viewport } from "next";
 
 // Export metadata from external file
@@ -20,7 +20,9 @@ export function generateStaticParams() {
 
 type RootLayoutProps = {
   children: React.ReactNode;
-  params: { locale: string };
+  params: {
+    locale: string;
+  };
 }
 
 export default function RootLayout({

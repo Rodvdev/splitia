@@ -15,13 +15,37 @@ import {
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/use-profile';
 import UserProfileDisplay from '@/components/user/UserProfileDisplay';
+import { locales } from "@/i18n/config";
+import ClientLayout from "./layout-client";
+import type { Viewport } from "next";
 
+// Export metadata from external file
+export { metadata } from "@/app/metadata";
+
+// Define viewport configuration
+export const viewport: Viewport = {
+  colorScheme: 'light dark',
+  themeColor: '#0f172a',
+  width: 'device-width',
+  initialScale: 1,
+};
+
+// Define supported locales for static generation
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
+type LayoutProps = {
+  children: React.ReactNode;
+  params: {
+    locale: string;
+  };
+}
 
 export default function DashboardLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  params
+}: LayoutProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const router = useRouter();
@@ -114,80 +138,82 @@ export default function DashboardLayout({
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-sidebar-foreground">
-            {t('app.name')}
-          </h1>
-        </div>
-        <div className="px-6 mb-6">
-          <UserProfileDisplay />
-        </div>
-        <nav className="flex-1 overflow-y-auto p-4">
-          {renderNavItems()}
-        </nav>
-      </aside>
+    <ClientLayout params={params}>
+      <div className="flex min-h-screen bg-background">
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold text-sidebar-foreground">
+              {t('app.name')}
+            </h1>
+          </div>
+          <div className="px-6 mb-6">
+            <UserProfileDisplay />
+          </div>
+          <nav className="flex-1 overflow-y-auto p-4">
+            {renderNavItems()}
+          </nav>
+        </aside>
 
-      {/* Mobile Sidebar - Overlay */}
-      {isMobileNavOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={closeMobileNav}
-        />
-      )}
-
-      {/* Mobile Sidebar - Content */}
-      <aside className={cn(
-        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r' bg-white' text-sidebar-foreground transition-transform duration-300 ease-in-out shadow-lg",
-        isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="p-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-sidebar-foreground">
-            {t('app.name')}
-          </h1>
-          <button 
+        {/* Mobile Sidebar - Overlay */}
+        {isMobileNavOpen && (
+          <div 
+            className="md:hidden fixed inset-0 bg-black/50 z-40"
             onClick={closeMobileNav}
-            className="p-1 rounded-lg hover:bg-sidebar-accent"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="px-6 mb-6">
-          <UserProfileDisplay />
-        </div>
-        <nav className="flex-1 overflow-y-auto p-4">
-          {renderNavItems()}
-        </nav>
-      </aside>
+          />
+        )}
 
-      {/* Main content wrapper with grid background */}
-      <div className="flex flex-1 flex-col overflow-hidden relative bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-        {/* Grid pattern background */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
-        </div>
-        
-        {/* Mobile header */}
-        <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 backdrop-blur-md dark:bg-gray-950/80">
-          <h1 className="text-xl font-bold">{t('app.name')}</h1>
-          <div className="flex items-center gap-3">
-            <UserProfileDisplay showDetails={false} />
+        {/* Mobile Sidebar - Content */}
+        <aside className={cn(
+          "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r' bg-white' text-sidebar-foreground transition-transform duration-300 ease-in-out shadow-lg",
+          isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className="p-6 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-sidebar-foreground">
+              {t('app.name')}
+            </h1>
             <button 
-              className="p-2 rounded-lg hover:bg-accent" 
-              onClick={toggleMobileNav}
+              onClick={closeMobileNav}
+              className="p-1 rounded-lg hover:bg-sidebar-accent"
             >
-              <Menu className="w-6 h-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
-        </header>
+          <div className="px-6 mb-6">
+            <UserProfileDisplay />
+          </div>
+          <nav className="flex-1 overflow-y-auto p-4">
+            {renderNavItems()}
+          </nav>
+        </aside>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-auto relative z-10">
-          {children}
-        </main>
+        {/* Main content wrapper with grid background */}
+        <div className="flex flex-1 flex-col overflow-hidden relative bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+          {/* Grid pattern background */}
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+          </div>
+          
+          {/* Mobile header */}
+          <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 backdrop-blur-md dark:bg-gray-950/80">
+            <h1 className="text-xl font-bold">{t('app.name')}</h1>
+            <div className="flex items-center gap-3">
+              <UserProfileDisplay showDetails={false} />
+              <button 
+                className="p-2 rounded-lg hover:bg-accent" 
+                onClick={toggleMobileNav}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            </div>
+          </header>
+
+          {/* Main content */}
+          <main className="flex-1 overflow-auto relative z-10">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ClientLayout>
   );
 } 

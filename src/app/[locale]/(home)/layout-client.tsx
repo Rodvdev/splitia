@@ -5,6 +5,7 @@ import "@/app/globals.css";
 import { Providers } from "@/app/providers";
 import { Header } from "@/app/components/Header";
 import { Footer } from "@/app/components/Footer";
+import { useTranslations } from "next-intl";
 
 // Import language messages
 import en from '@/i18n/locales/en.json';
@@ -31,11 +32,13 @@ const geistMono = Geist_Mono({
 
 type ClientLayoutProps = {
   children: React.ReactNode;
-  params: { locale: string };
+  params: {
+    locale: string;
+  };
 }
 
 // Use the Next.js provided type instead of defining our own
-export default function RootLayout({
+export default function HomeClientLayout({
   children,
   params
 }: ClientLayoutProps) {
