@@ -96,7 +96,7 @@ export default function Home() {
 
   // Render landing page with hero section and features
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-white">
       {/* Landing Page Header */}
       <header className="py-4 px-6 border-b flex items-center justify-between">
         <div className="flex items-center">

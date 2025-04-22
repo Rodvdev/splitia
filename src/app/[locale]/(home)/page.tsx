@@ -88,7 +88,7 @@ export default function Home() {
 
   // Render landing page with hero section and features
   return (
-    <div className="flex flex-col min-h-screen bg-background dark:bg-slate-950 transition-colors">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 transition-colors">
 
       {/* Hero Section */}
       <HeroSection />

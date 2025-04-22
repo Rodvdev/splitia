@@ -163,7 +163,7 @@ function SignUpForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-foreground"
                 placeholder={t('auth.namePlaceholder')}
               />
             </div>
@@ -181,7 +181,7 @@ function SignUpForm() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-foreground"
                 placeholder={t('auth.lastNamePlaceholder')}
               />
             </div>
@@ -199,7 +199,7 @@ function SignUpForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-foreground"
                 placeholder="email@example.com"
                 disabled={!!emailParam} // Disable if email is provided in URL
               />
@@ -217,7 +217,7 @@ function SignUpForm() {
                   id="currency"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-foreground"
                 >
                   {currencies.map((curr) => (
                     <option key={curr.value} value={curr.value}>
@@ -238,7 +238,7 @@ function SignUpForm() {
                   id="language"
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-foreground"
                 >
                   {languages.map((lang) => (
                     <option key={lang.value} value={lang.value}>
@@ -263,7 +263,7 @@ function SignUpForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent pr-10 bg-background text-foreground"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent pr-10 bg-white text-foreground"
                   placeholder="••••••••"
                 />
                 <button
@@ -290,7 +290,7 @@ function SignUpForm() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent pr-10 bg-background text-foreground"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent pr-10 bg-white text-foreground"
                   placeholder="••••••••"
                 />
                 <button
@@ -330,7 +330,7 @@ function SignUpForm() {
 // Componente de carga para mostrar mientras el componente está suspendido
 function SignUpLoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-white">
       <div className="flex flex-col items-center space-y-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="text-lg">Cargando...</p>

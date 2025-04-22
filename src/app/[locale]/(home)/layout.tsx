@@ -1,5 +1,5 @@
 import { locales } from "@/i18n/config";
-import ClientLayout from "@/app/[locale]/dashboard/layout-client";
+import ClientLayout from "../(home)/layout-client";
 import type { Viewport } from "next";
 
 // Export metadata from external file

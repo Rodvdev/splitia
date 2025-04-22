@@ -52,7 +52,7 @@ export default function ExpensesLayout({
   return (
     <div className="flex flex-col">
       {/* Sub-navigation */}
-      <div className="bg-background border-b">
+      <div className="bg-white border-b">
         <div className="container mx-auto px-4">
           <div className="flex overflow-x-auto py-3 gap-2">
             {subNavItems.map((item) => (

@@ -1,7 +1,8 @@
 'use client';
 
+import React from 'react';
 import { useTranslations } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
@@ -28,7 +29,6 @@ export default function DashboardClientLayout({
   params
 }: ClientLayoutProps) {
   const t = useTranslations();
-  const pathname = usePathname();
   const router = useRouter();
   const { profile } = useProfile();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -102,11 +102,7 @@ export default function DashboardClientLayout({
           <a
             href={item.href}
             className={cn(
-              "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              pathname?.endsWith(item.href) || 
-              (item.href === '/dashboard' && pathname === '/dashboard')
-                ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                : ""
+              "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-white-accent hover:text-accent-foreground"
             )}
             onClick={(e) => handleNavigation(item.href, e)}
           >
@@ -119,53 +115,7 @@ export default function DashboardClientLayout({
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-sidebar-foreground">
-            {t('app.name')}
-          </h1>
-        </div>
-        <div className="px-6 mb-6">
-          <UserProfileDisplay />
-        </div>
-        <nav className="flex-1 overflow-y-auto p-4">
-          {renderNavItems()}
-        </nav>
-      </aside>
-
-      {/* Mobile Sidebar - Overlay */}
-      {isMobileNavOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={closeMobileNav}
-        />
-      )}
-
-      {/* Mobile Sidebar - Content */}
-      <aside className={cn(
-        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-white text-sidebar-foreground transition-transform duration-300 ease-in-out shadow-lg",
-        isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="p-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-sidebar-foreground">
-            {t('app.name')}
-          </h1>
-          <button 
-            onClick={closeMobileNav}
-            className="p-1 rounded-lg hover:bg-sidebar-accent"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="px-6 mb-6">
-          <UserProfileDisplay />
-        </div>
-        <nav className="flex-1 overflow-y-auto p-4">
-          {renderNavItems()}
-        </nav>
-      </aside>
+    <div className="flex min-h-screen bg-white">
 
       {/* Main content wrapper with grid background */}
       <div className="flex flex-1 flex-col overflow-hidden relative bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -174,20 +124,6 @@ export default function DashboardClientLayout({
           <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
         </div>
         
-        {/* Mobile header */}
-        <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 backdrop-blur-md dark:bg-gray-950/80">
-          <h1 className="text-xl font-bold">{t('app.name')}</h1>
-          <div className="flex items-center gap-3">
-            <UserProfileDisplay showDetails={false} />
-            <button 
-              className="p-2 rounded-lg hover:bg-accent" 
-              onClick={toggleMobileNav}
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-          </div>
-        </header>
-
         {/* Main content */}
         <main className="flex-1 overflow-auto relative z-10">
           {children}

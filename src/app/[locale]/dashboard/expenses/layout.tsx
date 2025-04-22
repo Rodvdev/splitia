@@ -1,5 +1,5 @@
-import type { Viewport } from "next";
 import ExpensesLayoutClient from "./layout-client";
+import type { Viewport } from "next";
 
 // Define viewport configuration
 export const viewport: Viewport = {

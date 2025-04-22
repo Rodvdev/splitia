@@ -56,7 +56,7 @@ function SignInForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-white">
       <div className="max-w-md w-full space-y-8 bg-card rounded-2xl p-8 shadow-md">
         <div className="text-center">
           <h1 className="text-3xl font-bold">{t('app.name')}</h1>

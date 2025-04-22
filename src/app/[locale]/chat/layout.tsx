@@ -129,9 +129,9 @@ export default function ChatLayout({
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-white">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r bg-background dark:bg-gray-900 dark:border-gray-800 text-foreground dark:text-gray-100">
+      <aside className="hidden md:flex w-64 flex-col border-r bg-white dark:bg-gray-900 dark:border-gray-800 text-foreground dark:text-gray-100">
         <div className="p-6">
           <Link href={getLocalizedPath('/')} className="text-2xl font-bold text-foreground dark:text-gray-100">
             Splitia
@@ -175,7 +175,7 @@ export default function ChatLayout({
 
       {/* Mobile Sidebar - Content */}
       <aside className={cn(
-        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-background dark:bg-gray-900 dark:border-gray-800 text-foreground dark:text-gray-100 transition-transform duration-300 ease-in-out shadow-lg",
+        "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-white dark:bg-gray-900 dark:border-gray-800 text-foreground dark:text-gray-100 transition-transform duration-300 ease-in-out shadow-lg",
         isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 flex justify-between items-center">
@@ -223,7 +223,7 @@ export default function ChatLayout({
         </div>
         
         {/* Mobile header */}
-        <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 bg-background/80 backdrop-blur-md dark:bg-gray-900/80 dark:border-gray-800">
+        <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 bg-white/80 backdrop-blur-md dark:bg-gray-900/80 dark:border-gray-800">
           <h1 className="text-xl font-bold text-foreground dark:text-gray-100">Splitia</h1>
           <div className="flex items-center gap-3">
             <Button 

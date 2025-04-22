@@ -38,7 +38,7 @@
 #### Buttons
 - **Primary:** bg-primary text-primary-foreground hover:bg-primary/90
 - **Secondary:** bg-secondary text-secondary-foreground hover:bg-secondary/90
-- **Outline:** border border-input bg-background hover:bg-accent hover:text-accent-foreground
+- **Outline:** border border-input bg-white hover:bg-accent hover:text-accent-foreground
 - **Ghost:** hover:bg-accent `hover:text-accent-foreground
 - **Destructive:** bg-destructive text-destructive-foreground hover:bg-destructive/90
 - **Link:** text-primary underline-offset-4 hover:underline
@@ -62,8 +62,8 @@
 - **Validation:** Error messages in text-destructive
 
 #### Navigation
-- **Header:** sticky top-0 z-50 bg-background/80 backdrop-blur-md
-- **Sidebar:** w-64 bg-sidebar text-sidebar-foreground
+- **Header:** sticky top-0 z-50 bg-white/80 backdrop-blur-md
+- **Sidebar:** w-64 bg-white text-sidebar-foreground
 - **Active States:** bg-primary/10 text-primary
 - **Mobile Nav:** Collapsible with hamburger menu
 
@@ -78,7 +78,7 @@
 - **Loading States:** Skeleton loaders and spinner animations
 
 ## 🎭 Dark Mode
-- **Background:** bg-background (light: white, dark: rgb(9, 9, 11))
+- **Background:** bg-white (light: white, dark: rgb(9, 9, 11))
 - **Foreground:** text-foreground (light: black, dark: white)
 - **Muted:** bg-muted text-muted-foreground
 - **Card:** bg-card text-card-foreground

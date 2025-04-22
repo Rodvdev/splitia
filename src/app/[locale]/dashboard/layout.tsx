@@ -15,25 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/use-profile';
 import UserProfileDisplay from '@/components/user/UserProfileDisplay';
-import { locales } from "@/i18n/config";
 import ClientLayout from "./layout-client";
-import type { Viewport } from "next";
-
-// Export metadata from external file
-export { metadata } from "@/app/metadata";
-
-// Define viewport configuration
-export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: '#0f172a',
-  width: 'device-width',
-  initialScale: 1,
-};
-
-// Define supported locales for static generation
-export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
-}
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -121,10 +103,10 @@ export default function DashboardLayout({
           <a
             href={item.href}
             className={cn(
-              "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-white-accent hover:text-sidebar-accent-foreground",
               pathname?.endsWith(item.href) || 
               (item.href === '/dashboard' && pathname === '/dashboard')
-                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                ? "bg-white-primary text-sidebar-primary-foreground"
                 : ""
             )}
             onClick={(e) => handleNavigation(item.href, e)}
@@ -139,9 +121,9 @@ export default function DashboardLayout({
 
   return (
     <ClientLayout params={params}>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-white">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
+        <aside className="hidden md:flex w-64 flex-col border-r bg-white text-sidebar-foreground">
           <div className="p-6">
             <h1 className="text-2xl font-bold text-sidebar-foreground">
               {t('app.name')}
@@ -165,7 +147,7 @@ export default function DashboardLayout({
 
         {/* Mobile Sidebar - Content */}
         <aside className={cn(
-          "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r' bg-white' text-sidebar-foreground transition-transform duration-300 ease-in-out shadow-lg",
+          "md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r bg-white text-sidebar-foreground transition-transform duration-300 ease-in-out shadow-lg",
           isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <div className="p-6 flex justify-between items-center">
@@ -174,7 +156,7 @@ export default function DashboardLayout({
             </h1>
             <button 
               onClick={closeMobileNav}
-              className="p-1 rounded-lg hover:bg-sidebar-accent"
+              className="p-1 rounded-lg hover:bg-white"
             >
               <X className="h-5 w-5" />
             </button>
@@ -195,7 +177,7 @@ export default function DashboardLayout({
           </div>
           
           {/* Mobile header */}
-          <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 backdrop-blur-md dark:bg-gray-950/80">
+          <header className="md:hidden border-b p-4 flex items-center justify-between relative z-10 backdrop-blur-md bg-white dark:bg-gray-950/80">
             <h1 className="text-xl font-bold">{t('app.name')}</h1>
             <div className="flex items-center gap-3">
               <UserProfileDisplay showDetails={false} />
