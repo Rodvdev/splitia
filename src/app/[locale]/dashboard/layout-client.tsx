@@ -1,21 +1,4 @@
-'use client';
-
 import React from 'react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import {
-  LayoutDashboard,
-  Receipt,
-  Users,
-  Wallet,
-  MessageSquare,
-  Menu,
-  X,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useProfile } from '@/hooks/use-profile';
-import UserProfileDisplay from '@/components/user/UserProfileDisplay';
 
 type ClientLayoutProps = {
   children: React.ReactNode;
@@ -25,94 +8,8 @@ type ClientLayoutProps = {
 }
 
 export default function DashboardClientLayout({
-  children,
-  params
+  children
 }: ClientLayoutProps) {
-  const t = useTranslations();
-  const router = useRouter();
-  const { profile } = useProfile();
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [userLocale, setUserLocale] = useState<string>(params.locale);
-  
-  // Set user's preferred locale from profile
-  useEffect(() => {
-    if (profile?.language) {
-      setUserLocale(profile.language);
-    }
-  }, [profile]);
-  
-  // Build localized path
-  const getLocalizedPath = (path: string) => {
-    if (!userLocale) return path;
-    
-    if (path === '/dashboard') {
-      return `/${userLocale}/dashboard`;
-    } else {
-      return `/${userLocale}${path}`;
-    }
-  };
-
-  // Navigation items with icons
-  const navItems = [
-    {
-      href: '/dashboard',
-      label: t('navigation.dashboard'),
-      icon: <LayoutDashboard className="h-5 w-5" />,
-    },
-    {
-      href: '/dashboard/expenses',
-      label: t('navigation.expenses'),
-      icon: <Receipt className="h-5 w-5" />,
-    },
-    {
-      href: '/dashboard/groups',
-      label: t('navigation.groups'),
-      icon: <Users className="h-5 w-5" />,
-    },
-    {
-      href: '/dashboard/budget',
-      label: t('navigation.budget'),
-      icon: <Wallet className="h-5 w-5" />,
-    },
-    {
-      href: '/dashboard/chat',
-      label: t('navigation.chat'),
-      icon: <MessageSquare className="h-5 w-5" />,
-    },
-  ];
-
-  const toggleMobileNav = () => {
-    setIsMobileNavOpen(!isMobileNavOpen);
-  };
-
-  const closeMobileNav = () => {
-    setIsMobileNavOpen(false);
-  };
-
-  const handleNavigation = (href: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    router.push(getLocalizedPath(href));
-    closeMobileNav();
-  };
-
-  const renderNavItems = () => (
-    <ul className="space-y-2">
-      {navItems.map((item) => (
-        <li key={item.href}>
-          <a
-            href={item.href}
-            className={cn(
-              "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-white-accent hover:text-accent-foreground"
-            )}
-            onClick={(e) => handleNavigation(item.href, e)}
-          >
-            {item.icon}
-            <span className="ml-3">{item.label}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  );
 
   return (
     <div className="flex min-h-screen bg-white">
