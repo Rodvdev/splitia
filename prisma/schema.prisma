@@ -46,6 +46,14 @@ model User {
   initiatedSettlements Settlement[]              @relation("InitiatedSettlements")
   // Settlements where this user is the counterparty
   receivedSettlements  Settlement[]              @relation("ReceivedSettlements")
+  // User subscriptions
+  subscriptions       Subscription[]
+  // Support tickets created by this user
+  supportTickets      SupportTicket[]           @relation("CreatedTickets")
+  // Support tickets assigned to this user (for admins)
+  assignedTickets     SupportTicket[]           @relation("AssignedTickets")
+  // Support messages sent by this user
+  supportMessages     SupportMessage[]
 }
 
 // Group model
@@ -278,6 +286,90 @@ model Settlement {
   expense           Expense?
 }
 
+// Subscription model for premium plans
+model Subscription {
+  id                String              @id @default(cuid())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  planType          SubscriptionPlan    @default(FREE)
+  status            SubscriptionStatus  @default(ACTIVE)
+  startDate         DateTime
+  endDate           DateTime?
+  autoRenew         Boolean             @default(false)
+  paymentMethod     String? // Stripe payment method ID
+  stripeSubscriptionId String? @unique // Stripe subscription ID
+  stripeCustomerId  String? // Stripe customer ID
+  pricePerMonth     Float?
+  currency          String              @default("USD")
+  // Relations
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  payments          SubscriptionPayment[]
+}
+
+// Subscription payment history
+model SubscriptionPayment {
+  id                String              @id @default(cuid())
+  createdAt         DateTime            @default(now())
+  amount            Float
+  currency          String              @default("USD")
+  status            PaymentStatus       @default(PENDING)
+  stripePaymentIntentId String? @unique
+  stripeChargeId    String? @unique
+  description       String?
+  // Relations
+  subscription      Subscription        @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId    String
+}
+
+// Support ticket model
+model SupportTicket {
+  id                String              @id @default(cuid())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  title             String
+  description       String
+  category          SupportCategory
+  priority          SupportPriority     @default(MEDIUM)
+  status            SupportStatus       @default(OPEN)
+  resolution        String?
+  resolvedAt        DateTime?
+  // Relations
+  createdBy         User                @relation("CreatedTickets", fields: [createdById], references: [id])
+  createdById       String
+  assignedTo        User?               @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  assignedToId      String?
+  messages          SupportMessage[]
+  attachments       SupportAttachment[]
+}
+
+// Support message model for ticket conversations
+model SupportMessage {
+  id                String              @id @default(cuid())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  content           String
+  isInternal        Boolean             @default(false) // Internal notes for admins
+  // Relations
+  ticket            SupportTicket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId          String
+  sender            User                @relation(fields: [senderId], references: [id])
+  senderId          String
+}
+
+// Support attachment model
+model SupportAttachment {
+  id                String              @id @default(cuid())
+  createdAt         DateTime            @default(now())
+  fileName          String
+  fileSize          Int
+  mimeType          String
+  fileUrl           String
+  // Relations
+  ticket            SupportTicket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId          String
+}
+
 // Enums
 enum GroupRole {
   ADMIN
@@ -317,4 +409,56 @@ enum ThemeMode {
   LIGHT
   DARK
   SYSTEM
+}
+
+// Subscription plan types
+enum SubscriptionPlan {
+  FREE
+  PREMIUM
+  ENTERPRISE
+}
+
+// Subscription status
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+// Payment status
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+// Support ticket categories
+enum SupportCategory {
+  TECHNICAL
+  BILLING
+  FEATURE_REQUEST
+  BUG_REPORT
+  ACCOUNT
+  GENERAL
+}
+
+// Support ticket priority
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Support ticket status
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING_CUSTOMER
+  RESOLVED
+  CLOSED
 }
