@@ -30,7 +30,7 @@ Ser la aplicación líder en gestión de gastos compartidos, reconocida por su s
 
 ## 2. ACTORES DEL NEGOCIO
 
-### 2.1 Actores Principales
+### 2.1 Trabajadores del Negocio
 
 #### **Usuario Registrado**
 - **Descripción**: Persona que se registra en la plataforma para gestionar sus gastos compartidos
@@ -49,8 +49,6 @@ Ser la aplicación líder en gestión de gastos compartidos, reconocida por su s
   - Realizar pagos cuando corresponda
   - Comunicarse con otros miembros
 
-### 2.2 Actores Secundarios
-
 #### **Administrador del Sistema**
 - **Descripción**: Personal técnico que mantiene la plataforma
 - **Responsabilidades**:
@@ -58,6 +56,8 @@ Ser la aplicación líder en gestión de gastos compartidos, reconocida por su s
   - Resolver problemas técnicos
   - Gestionar la base de datos
   - Implementar mejoras
+
+### 2.2 Entidades del Negocio
 
 #### **Sistema de Pagos**
 - **Descripción**: Integración con servicios de pago externos
@@ -560,7 +560,173 @@ classDiagram
 
 ## 9. DIAGRAMA DE ACTIVIDADES DEL NEGOCIO
 
-### 9.1 Proceso de Registro de Gasto
+### 9.1 Proceso de Registro y Autenticación de Usuario
+
+```mermaid
+flowchart TD
+    A[Usuario accede a la plataforma] --> B{¿Usuario registrado?}
+    B -->|No| C[Mostrar opciones de registro]
+    B -->|Sí| D[Mostrar opciones de login]
+    
+    C --> E[Usuario selecciona método de registro]
+    E --> F{¿Método de registro?}
+    F -->|Email/Contraseña| G[Mostrar formulario de registro]
+    F -->|Google OAuth| H[Redirigir a Google]
+    F -->|Facebook OAuth| I[Redirigir a Facebook]
+    
+    G --> J[Usuario completa datos básicos]
+    J --> K[Validar formato de email]
+    K --> L{¿Email válido?}
+    L -->|No| M[Mostrar error de email]
+    L -->|Sí| N[Verificar unicidad de email]
+    M --> J
+    N --> O{¿Email único?}
+    O -->|No| P[Mostrar error de duplicado]
+    O -->|Sí| Q[Validar contraseña]
+    P --> J
+    Q --> R{¿Contraseña segura?}
+    R -->|No| S[Mostrar requisitos de contraseña]
+    R -->|Sí| T[Crear cuenta de usuario]
+    S --> J
+    T --> U[Enviar email de verificación]
+    U --> V[Mostrar mensaje de confirmación]
+    V --> W[Fin]
+    
+    H --> X[Usuario autoriza con Google]
+    X --> Y[Obtener datos de Google]
+    Y --> Z[Verificar/crear cuenta]
+    Z --> AA[Iniciar sesión automáticamente]
+    AA --> BB[Fin]
+    
+    I --> CC[Usuario autoriza con Facebook]
+    CC --> DD[Obtener datos de Facebook]
+    DD --> EE[Verificar/crear cuenta]
+    EE --> FF[Iniciar sesión automáticamente]
+    FF --> BB
+    
+    D --> GG[Usuario ingresa credenciales]
+    GG --> HH[Validar credenciales]
+    HH --> II{¿Credenciales válidas?}
+    II -->|No| JJ[Mostrar error de autenticación]
+    II -->|Sí| KK[Verificar estado de cuenta]
+    JJ --> GG
+    KK --> LL{¿Cuenta activa?}
+    LL -->|No| MM[Mostrar mensaje de cuenta inactiva]
+    LL -->|Sí| NN[Iniciar sesión]
+    MM --> OO[Ofrecer reactivar cuenta]
+    OO --> PP{¿Usuario reactiva?}
+    PP -->|Sí| QQ[Reactivar cuenta]
+    PP -->|No| W
+    QQ --> NN
+    NN --> RR[Establecer sesión]
+    RR --> SS[Redirigir al dashboard]
+    SS --> BB
+```
+
+### 9.2 Proceso de Gestión de Grupos
+
+```mermaid
+flowchart TD
+    A[Usuario accede a gestión de grupos] --> B{¿Usuario autenticado?}
+    B -->|No| C[Redirigir a login]
+    B -->|Sí| D[Mostrar grupos del usuario]
+    
+    D --> E{¿Acción del usuario?}
+    E -->|Crear grupo| F[Mostrar formulario de nuevo grupo]
+    E -->|Unirse a grupo| G[Mostrar opciones de unión]
+    E -->|Gestionar grupo existente| H[Seleccionar grupo]
+    
+    F --> I[Usuario ingresa datos del grupo]
+    I --> J[Validar nombre del grupo]
+    J --> K{¿Nombre válido?}
+    K -->|No| L[Mostrar error de validación]
+    K -->|Sí| M[Crear grupo]
+    L --> I
+    M --> N[Asignar usuario como administrador]
+    N --> O[Generar código de invitación]
+    O --> P[Mostrar opciones de invitación]
+    P --> Q[Fin]
+    
+    G --> R{¿Método de unión?}
+    R -->|Código de invitación| S[Ingresar código]
+    R -->|Enlace de invitación| T[Procesar enlace]
+    R -->|Búsqueda por nombre| U[Buscar grupo público]
+    
+    S --> V[Validar código de invitación]
+    V --> W{¿Código válido?}
+    W -->|No| X[Mostrar error de código]
+    W -->|Sí| Y[Verificar permisos de invitación]
+    X --> S
+    Y --> Z{¿Invitación activa?}
+    Z -->|No| AA[Mostrar error de invitación expirada]
+    Z -->|Sí| BB[Unir usuario al grupo]
+    AA --> S
+    BB --> CC[Notificar al administrador]
+    CC --> DD[Mostrar confirmación de unión]
+    DD --> Q
+    
+    T --> EE[Validar enlace de invitación]
+    EE --> FF{¿Enlace válido?}
+    FF -->|No| GG[Mostrar error de enlace]
+    FF -->|Sí| HH[Procesar invitación automáticamente]
+    GG --> Q
+    HH --> II[Unir usuario al grupo]
+    II --> JJ[Notificar al administrador]
+    JJ --> KK[Mostrar confirmación]
+    KK --> Q
+    
+    U --> LL[Mostrar resultados de búsqueda]
+    LL --> MM[Usuario selecciona grupo]
+    MM --> NN[Solicitar unión al grupo]
+    NN --> OO[Notificar al administrador]
+    OO --> PP[Esperar aprobación]
+    PP --> QQ{¿Aprobado?}
+    QQ -->|Sí| RR[Unir usuario al grupo]
+    QQ -->|No| SS[Notificar rechazo]
+    RR --> TT[Mostrar confirmación]
+    SS --> UU[Mostrar mensaje de rechazo]
+    TT --> Q
+    UU --> Q
+    
+    H --> VV[Mostrar opciones de gestión]
+    VV --> WW{¿Acción de gestión?}
+    WW -->|Ver miembros| XX[Mostrar lista de miembros]
+    WW -->|Invitar miembros| YY[Mostrar formulario de invitación]
+    WW -->|Configurar grupo| ZZ[Mostrar configuración]
+    WW -->|Abandonar grupo| AAA[Confirmar abandono]
+    
+    XX --> BBB[Mostrar información de miembros]
+    BBB --> CCC[Usuario puede ver roles y actividad]
+    CCC --> Q
+    
+    YY --> DDD[Seleccionar método de invitación]
+    DDD --> EEE[Generar invitación]
+    EEE --> FFF[Enviar invitación]
+    FFF --> GGG[Mostrar confirmación]
+    GGG --> Q
+    
+    ZZ --> HHH[Mostrar opciones de configuración]
+    HHH --> III[Usuario modifica configuración]
+    III --> JJJ[Guardar cambios]
+    JJJ --> KKK[Mostrar confirmación]
+    KKK --> Q
+    
+    AAA --> LLL{¿Usuario confirma?}
+    LLL -->|No| Q
+    LLL -->|Sí| MMM[Verificar si es administrador]
+    MMM --> NNN{¿Es único administrador?}
+    NNN -->|Sí| OOO[Transferir administración o eliminar grupo]
+    NNN -->|No| PPP[Remover usuario del grupo]
+    OOO --> QQQ[Notificar a miembros]
+    PPP --> RRR[Notificar a administradores]
+    QQQ --> Q
+    RRR --> Q
+    
+    C --> SSS[Usuario se autentica]
+    SSS --> D
+```
+
+### 9.3 Proceso de Registro de Gasto
 
 ```mermaid
 flowchart TD
@@ -636,6 +802,340 @@ flowchart TD
     T --> V[Fin]
     U --> V
     C --> V
+```
+
+### 9.5 Proceso de Gestión de Gastos Personales
+
+```mermaid
+flowchart TD
+    A[Usuario accede a gastos personales] --> B{¿Usuario autenticado?}
+    B -->|No| C[Redirigir a login]
+    B -->|Sí| D[Mostrar lista de gastos personales]
+    
+    D --> E{¿Acción del usuario?}
+    E -->|Ver gastos| F[Filtrar y mostrar gastos]
+    E -->|Crear gasto| G[Mostrar formulario de gasto personal]
+    E -->|Editar gasto| H[Seleccionar gasto a editar]
+    E -->|Eliminar gasto| I[Seleccionar gasto a eliminar]
+    E -->|Categorizar| J[Mostrar opciones de categorización]
+    
+    F --> K[Mostrar gastos filtrados]
+    K --> L[Usuario puede ordenar por fecha/monto/categoría]
+    L --> M[Fin]
+    
+    G --> N[Completar datos del gasto]
+    N --> O[Seleccionar categoría]
+    O --> P[Validar datos ingresados]
+    P --> Q{¿Datos válidos?}
+    Q -->|No| R[Mostrar errores]
+    Q -->|Sí| S[Crear gasto personal]
+    R --> N
+    S --> T[Actualizar balance personal]
+    T --> U[Mostrar confirmación]
+    U --> M
+    
+    H --> V[Mostrar formulario con datos actuales]
+    V --> W[Usuario modifica datos]
+    W --> X[Validar cambios]
+    X --> Y{¿Cambios válidos?}
+    Y -->|No| Z[Mostrar errores]
+    Y -->|Sí| AA[Actualizar gasto]
+    Z --> W
+    AA --> BB[Recalcular balance]
+    BB --> CC[Mostrar confirmación]
+    CC --> M
+    
+    I --> DD[Confirmar eliminación]
+    DD --> EE{¿Usuario confirma?}
+    EE -->|No| M
+    EE -->|Sí| FF[Eliminar gasto]
+    FF --> GG[Recalcular balance]
+    GG --> HH[Mostrar confirmación]
+    HH --> M
+    
+    J --> II[Mostrar categorías disponibles]
+    II --> JJ[Usuario selecciona categorías]
+    JJ --> KK[Aplicar filtros de categoría]
+    KK --> LL[Mostrar gastos categorizados]
+    LL --> M
+    
+    C --> MM[Usuario se autentica]
+    MM --> D
+```
+
+### 9.6 Proceso de Comunicación Financiera
+
+```mermaid
+flowchart TD
+    A[Usuario accede al chat del grupo] --> B{¿Usuario es miembro del grupo?}
+    B -->|No| C[Acceso denegado]
+    B -->|Sí| D[Mostrar interfaz de chat]
+    
+    D --> E[Usuario puede ver mensajes existentes]
+    E --> F{¿Acción del usuario?}
+    F -->|Enviar mensaje| G[Escribir mensaje]
+    F -->|Reaccionar a mensaje| H[Seleccionar reacción]
+    F -->|Mencionar usuario| I[Seleccionar usuario a mencionar]
+    F -->|Enviar notificación| J[Crear notificación]
+    
+    G --> K[Validar contenido del mensaje]
+    K --> L{¿Mensaje válido?}
+    L -->|No| M[Mostrar error]
+    L -->|Sí| N[Enviar mensaje]
+    M --> G
+    N --> O[Notificar a otros miembros]
+    O --> P[Actualizar chat en tiempo real]
+    P --> Q[Fin]
+    
+    H --> R[Agregar reacción al mensaje]
+    R --> S[Notificar al autor del mensaje]
+    S --> Q
+    
+    I --> T[Completar mensaje con mención]
+    T --> U[Enviar mensaje con mención]
+    U --> V[Notificar al usuario mencionado]
+    V --> W[Notificar a otros miembros]
+    W --> Q
+    
+    J --> X[Seleccionar tipo de notificación]
+    X --> Y[Completar detalles de notificación]
+    Y --> Z[Enviar notificación a miembros]
+    Z --> AA[Registrar notificación enviada]
+    AA --> Q
+    
+    C --> Q
+```
+
+### 9.7 Proceso de Análisis de Patrones Financieros
+
+```mermaid
+flowchart TD
+    A[Usuario solicita análisis financiero] --> B{¿Usuario autenticado?}
+    B -->|No| C[Redirigir a login]
+    B -->|Sí| D[Seleccionar tipo de análisis]
+    
+    D --> E{¿Tipo de análisis?}
+    E -->|Gastos personales| F[Análisis de gastos personales]
+    E -->|Gastos grupales| G[Análisis de gastos grupales]
+    E -->|Comparativo| H[Análisis comparativo]
+    E -->|Tendencias| I[Análisis de tendencias]
+    
+    F --> J[Recopilar gastos personales]
+    J --> K[Calcular estadísticas básicas]
+    K --> L[Generar gráficos de categorías]
+    L --> M[Mostrar resumen de gastos]
+    M --> N[Fin]
+    
+    G --> O[Seleccionar grupo]
+    O --> P[Recopilar gastos del grupo]
+    P --> Q[Calcular participación individual]
+    Q --> R[Generar gráficos de distribución]
+    R --> S[Mostrar análisis grupal]
+    S --> N
+    
+    H --> T[Seleccionar períodos a comparar]
+    T --> U[Recopilar datos de ambos períodos]
+    U --> V[Calcular diferencias]
+    V --> W[Generar gráficos comparativos]
+    W --> X[Mostrar análisis comparativo]
+    X --> N
+    
+    I --> Y[Seleccionar rango de tiempo]
+    Y --> Z[Recopilar datos históricos]
+    Z --> AA[Identificar patrones y tendencias]
+    AA --> BB[Calcular proyecciones]
+    BB --> CC[Generar gráficos de tendencias]
+    CC --> DD[Mostrar análisis de tendencias]
+    DD --> N
+    
+    C --> EE[Usuario se autentica]
+    EE --> D
+```
+
+### 9.8 Proceso de Suscripción Premium
+
+```mermaid
+flowchart TD
+    A[Usuario solicita suscripción premium] --> B{¿Usuario autenticado?}
+    B -->|No| C[Redirigir a login]
+    B -->|Sí| D[Mostrar planes disponibles]
+    
+    D --> E[Usuario selecciona plan]
+    E --> F[Mostrar detalles del plan]
+    F --> G{¿Usuario confirma?}
+    G -->|No| H[Cancelar proceso]
+    G -->|Sí| I[Procesar pago]
+    
+    I --> J{¿Pago exitoso?}
+    J -->|No| K[Mostrar error de pago]
+    J -->|Sí| L[Activar suscripción]
+    
+    K --> M[Ofrecer reintentar pago]
+    M --> N{¿Usuario reintenta?}
+    N -->|Sí| I
+    N -->|No| O[Fin]
+    
+    L --> P[Actualizar estado de usuario]
+    P --> Q[Desbloquear funcionalidades premium]
+    Q --> R[Enviar confirmación por email]
+    R --> S[Mostrar bienvenida premium]
+    S --> T[Fin]
+    
+    H --> O
+    C --> U[Usuario se autentica]
+    U --> D
+```
+
+### 9.9 Proceso de Asistente de IA
+
+```mermaid
+flowchart TD
+    A[Usuario interactúa con asistente IA] --> B{¿Usuario tiene suscripción premium?}
+    B -->|No| C[Mostrar opción de upgrade]
+    B -->|Sí| D[Procesar comando del usuario]
+    
+    C --> E{¿Usuario acepta upgrade?}
+    E -->|Sí| F[Redirigir a suscripción]
+    E -->|No| G[Mostrar funcionalidades limitadas]
+    F --> H[Procesar suscripción]
+    H --> I[Activar IA después del pago]
+    I --> D
+    G --> J[Fin]
+    
+    D --> K[Analizar intención del comando]
+    K --> L{¿Tipo de comando?}
+    L -->|Crear gasto| M[Procesar creación de gasto]
+    L -->|Generar liquidación| N[Procesar liquidación]
+    L -->|Análisis financiero| O[Generar análisis]
+    L -->|Consulta general| P[Procesar consulta]
+    
+    M --> Q[Extraer datos del gasto]
+    Q --> R[Validar información]
+    R --> S{¿Datos válidos?}
+    S -->|No| T[Solicitar aclaración]
+    S -->|Sí| U[Crear gasto automáticamente]
+    T --> V[Usuario proporciona aclaración]
+    V --> Q
+    U --> W[Confirmar creación]
+    W --> X[Fin]
+    
+    N --> Y[Identificar grupo objetivo]
+    Y --> Z[Calcular balances]
+    Z --> AA[Generar propuesta de liquidación]
+    AA --> BB[Mostrar propuesta al usuario]
+    BB --> CC{¿Usuario aprueba?}
+    CC -->|Sí| DD[Crear liquidaciones]
+    CC -->|No| EE[Solicitar modificaciones]
+    DD --> FF[Confirmar liquidación]
+    EE --> GG[Usuario especifica cambios]
+    GG --> AA
+    FF --> X
+    
+    O --> HH[Recopilar datos financieros]
+    HH --> II[Analizar patrones]
+    II --> JJ[Generar insights]
+    JJ --> KK[Presentar análisis]
+    KK --> X
+    
+    P --> LL[Procesar consulta con IA]
+    LL --> MM[Generar respuesta]
+    MM --> NN[Mostrar respuesta]
+    NN --> X
+```
+
+### 9.10 Proceso de Soporte al Usuario
+
+```mermaid
+flowchart TD
+    A[Usuario solicita soporte] --> B[Mostrar opciones de soporte]
+    B --> C{¿Tipo de soporte?}
+    C -->|Crear ticket| D[Mostrar formulario de ticket]
+    C -->|Chat en vivo| E[Conectar con agente]
+    C -->|Base de conocimientos| F[Mostrar artículos de ayuda]
+    
+    D --> G[Usuario completa formulario]
+    G --> H[Seleccionar categoría del problema]
+    H --> I[Asignar prioridad]
+    I --> J[Validar información]
+    J --> K{¿Información completa?}
+    K -->|No| L[Solicitar información adicional]
+    K -->|Sí| M[Crear ticket de soporte]
+    L --> G
+    M --> N[Asignar ticket a agente]
+    N --> O[Enviar confirmación al usuario]
+    O --> P[Fin]
+    
+    E --> Q[Verificar disponibilidad de agentes]
+    Q --> R{¿Agente disponible?}
+    R -->|No| S[Ofrecer crear ticket]
+    R -->|Sí| T[Iniciar conversación]
+    S --> D
+    T --> U[Agente responde consulta]
+    U --> V{¿Problema resuelto?}
+    V -->|Sí| W[Cerrar chat satisfactoriamente]
+    V -->|No| X[Escalar a especialista]
+    W --> Y[Enviar encuesta de satisfacción]
+    X --> Z[Transferir a especialista]
+    Z --> AA[Especialista resuelve problema]
+    AA --> Y
+    Y --> P
+    
+    F --> BB[Usuario busca información]
+    BB --> CC[Mostrar artículos relevantes]
+    CC --> DD{¿Información útil?}
+    DD -->|Sí| EE[Problema resuelto]
+    DD -->|No| FF[Ofrecer crear ticket]
+    EE --> P
+    FF --> D
+```
+
+### 9.11 Diagrama de Actividades End-to-End - Flujo Completo del Usuario
+
+```mermaid
+flowchart TD
+    A[Usuario nuevo llega a la plataforma] --> B[Registro/Login]
+    B --> C[Configuración inicial de perfil]
+    C --> D[Crear o unirse a grupo]
+    D --> E[Inicio de uso de la plataforma]
+    
+    E --> F{¿Acción del usuario?}
+    F -->|Gastos personales| G[Gestionar gastos personales]
+    F -->|Gastos grupales| H[Registrar gasto grupal]
+    F -->|Comunicación| I[Usar chat del grupo]
+    F -->|Liquidaciones| J[Procesar liquidaciones]
+    F -->|Análisis| K[Generar reportes]
+    F -->|Soporte| L[Solicitar ayuda]
+    
+    G --> M[Actualizar balance personal]
+    M --> N[Fin de sesión]
+    
+    H --> O[Distribuir gasto entre miembros]
+    O --> P[Notificar a participantes]
+    P --> Q[Actualizar balances grupales]
+    Q --> N
+    
+    I --> R[Enviar mensajes/notificaciones]
+    R --> S[Coordinar con el grupo]
+    S --> N
+    
+    J --> T[Calcular deudas pendientes]
+    T --> U[Optimizar transacciones]
+    U --> V[Confirmar pagos]
+    V --> W[Actualizar balances finales]
+    W --> N
+    
+    K --> X[Analizar patrones financieros]
+    X --> Y[Generar insights]
+    Y --> Z[Tomar decisiones financieras]
+    Z --> N
+    
+    L --> AA[Resolver consulta/problema]
+    AA --> BB[Continuar uso normal]
+    BB --> N
+    
+    N --> CC{¿Usuario regresa?}
+    CC -->|Sí| E
+    CC -->|No| DD[Fin del journey]
 ```
 
 ---

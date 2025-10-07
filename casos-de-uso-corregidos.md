@@ -397,6 +397,138 @@ graph LR
     class Premium premium
 ```
 
+### Diagrama de Journey del Usuario
+
+```mermaid
+journey
+    title Experiencia del Usuario en Splitia
+    section Registro y Configuración
+      Crear cuenta: 5: Usuario
+      Configurar perfil: 4: Usuario
+      Establecer preferencias: 3: Usuario
+    section Gestión de Grupos
+      Crear grupo: 5: Usuario
+      Invitar miembros: 4: Usuario
+      Configurar roles: 3: Usuario
+    section Gestión de Gastos
+      Registrar gasto personal: 4: Usuario
+      Registrar gasto grupal: 5: Usuario
+      Definir división: 4: Usuario
+      Categorizar gasto: 3: Usuario
+    section Comunicación
+      Enviar mensaje: 4: Usuario
+      Recibir notificaciones: 3: Usuario
+      Responder mensajes: 4: Usuario
+    section Liquidación
+      Ver balances: 4: Usuario
+      Generar liquidación: 5: Usuario
+      Confirmar pago: 4: Usuario
+      Recibir confirmación: 5: Usuario
+    section Análisis y Reportes
+      Ver reportes: 4: Usuario
+      Analizar patrones: 3: Usuario
+      Exportar datos: 3: Usuario
+    section Funcionalidades Premium
+      Contratar suscripción: 4: Usuario
+      Usar asistente IA: 5: Usuario
+      Acceder a análisis avanzados: 4: Usuario
+    section Soporte
+      Solicitar ayuda: 3: Usuario
+      Recibir respuesta: 4: Usuario
+      Resolver problema: 5: Usuario
+```
+
+### Journey Detallado - Proceso de División de Gastos
+
+```mermaid
+journey
+    title Proceso Completo de División de Gastos
+    section Inicio del Proceso
+      Usuario inicia sesión: 4: Usuario
+      Selecciona grupo: 4: Usuario
+      Accede a "Nuevo Gasto": 3: Usuario
+    section Registro del Gasto
+      Ingresa monto: 5: Usuario
+      Escribe descripción: 4: Usuario
+      Selecciona fecha: 3: Usuario
+      Elige categoría: 3: Usuario
+    section División del Gasto
+      Selecciona participantes: 4: Usuario
+      Elige método de división: 4: Usuario
+      Define montos/porcentajes: 3: Usuario
+      Confirma división: 5: Usuario
+    section Notificación y Confirmación
+      Sistema notifica miembros: 4: Sistema
+      Miembros reciben notificación: 4: Miembros
+      Miembros confirman participación: 5: Miembros
+    section Actualización de Balances
+      Sistema calcula balances: 5: Sistema
+      Actualiza deudas pendientes: 4: Sistema
+      Genera resumen: 4: Sistema
+    section Siguiente Paso
+      Usuario ve balances actualizados: 5: Usuario
+      Decide iniciar liquidación: 4: Usuario
+      Proceso continúa: 3: Usuario
+```
+
+### Journey de Liquidación de Deudas
+
+```mermaid
+journey
+    title Proceso de Liquidación de Deudas
+    section Inicio de Liquidación
+      Usuario revisa balances: 4: Usuario
+      Solicita generar liquidación: 4: Usuario
+      Sistema calcula optimización: 5: Sistema
+    section Propuesta de Liquidación
+      Sistema muestra propuesta: 4: Sistema
+      Usuario revisa transacciones: 4: Usuario
+      Usuario aprueba propuesta: 5: Usuario
+    section Ejecución de Pagos
+      Usuario inicia pago: 4: Usuario
+      Confirma monto y destinatario: 5: Usuario
+      Procesa transacción: 4: Sistema
+    section Confirmación
+      Destinatario recibe notificación: 4: Sistema
+      Destinatario confirma pago: 5: Destinatario
+      Sistema actualiza balances: 5: Sistema
+    section Finalización
+      Usuario recibe confirmación: 5: Usuario
+      Balances se actualizan: 4: Sistema
+      Proceso completado: 5: Usuario
+```
+
+### Journey de Experiencia Premium con IA
+
+```mermaid
+journey
+    title Experiencia Premium con Asistente de IA
+    section Contratación Premium
+      Usuario ve funcionalidades premium: 3: Usuario
+      Selecciona plan: 4: Usuario
+      Procesa pago: 4: Usuario
+      Activa suscripción: 5: Usuario
+    section Primer Uso de IA
+      Accede a asistente IA: 4: Usuario
+      Hace primera consulta: 5: Usuario
+      IA procesa solicitud: 4: IA
+      Recibe respuesta útil: 5: Usuario
+    section Automatización
+      Solicita crear gasto por voz: 5: Usuario
+      IA interpreta comando: 4: IA
+      IA crea gasto automáticamente: 5: IA
+      Usuario confirma creación: 4: Usuario
+    section Análisis Avanzado
+      Solicita análisis de patrones: 4: Usuario
+      IA genera insights: 5: IA
+      Usuario recibe recomendaciones: 5: Usuario
+      Implementa sugerencias: 4: Usuario
+    section Satisfacción
+      Usuario valora funcionalidades: 5: Usuario
+      Renueva suscripción: 4: Usuario
+      Recomienda a otros: 5: Usuario
+```
+
 ---
 
 ## Resumen de Correcciones Aplicadas
