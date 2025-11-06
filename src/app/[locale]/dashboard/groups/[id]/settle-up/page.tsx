@@ -438,7 +438,7 @@ export default function SettleUpPage() {
                   {usersWithBalance.map(balance => (
                     <div
                       key={balance.userId}
-                      className="flex items-center justify-between p-3 bg-muted/40 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -469,7 +469,7 @@ export default function SettleUpPage() {
                     onValueChange={(value) => setSettlementType(value as 'PAYMENT' | 'RECEIPT')}
                     disabled={isSubmitting}
                   >
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder={t('fields.selectType')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -496,7 +496,7 @@ export default function SettleUpPage() {
                     onValueChange={setSelectedUserId}
                     disabled={isSubmitting || usersWithBalance.length === 0}
                   >
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder={t('fields.selectUser')} />
                     </SelectTrigger>
                     <SelectContent>

@@ -256,6 +256,7 @@ model GroupInvitation {
   usedAt        DateTime?
   maxUses       Int? // Maximum number of uses (null = unlimited)
   useCount      Int       @default(0) // Current use count
+  requireEmail  Boolean   @default(false) // Require email registration before joining
   // Relations
   group         Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId       String

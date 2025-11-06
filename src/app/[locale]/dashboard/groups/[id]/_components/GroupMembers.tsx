@@ -241,7 +241,7 @@ export function GroupMembers({
                               <AlertDialogCancel>{t('actions.cancel')}</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={handleRemoveMember}
-                                className="bg-destructive hover:bg-destructive/90"
+                                className="bg-destructive text-destructive-foreground"
                                 disabled={isRemoving}
                               >
                                 {isRemoving ? t('actions.removing') : t('actions.remove')}

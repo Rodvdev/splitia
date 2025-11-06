@@ -100,13 +100,13 @@ export default function SettingsPage() {
       </header>
 
       {errorMessage && (
-        <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-6">
+        <div className="bg-destructive text-destructive-foreground p-4 rounded-lg mb-6">
           {errorMessage}
         </div>
       )}
 
       {successMessage && (
-        <div className="bg-success/10 text-success p-4 rounded-lg mb-6">
+        <div className="bg-muted text-foreground p-4 rounded-lg mb-6 border-l-4 border-primary">
           {successMessage}
         </div>
       )}

@@ -1,20 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./providers";
 import { locales } from "@/i18n/config";
-
-// Import language messages
-import en from '@/i18n/locales/en.json';
-import es from '@/i18n/locales/es.json';
-import pt from '@/i18n/locales/pt.json';
-
-// Define messages by locale
-const messages = {
-  en,
-  es,
-  pt
-};
 
 // Define font configuration
 const geistSans = Geist({
@@ -50,20 +37,14 @@ export function generateStaticParams() {
 // Use the Next.js provided type instead of defining our own
 export default function RootLayout({
   children,
-  params = {}
 }: {
   children: React.ReactNode;
-  params?: { locale?: string };
 }) {
-  // Set default locale if not provided
-  const locale = (params.locale || 'en') as keyof typeof messages;
-  
+  // Root layout doesn't receive locale params - nested layouts handle locale-specific providers
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers locale={locale} messages={messages[locale]}>
-          {children}
-        </Providers>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white dark:bg-slate-950 dark:text-slate-50 transition-colors`}>
+        {children}
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 // Import and re-export from the config file in src/i18n
-import { locales, defaultLocale, isValidLocale } from './src/i18n/config';
-import type { Locale } from './src/i18n/config';
+import { locales, defaultLocale, isValidLocale } from './config';
+import type { Locale } from './config';
 
 // Re-export values
 export { locales, defaultLocale, isValidLocale };
@@ -8,4 +8,4 @@ export { locales, defaultLocale, isValidLocale };
 export type { Locale };
 
 // Re-export the default export (getRequestConfig) from src/i18n/config
-export { default } from './src/i18n/config';
+export { default } from './config';

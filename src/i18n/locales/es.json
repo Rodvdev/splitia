@@ -72,6 +72,22 @@
     "loginInfoText": "Accede a tu cuenta para gestionar tus gastos compartidos de forma sencilla",
     "welcomeBack": "Bienvenido de nuevo"
   },
+  "dashboard": {
+    "recentActivity": "Actividad Reciente",
+    "viewAll": "Ver Todo",
+    "empty": "No hay datos disponibles",
+    "totalExpenses": "Gastos Totales",
+    "description": "Resumen de tus gastos y grupos",
+    "title": "Panel",
+    "tagline": "Gestiona tus gastos y grupos",
+    "expenses": "Gastos",
+    "groups": "Grupos",
+    "budget": "Presupuesto",
+    "chat": "Chat",
+    "settings": "Configuración",
+    "manageGroups": "Gestionar Grupos",
+    "changeSettings": "Cambiar Configuración"
+  },
   "hero": {
     "title": "Simplifica tus finanzas compartidas con",
     "subtitle": "La forma más sencilla de dividir gastos con amigos, familia o compañeros. Dile adiós a las complicadas hojas de cálculo y a los pagos confusos.",
@@ -405,6 +421,7 @@
     "errorVerifyingInvite": "Error al verificar la invitación",
     "error": "Error",
     "members": "Miembros",
+    "expenses": "Gastos",
     "invite": "Invitar",
     "leave": "Salir del Grupo",
     "name": "Nombre del Grupo",

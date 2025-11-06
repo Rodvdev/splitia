@@ -320,9 +320,9 @@ export default function ExpensesPage() {
             ))
           ) : error ? (
             // Error state
-            <div className="col-span-full flex flex-col items-center justify-center p-8 text-center bg-muted/40 rounded-lg">
-              <div className="mb-4 p-3 bg-destructive/10 rounded-full">
-                <Search className="h-6 w-6 text-destructive" />
+            <div className="col-span-full flex flex-col items-center justify-center p-8 text-center bg-muted rounded-lg">
+              <div className="mb-4 p-3 bg-destructive rounded-full">
+                <Search className="h-6 w-6 text-destructive-foreground" />
               </div>
               <h3 className="text-lg font-medium mb-1">{error}</h3>
               <p className="text-muted-foreground mb-4">{t('error.tryAgain')}</p>
@@ -332,9 +332,9 @@ export default function ExpensesPage() {
             </div>
           ) : (
             // Empty state
-            <div className="col-span-full flex flex-col items-center justify-center p-8 text-center bg-muted/40 rounded-lg">
-              <div className="mb-4 p-3 bg-primary/10 rounded-full">
-                <Search className="h-6 w-6 text-primary" />
+            <div className="col-span-full flex flex-col items-center justify-center p-8 text-center bg-muted rounded-lg">
+              <div className="mb-4 p-3 bg-primary rounded-full">
+                <Search className="h-6 w-6 text-primary-foreground" />
               </div>
               <h3 className="text-lg font-medium mb-1">{t('empty.title')}</h3>
               <p className="text-muted-foreground mb-4">{t('empty.description')}</p>

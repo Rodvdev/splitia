@@ -250,7 +250,7 @@ export default function GroupPage() {
     try {
       await changeGroupMemberRole({
         groupId,
-        memberId,
+        userId: memberId,
         role: newRole as 'ADMIN' | 'MEMBER' | 'GUEST' | 'ASSISTANT',
       });
       
@@ -503,7 +503,7 @@ export default function GroupPage() {
       <div className="flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+            <Button variant="outline" className="text-destructive border-destructive hover:bg-muted">
               <Trash2 className="mr-2 h-4 w-4" />
               {t('actions.delete')}
             </Button>
@@ -519,7 +519,7 @@ export default function GroupPage() {
               <AlertDialogCancel>{t('actions.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
+                className="bg-destructive text-destructive-foreground"
                 disabled={isDeleting}
               >
                 {isDeleting ? t('actions.deleting') : t('actions.confirm')}

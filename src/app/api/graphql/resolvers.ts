@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { GraphQLError } from 'graphql';
 import { createGroupWithConversation, addUserToGroupAndConversation, createGroupChatWithGroup } from '@/lib/conversations';
 import { PrismaClient } from '@prisma/client';
+import { randomBytes } from 'crypto';
+import { sendGroupInvitationEmail } from '@/lib/email';
 
 // Common type for transaction callback parameters
 type TransactionClient = Omit<
@@ -753,7 +755,7 @@ export const resolvers = {
           maxUses: invitation.maxUses,
           usedCount: invitation.useCount,
           expiresAt: invitation.expiresAt,
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://splitia.vercel.app'}/join?token=${token}`,
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/join?token=${token}`,
           group: invitation.group,
         };
       } catch (error) {
@@ -2153,6 +2155,105 @@ export const resolvers = {
       return true;
     },
 
+    // Change a group member's role
+    changeGroupMemberRole: async (
+      _parent: unknown,
+      { groupId, userId: memberUserId, role }: { groupId: string; userId: string; role: string },
+      context: Context
+    ) => {
+      const session = await getServerSession(context);
+
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Check if the requesting user is an admin of the group
+      const requestingUserMembership = await prisma.groupUser.findFirst({
+        where: {
+          userId,
+          groupId,
+        },
+      });
+
+      if (!requestingUserMembership) {
+        throw new GraphQLError('You are not a member of this group', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      if (requestingUserMembership.role !== GroupRole.ADMIN) {
+        throw new GraphQLError('Only admins can change member roles', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      // Find the membership to update
+      const membershipToUpdate = await prisma.groupUser.findFirst({
+        where: {
+          userId: memberUserId,
+          groupId,
+        },
+        include: {
+          user: true,
+          group: true,
+        },
+      });
+
+      if (!membershipToUpdate) {
+        throw new GraphQLError('Member not found in this group', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // If changing from ADMIN role, ensure there will be at least one admin remaining
+      if (membershipToUpdate.role === GroupRole.ADMIN && role !== GroupRole.ADMIN) {
+        const adminCount = await prisma.groupUser.count({
+          where: {
+            groupId,
+            role: GroupRole.ADMIN,
+          },
+        });
+
+        if (adminCount <= 1) {
+          throw new GraphQLError('Cannot remove the last admin of the group', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+      }
+
+      // Update the role
+      const updatedMembership = await prisma.groupUser.update({
+        where: {
+          id: membershipToUpdate.id,
+        },
+        data: {
+          role: role as GroupRole,
+        },
+        include: {
+          user: true,
+          group: true,
+        },
+      });
+
+      // Return the updated member in the format expected by the GroupMember type
+      return {
+        id: updatedMembership.user.id,
+        name: updatedMembership.user.name,
+        email: updatedMembership.user.email,
+        image: updatedMembership.user.image,
+        role: updatedMembership.role,
+      };
+    },
+
     // Leave a group
     leaveGroup: async (_parent: unknown, { groupId }: { groupId: string }, context: Context) => {
       const session = await getServerSession(context);
@@ -2612,7 +2713,7 @@ export const resolvers = {
         }
 
         // Check if the invitation has expired
-        if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+        if (invitation.expiresAt && new Date(invitation.expiresAt) <= new Date()) {
           return {
             success: false,
             message: 'Invitation has expired',
@@ -2624,6 +2725,14 @@ export const resolvers = {
           return {
             success: false,
             message: 'Invitation has reached maximum number of uses',
+          };
+        }
+
+        // Check if the invitation requires email registration
+        if (invitation.requireEmail && !session?.user) {
+          return {
+            success: false,
+            message: 'This invitation requires you to be logged in. Please sign in or create an account first.',
           };
         }
 
@@ -2719,7 +2828,7 @@ export const resolvers = {
         });
       }
 
-      // Verify the user is a member of the group
+      // Verify the user is an admin of the group
       const membership = await prisma.groupUser.findFirst({
         where: {
           userId,
@@ -2733,9 +2842,15 @@ export const resolvers = {
         });
       }
 
+      if (membership.role !== GroupRole.ADMIN) {
+        throw new GraphQLError('Only group admins can create invitation links', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
       try {
-        // Generate a unique token
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        // Generate a secure unique token using crypto
+        const token = randomBytes(32).toString('base64url');
         
         // Create invitation link in database
         const invitation = await prisma.groupInvitation.create({
@@ -2743,6 +2858,7 @@ export const resolvers = {
             token,
             maxUses: data.maxUses || null,
             expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+            requireEmail: data.requireEmail || false,
             group: {
               connect: {
                 id: groupId
@@ -2753,14 +2869,12 @@ export const resolvers = {
                 id: userId
               }
             },
-            // Almacenar requireEmail como metadato o en un campo específico si existe
-            // Aquí asumimos que no hay un campo específico en el modelo
           }
         });
 
         // Construir la URL completa para el enlace de invitación
-        const baseUrl = 'https://splitia.vercel.app';
-        const url = `${baseUrl}/join?token=${token}${data.requireEmail ? '&requireEmail=true' : ''}`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        const url = `${baseUrl}/join?token=${token}`;
 
         return {
           ...invitation,
@@ -2770,6 +2884,141 @@ export const resolvers = {
       } catch (error) {
         console.error('Error creating group invitation link:', error);
         throw new GraphQLError('Failed to create invitation link', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+    },
+
+    // Send group invitation via email
+    sendGroupInvitationEmail: async (
+      _parent: unknown,
+      { groupId, email }: { groupId: string; email: string },
+      context: Context
+    ) => {
+      const session = await getServerSession(context);
+
+      if (!session?.user) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      const userId = context.user?.id || session.user.id;
+      if (!userId) {
+        throw new GraphQLError('User ID not found in session', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
+
+      // Verify the user is an admin of the group
+      const membership = await prisma.groupUser.findFirst({
+        where: {
+          userId,
+          groupId,
+        },
+        include: {
+          group: true,
+          user: true,
+        },
+      });
+
+      if (!membership) {
+        throw new GraphQLError('Not authorized to send invitations for this group', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      if (membership.role !== GroupRole.ADMIN) {
+        throw new GraphQLError('Only group admins can send invitation emails', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      try {
+        // Check if the user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        // If user exists, add them directly to the group
+        if (existingUser) {
+          // Check if already a member
+          const existingMembership = await prisma.groupUser.findFirst({
+            where: {
+              userId: existingUser.id,
+              groupId,
+            },
+          });
+
+          if (existingMembership) {
+            throw new GraphQLError('User is already a member of this group', {
+              extensions: { code: 'BAD_REQUEST' },
+            });
+          }
+
+          // Add to group
+          await prisma.groupUser.create({
+            data: {
+              userId: existingUser.id,
+              groupId,
+              role: GroupRole.MEMBER,
+            },
+          });
+
+          // Add to conversation if exists
+          if (membership.group.conversationId) {
+            await prisma.conversationParticipant.create({
+              data: {
+                userId: existingUser.id,
+                conversationId: membership.group.conversationId,
+              },
+            });
+          }
+
+          // Send notification email
+          await sendGroupInvitationEmail({
+            to: email,
+            groupName: membership.group.name,
+            inviterName: membership.user.name,
+            inviteLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/dashboard/groups/${groupId}`,
+            isNewUser: false,
+          });
+
+          return true;
+        }
+
+        // For new users, generate invitation link and send email
+        const token = randomBytes(32).toString('base64url');
+
+        await prisma.groupInvitation.create({
+          data: {
+            token,
+            maxUses: 1, // Single use for email invitations
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            requireEmail: true,
+            groupId,
+            creatorId: userId,
+          },
+        });
+
+        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/join?token=${token}`;
+
+        // Send invitation email
+        await sendGroupInvitationEmail({
+          to: email,
+          groupName: membership.group.name,
+          inviterName: membership.user.name,
+          inviteLink,
+          isNewUser: true,
+        });
+
+        return true;
+      } catch (error) {
+        console.error('Error sending group invitation email:', error);
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throw new GraphQLError('Failed to send invitation email', {
           extensions: { code: 'INTERNAL_SERVER_ERROR' },
         });
       }

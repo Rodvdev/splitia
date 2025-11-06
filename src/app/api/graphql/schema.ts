@@ -296,6 +296,7 @@ export const typeDefs = gql`
     createGroupWithConversation(data: GroupInput!): Group!
     addGroupMember(groupId: ID!, data: GroupMemberInput!): Boolean!
     removeGroupMember(groupId: ID!, userId: ID!): Boolean!
+    changeGroupMemberRole(groupId: ID!, userId: ID!, role: GroupRole!): GroupMember!
     leaveGroup(groupId: ID!): Boolean!
     deleteGroup(id: ID!): Boolean!
     sendMessage(data: MessageInput!): Message!
@@ -304,6 +305,7 @@ export const typeDefs = gql`
     markMessageAsSeen(messageId: ID!): Boolean!
     deleteConversation(id: ID!): Boolean!
     createGroupInvitation(groupId: ID!, data: GroupInvitationInput!): GroupInvitation!
+    sendGroupInvitationEmail(groupId: ID!, email: String!): Boolean!
     joinGroupByToken(token: String!, email: String): JoinGroupResult!
     recordPayment(groupId: ID!, userId: ID!, amount: Float!, currency: String!, method: String!): Boolean!
     createSettlement(data: SettlementInput!): Settlement!

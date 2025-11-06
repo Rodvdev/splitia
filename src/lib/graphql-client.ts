@@ -761,22 +761,17 @@ export async function generateGroupInvitation(data: {
 // Helper function to change a member's role in a group
 export async function changeGroupMemberRole(data: {
   groupId: string;
-  memberId: string;
+  userId: string;
   role: 'ADMIN' | 'MEMBER' | 'GUEST' | 'ASSISTANT';
 }) {
   const mutation = `
-    mutation ChangeGroupMemberRole($data: GroupMemberRoleInput!) {
-      changeGroupMemberRole(data: $data) {
+    mutation ChangeGroupMemberRole($groupId: ID!, $userId: ID!, $role: GroupRole!) {
+      changeGroupMemberRole(groupId: $groupId, userId: $userId, role: $role) {
         id
+        name
+        email
+        image
         role
-        user {
-          id
-          name
-        }
-        group {
-          id
-          name
-        }
       }
     }
   `;
@@ -784,9 +779,30 @@ export async function changeGroupMemberRole(data: {
   try {
     // Use authenticated client
     const client = await getAuthenticatedClient();
-    return await client.request(mutation, { data });
+    return await client.request(mutation, data);
   } catch (error) {
     console.error('Error changing group member role:', error);
+    throw error;
+  }
+}
+
+// Helper function to send group invitation via email
+export async function sendGroupInvitationEmail(data: {
+  groupId: string;
+  email: string;
+}) {
+  const mutation = `
+    mutation SendGroupInvitationEmail($groupId: ID!, $email: String!) {
+      sendGroupInvitationEmail(groupId: $groupId, email: $email)
+    }
+  `;
+
+  try {
+    // Use authenticated client
+    const client = await getAuthenticatedClient();
+    return await client.request(mutation, data);
+  } catch (error) {
+    console.error('Error sending group invitation email:', error);
     throw error;
   }
 }

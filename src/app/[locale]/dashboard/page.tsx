@@ -374,7 +374,7 @@ export default function DashboardPage() {
       </header>
 
       {error ? (
-        <div className="rounded-lg bg-destructive/10 p-4 text-destructive mb-6">
+        <div className="rounded-lg bg-destructive text-destructive-foreground p-4 mb-6">
           <p>{error}</p>
           <Button 
             variant="outline" 
@@ -463,7 +463,7 @@ export default function DashboardPage() {
                           >
                             <AvatarFallback className={cn(
                               "text-lg",
-                              currentGroupIndex === -1 ? "bg-primary/10 text-primary" : ""
+                              currentGroupIndex === -1 ? "bg-muted text-primary" : ""
                             )}>
                               <Globe className="h-8 w-8" />
                             </AvatarFallback>
@@ -502,7 +502,7 @@ export default function DashboardPage() {
                                 ) : null}
                                 <AvatarFallback className={cn(
                                   "text-lg",
-                                  isCurrent ? "bg-primary/10 text-primary" : ""
+                                  isCurrent ? "bg-muted text-primary" : ""
                                 )}>
                                   {getInitials(group.name)}
                                 </AvatarFallback>
@@ -640,7 +640,7 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="flex flex-wrap gap-3">
                   {getCurrentMembers().map(member => (
-                    <div key={member.id} className="flex items-center gap-2 bg-muted/30 rounded-full px-3 py-1">
+                    <div key={member.id} className="flex items-center gap-2 bg-muted rounded-full px-3 py-1">
                       <Avatar className="h-6 w-6">
                         {member.image ? (
                           <AvatarImage src={member.image} alt={member.name} />
@@ -723,9 +723,9 @@ export default function DashboardPage() {
                 ))
               ) : (
                 // Empty state
-                <div className="text-center p-6 bg-muted/30 rounded-lg">
+                <div className="text-center p-6 bg-card rounded-lg">
                   <p className="text-muted-foreground">
-                    {groups[currentGroupIndex] 
+                    {groups[currentGroupIndex]
                       ? `No hay gastos en ${groups[currentGroupIndex].name}`
                       : tExpenses('noExpenses')}
                   </p>

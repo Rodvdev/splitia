@@ -52,7 +52,7 @@ export default function ExpensesLayout({
   return (
     <div className="flex flex-col">
       {/* Sub-navigation */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b">
         <div className="container mx-auto px-4">
           <div className="flex overflow-x-auto py-3 gap-2">
             {subNavItems.map((item) => (
@@ -63,7 +63,7 @@ export default function ExpensesLayout({
                   "flex items-center rounded-full px-4 py-2 text-sm font-medium transition-colors",
                   pathname?.endsWith(item.href)
                     ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    : "bg-secondary text-secondary-foreground hover:bg-accent"
                 )}
               >
                 {item.icon}

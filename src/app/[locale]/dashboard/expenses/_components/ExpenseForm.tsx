@@ -447,11 +447,11 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="h-12 bg-white">
+                        <SelectTrigger className="h-12 bg-card">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-card">
                         {[
                           'USD', 'EUR', 'GBP', 'PEN', 'CLP', 'COP', 'ARS', 'MXN',
                           'BOB', 'UYU', 'PYG', 'BRL'
@@ -507,11 +507,11 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-white">
+                        <SelectTrigger className="bg-card">
                           <SelectValue placeholder={t('category.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-card">
                         {isLoadingCategories ? (
                           <SelectItem value="loading" disabled>Loading categories...</SelectItem>
                         ) : categories.length > 0 ? (
@@ -653,11 +653,11 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-white">
+                        <SelectTrigger className="bg-card">
                               <SelectValue placeholder={t('whoPaid.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-card">
                         {groupMembers.map((member) => (
                           <SelectItem 
                             key={member.id} 
@@ -749,11 +749,11 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="bg-white">
+                          <SelectTrigger className="bg-card">
                             <SelectValue placeholder="Select a group to split with" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-white">
+                        <SelectContent className="bg-card">
                           {groups.map((group) => (
                             <SelectItem key={group.id} value={group.id}>
                               {group.name}
@@ -833,11 +833,11 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
                                   value={typeField.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger className="bg-white">
+                                    <SelectTrigger className="bg-card">
                                       <SelectValue placeholder="Select settlement type" />
                                     </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent className="bg-white">
+                                  <SelectContent className="bg-card">
                                     <SelectItem value="PAYMENT">I&apos;m paying someone</SelectItem>
                                     <SelectItem value="RECEIPT">I&apos;m being paid</SelectItem>
                                   </SelectContent>
@@ -873,11 +873,11 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
                                   value={userField.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger className="bg-white">
+                                    <SelectTrigger className="bg-card">
                                       <SelectValue placeholder="Select user" />
                                     </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent className="bg-white">
+                                  <SelectContent className="bg-card">
                                     {groupMembers
                                       .filter(member => member.id !== profileRef.current?.id)
                                       .map((member) => (
@@ -920,11 +920,11 @@ export const ExpenseForm = ({ initialData, onSubmit, onCancel, isSubmitting, isE
                                   value={statusField.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger className="bg-white">
+                                    <SelectTrigger className="bg-card">
                                       <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent className="bg-white">
+                                  <SelectContent className="bg-card">
                                     <SelectItem value="PENDING">Pending</SelectItem>
                                     <SelectItem value="PENDING_CONFIRMATION">
                                       {form.watch('settlementType') === 'PAYMENT' 

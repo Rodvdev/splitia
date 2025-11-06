@@ -42,9 +42,9 @@ export function ExpenseCard({ expense, onClick }: ExpenseCardProps) {
       <CardHeader className="p-4 pb-0 flex flex-row justify-between items-start">
         <div>
           <h3 className="font-medium text-base">{expense.title}</h3>
-          <Badge 
-            variant="outline" 
-            className="mt-1 bg-primary/10"
+          <Badge
+            variant="outline"
+            className="mt-1 bg-muted"
           >
             {expense.category}
           </Badge>

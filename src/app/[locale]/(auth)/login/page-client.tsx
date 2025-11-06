@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
-import { Users, SplitSquareVertical, CreditCard, Loader2 } from 'lucide-react';
+import { Users, SplitSquareVertical, CreditCard, Loader2, User, Shield, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { signInUser } from '@/lib/auth/server-actions';
 import { signIn } from 'next-auth/react';
@@ -26,6 +26,38 @@ function SignInForm() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copiedCredential, setCopiedCredential] = useState<string | null>(null);
+
+  // Demo credentials
+  const demoCredentials = {
+    user: {
+      email: 'user@demo.com',
+      password: 'demo123',
+      label: 'Demo User'
+    },
+    admin: {
+      email: 'admin@demo.com',
+      password: 'admin123',
+      label: 'Demo Admin'
+    }
+  };
+
+  const handleUseDemoCredentials = (type: 'user' | 'admin') => {
+    const creds = demoCredentials[type];
+    setEmail(creds.email);
+    setPassword(creds.password);
+    setError('');
+  };
+
+  const handleCopyCredential = async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCredential(type);
+      setTimeout(() => setCopiedCredential(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -71,6 +103,129 @@ function SignInForm() {
         <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
           {t('auth.signInDescription') || "Ingresa tus credenciales para continuar"}
         </p>
+      </div>
+
+      {/* Demo Credentials Section */}
+      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Demo Credentials</h3>
+        </div>
+        <p className="text-xs text-blue-700 dark:text-blue-300 mb-4">
+          Use these credentials to test the application
+        </p>
+        
+        <div className="space-y-3">
+          {/* Demo User */}
+          <div className="bg-white dark:bg-gray-800 p-3 rounded-md border border-blue-200 dark:border-blue-700">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{demoCredentials.user.label}</span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleUseDemoCredentials('user')}
+                className="h-7 text-xs"
+              >
+                Use
+              </Button>
+            </div>
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Email:</span>
+                <div className="flex items-center gap-1">
+                  <code className="text-gray-900 dark:text-gray-100 font-mono">{demoCredentials.user.email}</code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCredential(demoCredentials.user.email, 'user-email')}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    {copiedCredential === 'user-email' ? (
+                      <Check className="h-3 w-3 text-green-600" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Password:</span>
+                <div className="flex items-center gap-1">
+                  <code className="text-gray-900 dark:text-gray-100 font-mono">{demoCredentials.user.password}</code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCredential(demoCredentials.user.password, 'user-password')}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    {copiedCredential === 'user-password' ? (
+                      <Check className="h-3 w-3 text-green-600" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Demo Admin */}
+          <div className="bg-white dark:bg-gray-800 p-3 rounded-md border border-blue-200 dark:border-blue-700">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{demoCredentials.admin.label}</span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleUseDemoCredentials('admin')}
+                className="h-7 text-xs"
+              >
+                Use
+              </Button>
+            </div>
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Email:</span>
+                <div className="flex items-center gap-1">
+                  <code className="text-gray-900 dark:text-gray-100 font-mono">{demoCredentials.admin.email}</code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCredential(demoCredentials.admin.email, 'admin-email')}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    {copiedCredential === 'admin-email' ? (
+                      <Check className="h-3 w-3 text-green-600" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Password:</span>
+                <div className="flex items-center gap-1">
+                  <code className="text-gray-900 dark:text-gray-100 font-mono">{demoCredentials.admin.password}</code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCredential(demoCredentials.admin.password, 'admin-password')}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    {copiedCredential === 'admin-password' ? (
+                      <Check className="h-3 w-3 text-green-600" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
       {error && (

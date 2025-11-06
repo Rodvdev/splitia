@@ -278,9 +278,9 @@ export default function BudgetPage() {
                         </span>
                       </div>
                     </div>
-                    <Progress 
-                      value={(category.spent / category.amount) * 100} 
-                      className={`h-2 ${category.spent > category.amount ? "bg-destructive/30" : ""}`}
+                    <Progress
+                      value={(category.spent / category.amount) * 100}
+                      className={`h-2 ${category.spent > category.amount ? "bg-destructive" : ""}`}
                     />
                     <div className="flex justify-between mt-1 text-xs text-muted-foreground">
                       <span>
@@ -301,7 +301,7 @@ export default function BudgetPage() {
       ) : (
         // Empty state
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-primary/10 p-4 mb-4">
+          <div className="rounded-full bg-muted p-4 mb-4">
             <PieChart className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-lg font-medium mb-2">{t('empty.title')}</h3>

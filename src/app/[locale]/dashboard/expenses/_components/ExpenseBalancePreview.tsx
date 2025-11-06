@@ -387,9 +387,9 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
             <div
               onClick={() => setIsCustomDivision(false)}
               className={`px-3 py-1.5 text-xs rounded-full transition-all ${
-                !isCustomDivision 
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-sm font-medium'
-                  : 'text-slate-500 dark:text-slate-400'
+                !isCustomDivision
+                  ? 'bg-card text-primary shadow-sm font-medium'
+                  : 'text-muted-foreground'
               }`}
             >
               {t('equalDivision')}
@@ -397,9 +397,9 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
             <div
               onClick={() => setIsCustomDivision(true)}
               className={`px-3 py-1.5 text-xs rounded-full transition-all ${
-                isCustomDivision 
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-sm font-medium'
-                  : 'text-slate-500 dark:text-slate-400'
+                isCustomDivision
+                  ? 'bg-card text-primary shadow-sm font-medium'
+                  : 'text-muted-foreground'
               }`}
             >
               {t('customDivision')}
@@ -434,22 +434,22 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
             </div>
             <div className="flex gap-2">
             <div
-                onClick={resetToEqual} 
-                className="px-2 py-1 text-xs bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors shadow-sm"
+                onClick={resetToEqual}
+                className="px-2 py-1 text-xs bg-card hover:bg-muted rounded-md transition-colors shadow-sm"
               >
                 {t('resetEqual')}
               </div>
               {shouldShowAutocomplete() ? (
-                <div 
-                  onClick={autocompleteLastMember} 
-                  className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-md transition-colors shadow-sm"
+                <div
+                  onClick={autocompleteLastMember}
+                  className="px-2 py-1 text-xs bg-primary text-primary-foreground hover:bg-accent rounded-md transition-colors shadow-sm"
                 >
                   {t('autocomplete')}
                 </div>
               ) : remainingAmount !== 0 && (
-                <div 
-                  onClick={distributeRemaining} 
-                  className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-md transition-colors shadow-sm"
+                <div
+                  onClick={distributeRemaining}
+                  className="px-2 py-1 text-xs bg-primary text-primary-foreground hover:bg-accent rounded-md transition-colors shadow-sm"
                 >
                   {t('distributeRemaining')}
                 </div>
@@ -460,9 +460,9 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
       )}
       
       {/* Group members list with balances */}
-      <div className="bg-white dark:bg-slate-950 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-card rounded-xl overflow-hidden shadow-sm">
         {/* Members list header */}
-        <div className="bg-slate-50 dark:bg-slate-900 px-4 py-2 flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2">
+        <div className="bg-muted px-4 py-2 flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2">
           <div 
             onClick={toggleAllMembers}
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
@@ -489,9 +489,9 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                   <div
                     onClick={() => toggleMemberSelection(member.id)}
                     className={`h-5 w-5 flex items-center justify-center rounded-full border ${
-                      selectedMembers.includes(member.id) 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700'
+                      selectedMembers.includes(member.id)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-card border-border'
                     }`}
                   >
                     {selectedMembers.includes(member.id) && (
@@ -501,7 +501,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                   
                   <Avatar className="h-7 w-7 border-2 border-white dark:border-slate-800 shadow-sm">
                     <AvatarImage src={member.image || ''} />
-                    <AvatarFallback className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                    <AvatarFallback className="bg-muted text-foreground">
                       {member.name?.charAt(0) || member.email?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -510,7 +510,7 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                     <p className="text-xs font-medium truncate max-w-[90px] sm:max-w-[120px]">
                       {member.name || member.email}
                       {member.id === paidById && (
-                        <span className="ml-1.5 inline-flex items-center text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded-full">
+                        <span className="ml-1.5 inline-flex items-center text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
                           {t('paidTheBill')}
                         </span>
                       )}
@@ -528,15 +528,15 @@ export function ExpenseBalancePreview({ amount, currency, groupMembers, paidById
                         onChange={(e) => handleCustomAmountChange(member.id, e.target.value)}
                         className={`w-16 sm:w-20 text-right border rounded-md p-1 text-xs ${
                           !selectedMembers.includes(member.id) ? 'opacity-50' : ''
-                        } bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-500 outline-none`}
+                        } bg-card border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none`}
                         disabled={!selectedMembers.includes(member.id)}
                       />
                       
                       <div className="flex gap-1 ml-1">
                         {shouldShowAutocompleteForMember(member.id) && (
-                          <div 
-                            onClick={autocompleteLastMember} 
-                            className="px-1.5 py-0.5 text-[10px] bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-700 dark:text-blue-400 rounded-md"
+                          <div
+                            onClick={autocompleteLastMember}
+                            className="px-1.5 py-0.5 text-[10px] bg-primary text-primary-foreground hover:bg-accent rounded-md"
                             title={t('autocomplete')}
                           >
                             <span className="hidden sm:inline">{t('autocomplete')}</span>

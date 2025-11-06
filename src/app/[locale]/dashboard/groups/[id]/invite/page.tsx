@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Mail, Link, Copy, QrCode, Share2, Check } from 'lucide-react';
+import { ArrowLeft, Mail, Link, Copy, Share2, Check, Download } from 'lucide-react';
+import QRCodeReact from 'qrcode.react';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -484,12 +485,37 @@ export default function InviteToGroupPage() {
                           {t('generateNew')}
                         </Button>
                       </div>
-                      
-                      <div className="flex justify-center mt-4">
-                        <div className="bg-white p-4 rounded-lg">
-                          <QrCode className="h-32 w-32 text-primary" />
-                          <p className="text-center text-xs mt-2 text-muted-foreground">{t('qrCode')}</p>
+
+                      <div className="flex flex-col items-center mt-4">
+                        <div className="bg-card p-4 rounded-lg border">
+                          <QRCodeReact
+                            value={inviteLink}
+                            size={200}
+                            level="H"
+                            includeMargin={true}
+                            id="group-invite-qr"
+                          />
                         </div>
+                        <p className="text-center text-xs mt-2 text-muted-foreground">{t('qrCode')}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => {
+                            const canvas = document.getElementById('group-invite-qr') as HTMLCanvasElement;
+                            if (canvas) {
+                              const url = canvas.toDataURL('image/png');
+                              const link = document.createElement('a');
+                              link.download = `splitia-invite-${groupId}.png`;
+                              link.href = url;
+                              link.click();
+                              toast.success(t('qrCodeDownloaded') || 'QR code downloaded');
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          {t('downloadQr') || 'Download QR'}
+                        </Button>
                       </div>
                     </div>
                   )}

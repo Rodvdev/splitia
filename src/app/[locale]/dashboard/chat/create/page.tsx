@@ -199,7 +199,7 @@ export default function CreateChatPage() {
                   <span>{user.name}</span>
                   <button
                     onClick={() => removeSelectedUser(user.id)}
-                    className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                    className="ml-1 rounded-full hover:bg-muted p-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>

@@ -272,10 +272,10 @@ export default function ExpensePage() {
                 <AlertDialogCancel disabled={isDeleting}>
                   {t('actions.cancel')}
                 </AlertDialogCancel>
-                <AlertDialogAction 
+                <AlertDialogAction
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="bg-destructive text-destructive-foreground"
                 >
                   {isDeleting ? t('delete.deleting') : t('actions.delete')}
                 </AlertDialogAction>
@@ -292,19 +292,19 @@ export default function ExpensePage() {
             <div>
               <CardTitle className="text-xl">{expense.description}</CardTitle>
               <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="bg-primary/10">
+                <Badge variant="outline" className="bg-muted">
                   {expense.category?.name || 'Uncategorized'}
                 </Badge>
                 
-                <Badge 
+                <Badge
                   variant={isPaid ? "default" : "secondary"}
-                  className={isPaid ? "bg-green-100 text-green-800" : ""}
+                  className={isPaid ? "bg-primary text-primary-foreground" : ""}
                 >
                   {isPaid ? t('status.paid') : t('status.pending')}
                 </Badge>
-                
+
                 {expense.group && (
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                  <Badge variant="outline" className="bg-primary text-primary-foreground">
                     {t('type.group')}
                   </Badge>
                 )}
@@ -417,7 +417,7 @@ export default function ExpensePage() {
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-medium">Notes</h3>
               </div>
-              <div className="bg-muted/40 rounded-md p-3 text-sm">
+              <div className="bg-muted rounded-md p-3 text-sm">
                 {expense.notes}
               </div>
             </div>
@@ -430,7 +430,7 @@ export default function ExpensePage() {
                 <Share2 className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-medium">Expense Shares</h3>
               </div>
-              <div className="bg-muted/40 rounded-md overflow-hidden">
+              <div className="bg-muted rounded-md overflow-hidden">
                 <div className="grid grid-cols-3 gap-4 p-3 font-medium text-sm border-b">
                   <div>Person</div>
                   <div>Type</div>
@@ -455,8 +455,8 @@ export default function ExpensePage() {
             </div>
           )}
         </CardContent>
-        
-        <CardFooter className="bg-muted/30 p-4 border-t">
+
+        <CardFooter className="bg-muted p-4 border-t">
           <div className="flex justify-between items-center w-full">
             <span className="text-sm text-muted-foreground">
               ID: {expense.id}
